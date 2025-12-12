@@ -73,7 +73,7 @@ return [
     |
     */
 
-    'home' => '/dashboard',
+    'home' => '/',
 
     /*
     |--------------------------------------------------------------------------
@@ -141,17 +141,20 @@ return [
     | by removing them from this array. You're free to only remove some of
     | these features or you can even remove all of these if you need to.
     |
+    | Note: Login is enabled by default in Fortify and does not need to be
+    | included in this array. Only optional features are listed here.
+    |
     */
 
     'features' => [
-        Features::registration(),
-        Features::resetPasswords(),
-        Features::emailVerification(),
+        Features::registration(), // Login y registro de usuarios
+        Features::resetPasswords(), // Recuperación de contraseñas
+        Features::emailVerification(), // Verificación de email
         Features::twoFactorAuthentication([
             'confirm' => true,
             'confirmPassword' => true,
             // 'window' => 0,
-        ]),
+        ]), // Autenticación de dos factores
     ],
 
 ];

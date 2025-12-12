@@ -2,7 +2,36 @@
     @include('partials.settings-heading')
 
     <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
-        <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
+        <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6" enctype="multipart/form-data">
+            <!-- Profile Photo -->
+            <div class="space-y-4">
+                <flux:field>
+                    <flux:label>{{ __('Profile Photo') }}</flux:label>
+                    <div class="flex items-center gap-4">
+                        @if($profilePhotoUrl)
+                            <img src="{{ $profilePhotoUrl }}" alt="{{ auth()->user()->name }}" class="h-20 w-20 rounded-full object-cover">
+                        @else
+                            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-200 text-lg font-semibold text-black dark:bg-neutral-700 dark:text-white">
+                                {{ auth()->user()->initials() }}
+                            </div>
+                        @endif
+                        <div class="flex-1">
+                            <flux:input wire:model="photo" type="file" accept="image/*" />
+                            <flux:text class="mt-1 text-xs text-neutral-500">
+                                {{ __('Upload a new profile photo. Max size: 2MB') }}
+                            </flux:text>
+                        </div>
+                    </div>
+                    @if($profilePhotoUrl)
+                        <div class="mt-2">
+                            <flux:button wire:click="deleteProfilePhoto" variant="ghost" size="sm" type="button">
+                                {{ __('Remove Photo') }}
+                            </flux:button>
+                        </div>
+                    @endif
+                </flux:field>
+            </div>
+
             <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
 
             <div>

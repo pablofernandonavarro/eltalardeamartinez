@@ -43,23 +43,41 @@
                 </flux:tooltip>
             </flux:navbar>
 
+            <!-- Logout Button - Visible -->
+            <form method="POST" action="{{ route('logout') }}" class="me-2">
+                @csrf
+                <flux:button variant="ghost" type="submit" icon="arrow-right-start-on-rectangle" class="max-lg:hidden">
+                    {{ __('Log Out') }}
+                </flux:button>
+            </form>
+
             <!-- Desktop User Menu -->
             <flux:dropdown position="top" align="end">
-                <flux:profile
-                    class="cursor-pointer"
-                    :initials="auth()->user()->initials()"
-                />
+                <button type="button" class="cursor-pointer">
+                    @if(auth()->user()->profilePhotoUrl())
+                        <img src="{{ auth()->user()->profilePhotoUrl() }}" alt="{{ auth()->user()->name }}" class="h-10 w-10 rounded-full object-cover">
+                    @else
+                        <flux:profile
+                            class="cursor-pointer"
+                            :initials="auth()->user()->initials()"
+                        />
+                    @endif
+                </button>
 
                 <flux:menu>
                     <flux:menu.radio.group>
                         <div class="p-0 text-sm font-normal">
                             <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                                 <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
-                                    <span
-                                        class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white"
-                                    >
-                                        {{ auth()->user()->initials() }}
-                                    </span>
+                                    @if(auth()->user()->profilePhotoUrl())
+                                        <img src="{{ auth()->user()->profilePhotoUrl() }}" alt="{{ auth()->user()->name }}" class="h-full w-full rounded-lg object-cover">
+                                    @else
+                                        <span
+                                            class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white"
+                                        >
+                                            {{ auth()->user()->initials() }}
+                                        </span>
+                                    @endif
                                 </span>
 
                                 <div class="grid flex-1 text-start text-sm leading-tight">
