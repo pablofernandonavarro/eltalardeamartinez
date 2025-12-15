@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Role;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,11 +13,35 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create admin user (admins are always approved, without 2FA for easier access)
+        User::factory()->withoutTwoFactor()->create([
+            'name' => 'Administrador',
+            'email' => 'admin@eltalardemartinez.com',
+            'role' => Role::Admin,
+            'approved_at' => now(),
+        ]);
 
+        // Create example propietario (approved)
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Juan Pérez',
+            'email' => 'juan.perez@example.com',
+            'role' => Role::Propietario,
+            'approved_at' => now(),
+        ]);
+
+        // Create example inquilino (approved)
+        User::factory()->create([
+            'name' => 'María González',
+            'email' => 'maria.gonzalez@example.com',
+            'role' => Role::Inquilino,
+            'approved_at' => now(),
+        ]);
+
+        // Seed complexes, buildings, and units
+        $this->call([
+            ComplexSeeder::class,
+            ConceptSeeder::class,
+            PoolSeeder::class,
         ]);
     }
 }

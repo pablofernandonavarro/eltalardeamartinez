@@ -34,6 +34,8 @@ class CreateNewUser implements CreatesNewUsers
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
+            'role' => null, // No role by default - must be assigned by admin
+            'approved_at' => null, // New users need admin approval
         ]);
     }
 }

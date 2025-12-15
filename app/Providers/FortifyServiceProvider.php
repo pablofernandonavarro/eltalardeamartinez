@@ -38,6 +38,36 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        // Check if user is approved and has role after login
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = \App\Models\User::where('email', $request->email)->first();
+
+            if ($user && \Hash::check($request->password, $user->password)) {
+                // Admins can always login
+                if ($user->isAdmin()) {
+                    return $user;
+                }
+
+                // Check if user has a role assigned
+                if (! $user->role) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'email' => ['Tu cuenta no tiene un rol asignado. Por favor, contacta al administrador para completar tu registro.'],
+                    ]);
+                }
+
+                // Check if user is approved
+                if (! $user->isApproved()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'email' => ['Tu cuenta está pendiente de aprobación. Por favor, contacta al administrador.'],
+                    ]);
+                }
+
+                return $user;
+            }
+
+            return null;
+        });
     }
 
     /**

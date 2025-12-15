@@ -5,6 +5,10 @@
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />
 
+        <flux:callout color="blue" class="text-sm">
+            {{ __('Después de registrarte, el administrador asignará tu rol y aprobará tu cuenta. Recibirás una notificación cuando puedas acceder al sistema.') }}
+        </flux:callout>
+
         <form method="POST" action="{{ route('register.store') }}" class="flex flex-col gap-6">
             @csrf
 

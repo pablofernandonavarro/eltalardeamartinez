@@ -145,9 +145,28 @@
                         </a>
                     </div>
                     @else
-                    <a href="{{ route('admin.dashboard') }}" class="ml-4 pl-4 border-l border-zinc-300 dark:border-zinc-700 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 whitespace-nowrap" aria-label="Ir al dashboard">
-                        Mi Portal
-                    </a>
+                    <div class="flex items-center gap-3 ml-4 pl-4 border-l border-zinc-300 dark:border-zinc-700">
+                        <div class="flex items-center gap-2 text-sm">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-xs">
+                                {{ auth()->user()->initials() }}
+                            </div>
+                            <div class="hidden lg:flex flex-col">
+                                <span class="text-xs font-semibold text-zinc-900 dark:text-white">{{ auth()->user()->name }}</span>
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ auth()->user()->role?->label() ?? 'Sin rol asignado' }}</span>
+                            </div>
+                        </div>
+                        <a href="{{ route('dashboard') }}" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 whitespace-nowrap" aria-label="Ir al dashboard">
+                            Mi Portal
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-red-600 dark:hover:text-red-400 transition-colors" aria-label="Cerrar sesión">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
                     @endguest
                 </div>
 
@@ -200,9 +219,25 @@
                         </div>
                         @else
                         <div class="grid gap-3">
-                            <a href="{{ route('admin.dashboard') }}" class="block px-6 py-4 rounded-xl text-center text-base bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg">
+                            <div class="flex items-center gap-3 px-6 py-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700">
+                                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold">
+                                    {{ auth()->user()->initials() }}
+                                </div>
+                                <div class="flex-1 text-left">
+                                    <p class="font-bold text-zinc-900 dark:text-white">{{ auth()->user()->name }}</p>
+                                    <p class="text-xs text-zinc-600 dark:text-zinc-400">{{ auth()->user()->email }}</p>
+                                    <p class="text-xs text-amber-600 dark:text-amber-400 font-semibold">{{ auth()->user()->role?->label() ?? 'Sin rol asignado' }}</p>
+                                </div>
+                            </div>
+                            <a href="{{ route('dashboard') }}" class="block px-6 py-4 rounded-xl text-center text-base bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg">
                                 🏠 Mi Portal
                             </a>
+                            <form method="POST" action="{{ route('logout') }}" class="w-full">
+                                @csrf
+                                <button type="submit" class="w-full px-6 py-3 rounded-xl text-center text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors border-2 border-red-200 dark:border-red-800">
+                                    Cerrar Sesión
+                                </button>
+                            </form>
                         </div>
                         @endguest
 

@@ -11,11 +11,18 @@ Route::get('/', function () {
     return view('landing');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
+Route::get('dashboard', function () {
+    $user = auth()->user();
+
+    if ($user->isAdmin()) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    return redirect()->route('resident.dashboard');
+})->middleware(['auth', 'verified', 'approved'])
     ->name('dashboard');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'approved'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
     Route::get('settings/profile', Profile::class)->name('profile.edit');
@@ -32,4 +39,11 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+
+    // Resident routes (for Propietarios and Inquilinos)
+    Route::prefix('resident')->name('resident.')->group(function () {
+        Route::get('/dashboard', \App\Livewire\Resident\Dashboard::class)->name('dashboard');
+        // Route::get('/expenses', \App\Livewire\Resident\Expenses\Index::class)->name('expenses.index');
+        // Route::get('/pools', \App\Livewire\Resident\Pools\Index::class)->name('pools.index');
+    });
 });
