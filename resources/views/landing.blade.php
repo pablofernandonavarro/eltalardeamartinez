@@ -130,16 +130,14 @@
                     @guest
                     <div class="flex items-center gap-2 lg:gap-3 ml-4 pl-4 border-l border-zinc-300 dark:border-zinc-700">
                         <a
-                            href="#"
-                            @click.prevent="$dispatch('open-auth-modal', { tab: 'login' })"
+                            href="{{ route('login') }}"
                             class="px-4 py-2 text-sm font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 rounded-lg transition-all duration-300 border-2 border-amber-300 dark:border-amber-700 whitespace-nowrap shadow-md"
                             aria-label="Iniciar sesión"
                         >
                             Ingresar
                         </a>
                         <a
-                            href="#"
-                            @click.prevent="$dispatch('open-auth-modal', { tab: 'register' })"
+                            href="{{ route('register') }}"
                             class="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 whitespace-nowrap"
                             aria-label="Registrarse"
                         >
@@ -147,7 +145,7 @@
                         </a>
                     </div>
                     @else
-                    <a href="{{ route('dashboard') }}" class="ml-4 pl-4 border-l border-zinc-300 dark:border-zinc-700 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 whitespace-nowrap" aria-label="Ir al dashboard">
+                    <a href="{{ route('admin.dashboard') }}" class="ml-4 pl-4 border-l border-zinc-300 dark:border-zinc-700 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 whitespace-nowrap" aria-label="Ir al dashboard">
                         Mi Portal
                     </a>
                     @endguest
@@ -186,15 +184,15 @@
                         @guest
                         <div class="grid gap-3">
                             <a
-                                href="#"
-                                @click.prevent="mobileMenuOpen = false; $dispatch('open-auth-modal', { tab: 'login' })"
+                                href="{{ route('login') }}"
+                                x-on:click="mobileMenuOpen = false"
                                 class="block px-6 py-4 rounded-xl text-center text-base font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all shadow-md border-2 border-amber-300 dark:border-amber-700"
                             >
                                 🔐 Ingresar
                             </a>
                             <a
-                                href="#"
-                                @click.prevent="mobileMenuOpen = false; $dispatch('open-auth-modal', { tab: 'register' })"
+                                href="{{ route('register') }}"
+                                x-on:click="mobileMenuOpen = false"
                                 class="block px-6 py-4 rounded-xl text-center text-base bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg"
                             >
                                 ✨ Registrarse
@@ -202,7 +200,7 @@
                         </div>
                         @else
                         <div class="grid gap-3">
-                            <a href="{{ route('dashboard') }}" class="block px-6 py-4 rounded-xl text-center text-base bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg">
+                            <a href="{{ route('admin.dashboard') }}" class="block px-6 py-4 rounded-xl text-center text-base bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg">
                                 🏠 Mi Portal
                             </a>
                         </div>
@@ -370,7 +368,7 @@
                     Ingresar para ver todas las novedades
                 </a>
                 @else
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-lg font-semibold hover:from-amber-600 hover:to-orange-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
+                <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-lg font-semibold hover:from-amber-600 hover:to-orange-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
                     Ver todas las novedades
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -616,7 +614,7 @@
                     Ingresar para solicitar reservas
                 </a>
                 @else
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-lg font-semibold hover:from-amber-600 hover:to-orange-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
+                <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-lg font-semibold hover:from-amber-600 hover:to-orange-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
                     Solicitar reservas en el portal
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -784,7 +782,7 @@
                                 Descargar Reglamento
                             </a>
                             @else
-                            <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors">
+                            <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                 </svg>
@@ -1332,7 +1330,7 @@
         x-data="{
             activeTab: '{{ ($errors->has('name') || $errors->has('password_confirmation')) ? 'register' : (($errors->has('email') || $errors->has('password') || old('email')) ? 'login' : 'login') }}'
         }"
-        @open-auth-modal.window="activeTab = ($event.detail?.tab ?? 'login'); $dispatch('open-modal', 'auth-modal')"
+        @set-auth-tab.window="activeTab = $event.detail?.tab || 'login'"
         x-init="@if($errors->has('email') || $errors->has('password') || $errors->has('name') || $errors->has('password_confirmation')) $dispatch('open-modal', 'auth-modal'); @endif"
     >
         <flux:modal 
