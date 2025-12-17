@@ -4,10 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Building;
 use App\Models\Complex;
-use App\Models\Unit;
 use Illuminate\Database\Seeder;
 
-class ComplexSeeder extends Seeder
+class TowersSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -26,7 +25,6 @@ class ComplexSeeder extends Seeder
             ]
         );
 
-        // Crear 11 torres: Torre 1 ... Torre 11 (sin crear unidades; se importan desde el PDF)
         for ($i = 1; $i <= 11; $i++) {
             Building::query()->updateOrCreate(
                 ['complex_id' => $complex->id, 'name' => "Torre {$i}"],

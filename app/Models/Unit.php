@@ -15,6 +15,7 @@ class Unit extends Model
     protected $fillable = [
         'building_id',
         'number',
+        'uf_code',
         'floor',
         'coefficient',
         'rooms',
