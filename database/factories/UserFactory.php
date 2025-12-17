@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,8 +30,14 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'two_factor_secret' => Str::random(10),
-            'two_factor_recovery_codes' => Str::random(10),
+
+            // Requerido por la lógica de login (FortifyServiceProvider)
+            'role' => Role::Propietario,
+            'approved_at' => now(),
+
+            // Por defecto dejamos 2FA habilitado (estos tests lo asumen)
+            'two_factor_secret' => encrypt(Str::random(10)),
+            'two_factor_recovery_codes' => encrypt(json_encode([Str::random(10), Str::random(10)])),
             'two_factor_confirmed_at' => now(),
         ];
     }

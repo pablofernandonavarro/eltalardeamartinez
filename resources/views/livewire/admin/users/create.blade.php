@@ -26,6 +26,7 @@
             <flux:label>Rol <span class="text-red-500">*</span></flux:label>
             <flux:select wire:model="role">
                 <option value="{{ \App\Role::Admin->value }}">{{ \App\Role::Admin->label() }}</option>
+                <option value="{{ \App\Role::Banero->value }}">{{ \App\Role::Banero->label() }}</option>
                 <option value="{{ \App\Role::Propietario->value }}">{{ \App\Role::Propietario->label() }}</option>
                 <option value="{{ \App\Role::Inquilino->value }}">{{ \App\Role::Inquilino->label() }}</option>
             </flux:select>

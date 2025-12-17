@@ -20,6 +20,7 @@ class Unit extends Model
         'rooms',
         'terrazas',
         'area',
+        'has_pets',
         'notes',
     ];
 
@@ -28,6 +29,7 @@ class Unit extends Model
         return [
             'coefficient' => 'decimal:4',
             'area' => 'decimal:2',
+            'has_pets' => 'boolean',
         ];
     }
 
@@ -103,6 +105,14 @@ class Unit extends Model
     public function residents(): HasMany
     {
         return $this->hasMany(Resident::class);
+    }
+
+    /**
+     * Get pets for this unit.
+     */
+    public function pets(): HasMany
+    {
+        return $this->hasMany(UnitPet::class);
     }
 
     /**

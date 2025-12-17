@@ -108,6 +108,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if the user is a banero.
+     */
+    public function isBanero(): bool
+    {
+        return $this->role === Role::Banero;
+    }
+
+    /**
      * Check if the user is a propietario.
      */
     public function isPropietario(): bool

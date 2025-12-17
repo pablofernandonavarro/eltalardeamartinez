@@ -6,10 +6,15 @@ use App\Models\Resident;
 use App\Models\Unit;
 use App\Services\RuleEvaluationService;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Edit extends Component
 {
+    use WithFileUploads;
+
     public Resident $resident;
+
+    public $photo;
 
     public int $unitId = 0;
 
@@ -84,6 +89,7 @@ class Edit extends Component
                 },
             ],
             'name' => 'required|string|max:255',
+            'photo' => 'nullable|image|max:2048',
             'documentType' => 'nullable|string|max:50',
             'documentNumber' => 'nullable|string|max:50',
             'birthDate' => 'nullable|date|before:today',
@@ -132,7 +138,7 @@ class Edit extends Component
             return;
         }
 
-        $this->resident->update([
+        $data = [
             'unit_id' => $validated['unitId'],
             'user_id' => $validated['userId'],
             'name' => $validated['name'],
@@ -143,7 +149,13 @@ class Edit extends Component
             'started_at' => $validated['startedAt'],
             'ended_at' => $validated['endedAt'],
             'notes' => $validated['notes'],
-        ]);
+        ];
+
+        if ($this->photo) {
+            $data['profile_photo_path'] = $this->photo->store('residents', 'public');
+        }
+
+        $this->resident->update($data);
 
         session()->flash('message', 'Residente actualizado correctamente.');
         $this->redirect(route('admin.residents.index'));

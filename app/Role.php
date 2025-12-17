@@ -5,6 +5,7 @@ namespace App;
 enum Role: string
 {
     case Admin = 'admin';
+    case Banero = 'banero';
     case Propietario = 'propietario';
     case Inquilino = 'inquilino';
 
@@ -15,6 +16,7 @@ enum Role: string
     {
         return match ($this) {
             self::Admin => 'Administrador',
+            self::Banero => 'Bañero',
             self::Propietario => 'Propietario',
             self::Inquilino => 'Inquilino',
         };
@@ -26,6 +28,14 @@ enum Role: string
     public function isAdmin(): bool
     {
         return $this === self::Admin;
+    }
+
+    /**
+     * Check if the role is banero.
+     */
+    public function isBanero(): bool
+    {
+        return $this === self::Banero;
     }
 
     /**

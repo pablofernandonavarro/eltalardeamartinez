@@ -16,6 +16,7 @@ class Resident extends Model
         'unit_id',
         'user_id',
         'name',
+        'profile_photo_path',
         'document_type',
         'document_number',
         'birth_date',
@@ -80,6 +81,13 @@ class Resident extends Model
         }
 
         return $this->birth_date->age;
+    }
+
+    public function profilePhotoUrl(): ?string
+    {
+        return $this->profile_photo_path
+            ? asset('storage/'.$this->profile_photo_path)
+            : null;
     }
 
     /**

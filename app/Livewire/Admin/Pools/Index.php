@@ -25,7 +25,7 @@ class Index extends Component
         $pools = Pool::all();
 
         $entries = PoolEntry::query()
-            ->with(['pool', 'unit.building.complex', 'user'])
+            ->with(['pool', 'unit.building.complex', 'user', 'resident', 'exitedBy'])
             ->when($this->poolId, fn ($q) => $q->where('pool_id', $this->poolId))
             ->when($this->date, fn ($q) => $q->whereDate('entered_at', $this->date))
             ->latest('entered_at')

@@ -140,7 +140,7 @@ class PoolAccessService
             throw new \Exception("El máximo de invitados permitidos es {$rule->max_guests_per_unit}.");
         }
 
-        if ($rule->max_entries_per_day > 0) {
+        if ($rule->max_entries_per_day = 0) {
             $todayEntries = PoolEntry::forUnit($unit->id)
                 ->where('pool_id', $pool->id)
                 ->forDate($enteredAtDate->toDateString())

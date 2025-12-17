@@ -29,7 +29,46 @@
             <flux:error name="name" />
         </flux:field>
 
-        <div class="grid grid-cols-2 gap-4">
+        <flux:field>
+            <flux:label>Foto (opcional)</flux:label>
+            <div class="flex items-center gap-4">
+                @php
+                    $previewUrl = null;
+                    if ($photo) {
+                        try {
+                            $previewUrl = $photo->temporaryUrl();
+                        } catch (\Exception $e) {
+                            $previewUrl = null;
+                        }
+                    }
+                    $photoUrl = $previewUrl ?: $resident->profilePhotoUrl();
+                    $initials = \Illuminate\Support\Str::of($resident->name)
+                        ->trim()
+                        ->explode(' ')
+                        ->filter()
+                        ->take(2)
+                        ->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))
+                        ->implode('');
+                @endphp
+
+                @if($photoUrl)
+                    <img src="{{ $photoUrl }}" alt="{{ $resident->name }}" class="h-20 w-20 rounded-full object-cover" />
+                @else
+                    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-200 text-lg font-semibold text-black dark:bg-neutral-700 dark:text-white">
+                        {{ $initials }}
+                    </div>
+                @endif
+
+                <div class="flex-1">
+                    <flux:input wire:model="photo" type="file" accept="image/*" />
+                    <flux:error name="photo" />
+                    <flux:description>JPG/PNG hasta 2MB. Subir una nueva reemplaza la anterior.</flux:description>
+                    <div wire:loading wire:target="photo" class="mt-1 text-xs text-gray-500">Cargando imagen...</div>
+                </div>
+            </div>
+        </flux:field>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <flux:field>
                 <flux:label>Tipo de Documento</flux:label>
                 <flux:select wire:model="documentType" placeholder="Seleccione tipo">
@@ -50,12 +89,11 @@
             </flux:field>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <flux:field>
                 <flux:label>Fecha de Nacimiento</flux:label>
                 <flux:input type="date" wire:model="birthDate" />
                 <flux:error name="birthDate" />
-                <flux:description>Para identificar menores de edad</flux:description>
             </flux:field>
 
             <flux:field>
@@ -70,6 +108,7 @@
                 <flux:error name="relationship" />
             </flux:field>
         </div>
+        <div class="-mt-4 text-xs text-gray-500">Para identificar menores de edad</div>
 
         <flux:field>
             <flux:label>Usuario Responsable</flux:label>
@@ -89,7 +128,7 @@
             <flux:description>Padre, tutor o responsable del residente. Solo se muestran usuarios con relación activa en la unidad seleccionada.</flux:description>
         </flux:field>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <flux:field>
                 <flux:label>Fecha de Inicio</flux:label>
                 <flux:input type="date" wire:model="startedAt" />
@@ -100,9 +139,9 @@
                 <flux:label>Fecha de Fin</flux:label>
                 <flux:input type="date" wire:model="endedAt" />
                 <flux:error name="endedAt" />
-                <flux:description>Complete para finalizar la residencia</flux:description>
             </flux:field>
         </div>
+        <div class="-mt-4 text-xs text-gray-500">Complete para finalizar la residencia</div>
 
         <flux:field>
             <flux:label>Notas</flux:label>

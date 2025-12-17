@@ -1,0 +1,273 @@
+<div>
+    <div class="mb-6">
+        <flux:heading size="xl">Mi QR de Pileta (hoy)</flux:heading>
+        <p class="text-sm text-gray-500 mt-1">
+            Precargá la cantidad de invitados para hoy. El bañero podrá elegir cuántos ingresan (hasta ese límite).
+        </p>
+    </div>
+
+    @if($errors->has('error'))
+        <flux:callout color="red" class="mb-4">
+            {{ $errors->first('error') }}
+        </flux:callout>
+    @endif
+
+    @if(session('message'))
+        <flux:callout color="green" class="mb-4">
+            {{ session('message') }}
+        </flux:callout>
+    @endif
+
+    @if($units->isEmpty())
+        <flux:callout color="blue">
+            No tenés unidades asignadas. Contactá al administrador.
+        </flux:callout>
+    @else
+        <div class="grid gap-6 lg:grid-cols-2">
+            <style>
+                /* Mejor UX móvil: checkboxes grandes */
+                input[type="checkbox"] { width: 18px; height: 18px; }
+            </style>
+            <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                <flux:heading size="lg" class="mb-4">Configuración del día</flux:heading>
+
+                <form wire:submit="save" class="space-y-6">
+                    <flux:field>
+                        <flux:label>Unidad</flux:label>
+                        <flux:select wire:model.live="unitId">
+                            @foreach($units as $unitUser)
+                                <option value="{{ $unitUser->unit_id }}">
+                                    {{ $unitUser->unit->full_identifier }}
+                                    ({{ $unitUser->unit->building->complex->name }})
+                                </option>
+                            @endforeach
+                        </flux:select>
+                        <flux:error name="unitId" />
+                    </flux:field>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <flux:label>Invitados precargados (hoy)</flux:label>
+                            <flux:button href="{{ route('resident.pools.guests.index') }}" size="sm" variant="ghost" wire:navigate>
+                                Administrar invitados
+                            </flux:button>
+                        </div>
+
+                        @if($guests->isEmpty())
+                            <flux:callout color="blue">
+                                No tenés invitados cargados para esta unidad. Crealos en “Mis invitados”.
+                            </flux:callout>
+                        @else
+                            <div class="space-y-2 max-h-[320px] overflow-auto">
+                                @foreach($guests as $guest)
+                                    <label class="flex items-center gap-3 p-3 border border-zinc-200 dark:border-zinc-700 rounded">
+                                        <input
+                                            type="checkbox"
+                                            value="{{ $guest->id }}"
+                                            wire:model="selectedGuestIds"
+                                        />
+
+                                        @if($guest->profilePhotoUrl())
+                                            <img src="{{ $guest->profilePhotoUrl() }}" alt="{{ $guest->name }}" class="h-10 w-10 rounded-full object-cover" />
+                                        @else
+                                            <div class="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold">
+                                                {{ \Illuminate\Support\Str::of($guest->name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
+                                            </div>
+                                        @endif
+
+                                        <div class="flex-1">
+                                            <div class="font-medium">{{ $guest->name }}</div>
+                                            <div class="text-xs text-gray-500">
+                                                {{ $guest->document_type }} {{ $guest->document_number }}
+                                            </div>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div class="text-sm text-gray-500">
+                            Seleccionados: {{ $selectedGuestsCount ?? 0 }}
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 items-center">
+                        <flux:button type="submit" variant="primary">Guardar</flux:button>
+
+                        <button
+                            type="button"
+                            wire:click="regenerateToken"
+                            wire:loading.attr="disabled"
+                            @disabled(! $pass || $pass?->used_at)
+                            class="px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Regenera el QR (solo si aún no fue usado)"
+                        >
+                            Regenerar QR
+                        </button>
+
+                        <span wire:loading wire:target="regenerateToken" class="text-sm text-gray-500">Actualizando…</span>
+                    </div>
+                </form>
+            </div>
+
+            <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <flux:heading size="lg">Tu QR</flux:heading>
+                    <div class="text-sm text-gray-500">Invitados: {{ $pass?->guests_allowed ?? 0 }}</div>
+                </div>
+
+                @if(!$pass)
+                    <flux:callout color="blue">Seleccioná una unidad para generar el QR.</flux:callout>
+                @else
+                    @if($pass->used_at)
+                        <flux:callout color="yellow" class="mb-4">
+                            Este pase ya se usó hoy (último registro: {{ $pass->used_at->format('d/m/Y H:i') }}).
+                            Podés reingresar con el mismo QR.
+                        </flux:callout>
+                    @endif
+
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="bg-white p-4 rounded-lg">
+                            <div id="resident-daypass-qr" class="w-[220px] h-[220px]" wire:ignore></div>
+                        </div>
+
+                        <div class="w-full">
+                            <flux:field>
+                                <flux:label>Código (por si no se puede escanear)</flux:label>
+
+                                <div class="flex gap-2 items-stretch">
+                                    <flux:input id="resident-daypass-token" value="{{ $pass->token }}" readonly class="flex-1" />
+
+                                    <button
+                                        id="resident-daypass-copy-btn"
+                                        type="button"
+                                        class="px-3 border rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                        title="Copiar al portapapeles"
+                                    >
+                                        <flux:icon.document-duplicate variant="outline" class="size-5" />
+                                    </button>
+                                </div>
+
+                                <div id="resident-daypass-copy-hint" class="text-xs text-gray-500 mt-1" style="display:none;">
+                                    Copiado.
+                                </div>
+                            </flux:field>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    <script>
+        (function () {
+            let currentToken = @json($pass?->token);
+
+            async function copyTokenToClipboard(token) {
+                if (!token) return;
+
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(token);
+                        return;
+                    }
+                } catch (e) {
+                    // fallback abajo
+                }
+
+                // Fallback muy compatible
+                const input = document.getElementById('resident-daypass-token');
+                if (input) {
+                    input.focus();
+                    input.select();
+                    document.execCommand('copy');
+                }
+            }
+
+            function showCopiedHint() {
+                const hint = document.getElementById('resident-daypass-copy-hint');
+                if (!hint) return;
+                hint.style.display = 'block';
+                setTimeout(() => { hint.style.display = 'none'; }, 1200);
+            }
+
+            function bindCopyButton() {
+                const btn = document.getElementById('resident-daypass-copy-btn');
+                if (!btn || btn.__bound) return;
+                btn.__bound = true;
+
+                btn.addEventListener('click', async () => {
+                    await copyTokenToClipboard(currentToken);
+                    showCopiedHint();
+                });
+            }
+
+            function renderInto(el, token) {
+                if (!el) return;
+
+                currentToken = token;
+
+                if (!token) {
+                    el.innerHTML = '';
+                    return;
+                }
+
+                const tryRender = () => {
+                    if (typeof window.QRCode === 'undefined') {
+                        setTimeout(tryRender, 100);
+                        return;
+                    }
+
+                    el.innerHTML = '';
+
+                    new window.QRCode(el, {
+                        text: token,
+                        width: 220,
+                        height: 220,
+                        correctLevel: window.QRCode.CorrectLevel.M,
+                    });
+                };
+
+                tryRender();
+            }
+
+            function renderFromBladeToken() {
+                const el = document.getElementById('resident-daypass-qr');
+                renderInto(el, @json($pass?->token));
+            }
+
+            // Render inicial
+            window.addEventListener('load', () => {
+                bindCopyButton();
+                renderFromBladeToken();
+            });
+
+            // Si se navega con wire:navigate
+            document.addEventListener('livewire:navigated', () => {
+                bindCopyButton();
+                renderFromBladeToken();
+            });
+
+            // Render cuando Livewire actualiza el token (guardar / regenerar)
+            function onTokenUpdated(event) {
+                bindCopyButton();
+
+                const token = event?.detail?.token || null;
+
+                // Actualizar el input visible (Livewire a veces lo re-renderiza)
+                const input = document.getElementById('resident-daypass-token');
+                if (input && token) {
+                    input.value = token;
+                }
+
+                const el = document.getElementById('resident-daypass-qr');
+                renderInto(el, token);
+            }
+
+            // Livewire despacha eventos en window, pero escuchamos también en document por compatibilidad
+            window.addEventListener('resident-daypass-qr-updated', onTokenUpdated);
+            document.addEventListener('resident-daypass-qr-updated', onTokenUpdated);
+        })();
+    </script>
+</div>

@@ -14,8 +14,15 @@
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Mi Portal')" class="grid">
                     <flux:navlist.item icon="home" :href="route('resident.dashboard')" :current="request()->routeIs('resident.dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item icon="home-modern" :href="route('resident.household')" :current="request()->routeIs('resident.household')" wire:navigate>{{ __('Mi hogar') }}</flux:navlist.item>
                 </flux:navlist.group>
                 <flux:navlist.group :heading="__('Mis Servicios')" class="grid">
+                    <flux:navlist.item icon="qr-code" :href="route('resident.pools.day-pass')" :current="request()->routeIs('resident.pools.day-pass')" wire:navigate>
+                        {{ __('Mi QR de Pileta (hoy)') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="users" :href="route('resident.pools.guests.index')" :current="request()->routeIs('resident.pools.guests.*')" wire:navigate>
+                        {{ __('Mis invitados') }}
+                    </flux:navlist.item>
                     {{-- <flux:navlist.item icon="currency-dollar" :href="route('resident.expenses.index')" :current="request()->routeIs('resident.expenses.*')" wire:navigate>{{ __('Mis Expensas') }}</flux:navlist.item>
                     <flux:navlist.item icon="beaker" :href="route('resident.pools.index')" :current="request()->routeIs('resident.pools.*')" wire:navigate>{{ __('Piletas') }}</flux:navlist.item> --}}
                 </flux:navlist.group>

@@ -18,6 +18,10 @@ Route::get('dashboard', function () {
         return redirect()->route('admin.dashboard');
     }
 
+    if ($user->isBanero()) {
+        return redirect()->route('banero.dashboard');
+    }
+
     return redirect()->route('resident.dashboard');
 })->middleware(['auth', 'verified', 'approved'])
     ->name('dashboard');
@@ -43,6 +47,19 @@ Route::middleware(['auth', 'approved'])->group(function () {
     // Resident routes (for Propietarios and Inquilinos)
     Route::prefix('resident')->name('resident.')->group(function () {
         Route::get('/dashboard', \App\Livewire\Resident\Dashboard::class)->name('dashboard');
+
+        Route::get('/household', \App\Livewire\Resident\Unit\Household::class)->name('household');
+
+        Route::prefix('pools')->name('pools.')->group(function () {
+            Route::get('/day-pass', \App\Livewire\Resident\Pools\DayPass::class)->name('day-pass');
+
+            Route::prefix('guests')->name('guests.')->group(function () {
+                Route::get('/', \App\Livewire\Resident\Pools\Guests\Index::class)->name('index');
+                Route::get('/create', \App\Livewire\Resident\Pools\Guests\Create::class)->name('create');
+                Route::get('/{guest}/edit', \App\Livewire\Resident\Pools\Guests\Edit::class)->name('edit');
+            });
+        });
+
         // Route::get('/expenses', \App\Livewire\Resident\Expenses\Index::class)->name('expenses.index');
         // Route::get('/pools', \App\Livewire\Resident\Pools\Index::class)->name('pools.index');
     });

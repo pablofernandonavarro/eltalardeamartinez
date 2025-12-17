@@ -6,10 +6,15 @@ use App\Models\Resident;
 use App\Models\Unit;
 use App\Services\RuleEvaluationService;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Create extends Component
 {
+    use WithFileUploads;
+
     public int $unitId = 0;
+
+    public $photo;
 
     public ?int $userId = null;
 
@@ -66,6 +71,7 @@ class Create extends Component
                 },
             ],
             'name' => 'required|string|max:255',
+            'photo' => 'nullable|image|max:2048',
             'documentType' => 'nullable|string|max:50',
             'documentNumber' => 'nullable|string|max:50',
             'birthDate' => 'nullable|date|before:today',
@@ -101,10 +107,16 @@ class Create extends Component
             return;
         }
 
+        $photoPath = null;
+        if ($this->photo) {
+            $photoPath = $this->photo->store('residents', 'public');
+        }
+
         Resident::create([
             'unit_id' => $validated['unitId'],
             'user_id' => $validated['userId'],
             'name' => $validated['name'],
+            'profile_photo_path' => $photoPath,
             'document_type' => $validated['documentType'],
             'document_number' => $validated['documentNumber'],
             'birth_date' => $validated['birthDate'],

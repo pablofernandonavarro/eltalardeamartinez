@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PoolEntry extends Model
@@ -18,7 +19,10 @@ class PoolEntry extends Model
         'resident_id',
         'guests_count',
         'entered_at',
+        'exited_at',
+        'exited_by_user_id',
         'notes',
+        'exit_notes',
     ];
 
     protected function casts(): array
@@ -26,6 +30,7 @@ class PoolEntry extends Model
         return [
             'guests_count' => 'integer',
             'entered_at' => 'datetime',
+            'exited_at' => 'datetime',
         ];
     }
 
@@ -59,6 +64,16 @@ class PoolEntry extends Model
     public function resident(): BelongsTo
     {
         return $this->belongsTo(Resident::class);
+    }
+
+    public function exitedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'exited_by_user_id');
+    }
+
+    public function guests(): BelongsToMany
+    {
+        return $this->belongsToMany(PoolGuest::class, 'pool_entry_guests');
     }
 
     /**

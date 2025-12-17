@@ -107,8 +107,8 @@
         <div>
             <div class="flex items-center justify-between mb-4">
                 <flux:heading size="lg">Últimos Accesos a Piletas</flux:heading>
-                <flux:button href="{{ route('resident.pools.index') }}" variant="ghost" size="sm">
-                    Ver todos
+                <flux:button href="{{ route('resident.pools.day-pass') }}" variant="ghost" size="sm">
+                    Mi QR (hoy)
                 </flux:button>
             </div>
             <div class="overflow-x-auto">
