@@ -43,4 +43,5 @@ class Building extends Model
     {
         return $this->hasMany(Expense::class);
     }
+    
 }

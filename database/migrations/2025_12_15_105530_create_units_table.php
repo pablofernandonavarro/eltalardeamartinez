@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('rooms')->nullable();
             $table->decimal('area', 10, 2)->nullable();
             $table->text('notes')->nullable();
+            $table->text('owner')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

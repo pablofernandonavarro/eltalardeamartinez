@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
             ComplexSeeder::class,
             ConceptSeeder::class,
             PoolSeeder::class,
+            UnitsFromExcelSeeder::class,
         ]);
     }
 }
