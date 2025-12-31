@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Resident;
 
-use App\Enums\Role;
+use App\Role;
 use App\Models\Resident;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
