@@ -70,13 +70,12 @@ class CreateResidentUser extends Command
             return 1;
         }
 
-        // Crear usuario
+        // Crear usuario (sin rol, el rol se determina por unit_users)
         $user = User::create([
             'name' => $resident->name,
             'email' => $email,
             'password' => Hash::make($password),
-            'role' => 'inquilino',
-            'is_approved' => true,
+            'role' => null, // Los residentes no tienen rol directo
             'approved_at' => now(),
         ]);
 

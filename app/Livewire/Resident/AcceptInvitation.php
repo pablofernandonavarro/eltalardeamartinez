@@ -61,12 +61,12 @@ class AcceptInvitation extends Component
             return;
         }
 
-        // Crear usuario
+        // Crear usuario (sin rol, el rol se determina por unit_users)
         $user = User::create([
             'name' => $this->resident->name,
             'email' => $this->email,
             'password' => Hash::make($this->password),
-            'role' => Role::Inquilino,
+            'role' => null, // Los residentes no tienen rol directo, acceden solo a su perfil
             'approved_at' => now(),
         ]);
 
