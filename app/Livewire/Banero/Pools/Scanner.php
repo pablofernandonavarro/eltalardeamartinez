@@ -351,14 +351,13 @@ class Scanner extends Component
             'exit_notes' => $this->exitNotes,
         ]);
 
-        session()->flash('message', 'Salida registrada correctamente.');
+        session()->flash('message', 'Salida registrada correctamente. Puede registrar un nuevo ingreso.');
 
-        $this->token = '';
-        $this->pass = null;
-        $this->scannedResident = null;
-        $this->poolId = null;
+        // Mantener el QR cargado pero limpiar notas y resetear acción a 'entry'
         $this->exitNotes = null;
-        $this->selectedGuestIds = [];
+        $this->action = 'entry';
+        $this->poolId = null;
+        // NO limpiamos token, pass ni scannedResident para permitir reingreso inmediato
     }
 
     public function render()
