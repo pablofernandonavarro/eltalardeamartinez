@@ -236,15 +236,15 @@
                                     ->implode('');
                             @endphp
                             <div class="flex items-center justify-between gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                                <div class="flex items-center gap-3 min-w-0">
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
                                     @if($photoUrl)
-                                        <img src="{{ $photoUrl }}" alt="{{ $r->name }}" class="h-10 w-10 rounded-full object-cover" />
+                                        <img src="{{ $photoUrl }}" alt="{{ $r->name }}" class="h-10 w-10 rounded-full object-cover flex-shrink-0" />
                                     @else
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-black dark:bg-neutral-700 dark:text-white">
+                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-black dark:bg-neutral-700 dark:text-white flex-shrink-0">
                                             {{ $initials }}
                                         </div>
                                     @endif
-                                    <div class="min-w-0">
+                                    <div class="min-w-0 flex-1">
                                         <div class="font-medium truncate">{{ $r->name }}</div>
                                         <div class="text-xs text-gray-500">
                                             @if($r->birth_date)
@@ -257,10 +257,84 @@
                                                 {{ $r->birth_date ? '·' : '' }} {{ $r->relationship }}
                                             @endif
                                         </div>
+                                        
+                                        {{-- Email y estado de invitación --}}
+                                        @if($r->canBeInvited() || $r->hasAuthAccount())
+                                            <div class="mt-1 flex items-center gap-2">
+                                                @if($editingResidentId === $r->id)
+                                                    <flux:input 
+                                                        wire:model="residentEmail" 
+                                                        type="email" 
+                                                        placeholder="email@ejemplo.com"
+                                                        class="text-xs"
+                                                    />
+                                                    <flux:button 
+                                                        type="button" 
+                                                        size="xs" 
+                                                        wire:click="saveResidentEmail"
+                                                    >
+                                                        Guardar
+                                                    </flux:button>
+                                                    <flux:button 
+                                                        type="button" 
+                                                        size="xs" 
+                                                        variant="ghost"
+                                                        wire:click="cancelEditEmail"
+                                                    >
+                                                        Cancelar
+                                                    </flux:button>
+                                                @else
+                                                    @if($r->email)
+                                                        <span class="text-xs text-gray-600 dark:text-gray-400">📧 {{ $r->email }}</span>
+                                                    @else
+                                                        <span class="text-xs text-gray-400">Sin email</span>
+                                                    @endif
+                                                    
+                                                    @if($r->hasAuthAccount())
+                                                        <flux:badge size="sm" color="green">✓ Tiene cuenta</flux:badge>
+                                                    @elseif($r->invitation_sent_at)
+                                                        <flux:badge size="sm" color="yellow">Invitado {{ $r->invitation_sent_at->diffForHumans() }}</flux:badge>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                            @error('residentEmail')
+                                                <div class="mt-1 text-xs text-red-600">{{ $message }}</div>
+                                            @enderror
+                                        @endif
                                     </div>
                                 </div>
 
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    @if($r->canBeInvited() && $canEdit)
+                                        @if(!$r->email)
+                                            <flux:button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                wire:click="editResidentEmail({{ $r->id }})"
+                                            >
+                                                Agregar email
+                                            </flux:button>
+                                        @else
+                                            <flux:button
+                                                type="button"
+                                                size="sm"
+                                                variant="primary"
+                                                wire:click="sendInvitation({{ $r->id }})"
+                                            >
+                                                Enviar invitación
+                                            </flux:button>
+                                            <flux:button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                wire:click="editResidentEmail({{ $r->id }})"
+                                            >
+                                                Editar
+                                            </flux:button>
+                                        @endif
+                                    @endif
+                                    
                                     <flux:button
                                         type="button"
                                         size="sm"
