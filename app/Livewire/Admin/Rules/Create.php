@@ -5,9 +5,12 @@ namespace App\Livewire\Admin\Rules;
 use App\Http\Requests\Admin\RuleRequest;
 use App\Models\SystemRule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Create extends Component
 {
+    use WithFileUploads;
+
     public string $type = 'unit_occupancy';
 
     public string $name = '';
@@ -28,6 +31,8 @@ class Create extends Component
 
     public ?string $notes = null;
 
+    public $document;
+
     public function mount(): void
     {
         $this->validFrom = now()->format('Y-m-d');
@@ -35,7 +40,22 @@ class Create extends Component
 
     public function save(): void
     {
-        $validated = $this->validate((new RuleRequest())->rules());
+        $validated = $this->validate((new RuleRequest)->rules());
+
+        // Validar documento si fue subido
+        if ($this->document) {
+            $this->validate([
+                'document' => 'file|mimes:pdf|max:10240', // 10MB max
+            ], [
+                'document.mimes' => 'El documento debe ser un archivo PDF.',
+                'document.max' => 'El documento no puede superar los 10MB.',
+            ]);
+        }
+
+        $documentPath = null;
+        if ($this->document) {
+            $documentPath = $this->document->store('documents', 'public');
+        }
 
         SystemRule::create([
             'type' => $validated['type'],
@@ -48,6 +68,7 @@ class Create extends Component
             'valid_to' => $validated['valid_to'],
             'priority' => $validated['priority'],
             'notes' => $validated['notes'],
+            'document_path' => $documentPath,
         ]);
 
         session()->flash('message', 'Regla creada correctamente.');

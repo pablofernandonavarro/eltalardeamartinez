@@ -22,10 +22,10 @@ class Index extends Component
 
     public function render()
     {
-        $pools = Pool::all();
+        $pools = Pool::query()->orderBy('name')->get();
 
         $entries = PoolEntry::query()
-            ->with(['pool', 'unit.building.complex', 'user', 'resident', 'exitedBy'])
+            ->with(['pool', 'unit.building.complex', 'user', 'resident', 'exitedBy', 'guests'])
             ->when($this->poolId, fn ($q) => $q->where('pool_id', $this->poolId))
             ->when($this->date, fn ($q) => $q->whereDate('entered_at', $this->date))
             ->latest('entered_at')

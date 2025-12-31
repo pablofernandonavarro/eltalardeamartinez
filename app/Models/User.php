@@ -28,6 +28,7 @@ class User extends Authenticatable
         'profile_photo_path',
         'role',
         'approved_at',
+        'requested_unit_id',
     ];
 
     /**
@@ -97,6 +98,14 @@ class User extends Authenticatable
     public function residents(): HasMany
     {
         return $this->hasMany(Resident::class);
+    }
+
+    /**
+     * Get the requested unit for registration.
+     */
+    public function requestedUnit()
+    {
+        return $this->belongsTo(Unit::class, 'requested_unit_id');
     }
 
     /**

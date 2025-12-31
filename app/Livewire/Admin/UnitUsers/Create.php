@@ -23,12 +23,14 @@ class Create extends Component
 
     public ?string $notes = null;
 
-    public function mount(?int $unit_id = null): void
+    public function mount(): void
     {
         $this->startedAt = now()->format('Y-m-d');
 
+        // Obtener unit_id de la query string
+        $unit_id = request()->query('unit_id');
         if ($unit_id) {
-            $this->unitId = $unit_id;
+            $this->unitId = (int) $unit_id;
         }
     }
 
@@ -113,6 +115,21 @@ class Create extends Component
 
             if ($existingTenant) {
                 session()->flash('error', 'Esta unidad funcional ya tiene un inquilino activo. Una unidad solo puede tener un inquilino a la vez.');
+
+                return;
+            }
+        }
+
+        // Si se marca como responsable del pago, verificar que no haya otro responsable activo
+        if ($validated['isResponsible']) {
+            $existingResponsible = UnitUser::where('unit_id', $validated['unitId'])
+                ->where('is_responsible', true)
+                ->whereNull('ended_at')
+                ->whereNull('deleted_at')
+                ->exists();
+
+            if ($existingResponsible) {
+                session()->flash('error', 'Esta unidad funcional ya tiene un responsable de pago activo. Solo puede haber un responsable de pago por unidad.');
 
                 return;
             }

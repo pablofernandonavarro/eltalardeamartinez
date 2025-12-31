@@ -17,8 +17,11 @@
                     <flux:navlist.item icon="home-modern" :href="route('resident.household')" :current="request()->routeIs('resident.household')" wire:navigate>{{ __('Mi hogar') }}</flux:navlist.item>
                 </flux:navlist.group>
                 <flux:navlist.group :heading="__('Mis Servicios')" class="grid">
-                    <flux:navlist.item icon="qr-code" :href="route('resident.pools.day-pass')" :current="request()->routeIs('resident.pools.day-pass')" wire:navigate>
-                        {{ __('Mi QR de Pileta (hoy)') }}
+                    <flux:navlist.item icon="qr-code" :href="route('resident.pools.my-qr')" :current="request()->routeIs('resident.pools.my-qr')" wire:navigate>
+                        {{ __('Mi QR de Pileta') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="ticket" :href="route('resident.pools.day-pass')" :current="request()->routeIs('resident.pools.day-pass')" wire:navigate>
+                        {{ __('Pase diario (invitados)') }}
                     </flux:navlist.item>
                     <flux:navlist.item icon="users" :href="route('resident.pools.guests.index')" :current="request()->routeIs('resident.pools.guests.*')" wire:navigate>
                         {{ __('Mis invitados') }}

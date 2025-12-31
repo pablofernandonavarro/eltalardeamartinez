@@ -116,6 +116,22 @@ class Edit extends Component
             }
         }
 
+        // Si se marca como responsable del pago, verificar que no haya otro responsable activo (excluyendo la actual)
+        if ($validated['isResponsible'] && ! $validated['endedAt']) {
+            $existingResponsible = UnitUser::where('unit_id', $validated['unitId'])
+                ->where('is_responsible', true)
+                ->where('id', '!=', $this->unitUser->id)
+                ->whereNull('ended_at')
+                ->whereNull('deleted_at')
+                ->exists();
+
+            if ($existingResponsible) {
+                session()->flash('error', 'Esta unidad funcional ya tiene un responsable de pago activo. Solo puede haber un responsable de pago por unidad.');
+
+                return;
+            }
+        }
+
         $this->unitUser->update([
             'user_id' => $validated['userId'],
             'unit_id' => $validated['unitId'],

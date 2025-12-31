@@ -26,7 +26,19 @@ class Index extends Component
     {
         $user = User::findOrFail($userId);
         $user->approve();
-        session()->flash('message', 'Usuario aprobado correctamente.');
+
+        // Si el usuario tiene una unidad solicitada, crear la asignación
+        if ($user->requested_unit_id) {
+            \App\Models\UnitUser::create([
+                'unit_id' => $user->requested_unit_id,
+                'user_id' => $user->id,
+                'is_owner' => false,
+                'is_responsible' => false,
+                'started_at' => now(),
+            ]);
+        }
+
+        session()->flash('message', 'Usuario aprobado correctamente y asignado a su unidad.');
     }
 
     public function reject(int $userId): void
@@ -60,7 +72,7 @@ class Index extends Component
     public function render()
     {
         $users = User::query()
-            ->with(['currentUnitUsers.unit.building.complex'])
+            ->with(['currentUnitUsers.unit.building.complex', 'requestedUnit'])
             ->when($this->role === 'null', fn ($q) => $q->whereNull('role'))
             ->when($this->role && $this->role !== 'null', fn ($q) => $q->where('role', $this->role))
             ->when($this->approvalStatus === 'approved', function ($q) {

@@ -93,6 +93,13 @@
                                         </div>
                                     @endforeach
                                 </div>
+                            @elseif($user->requestedUnit)
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                                        {{ $user->requestedUnit->full_identifier }}
+                                    </span>
+                                    <flux:badge size="sm" color="yellow">Solicitada</flux:badge>
+                                </div>
                             @else
                                 <span class="text-gray-400 text-sm">Sin unidades</span>
                             @endif
@@ -114,16 +121,15 @@
                         <td class="p-2">
                             <div class="flex gap-2 justify-center flex-wrap">
                                 @if(!$user->role)
-                                    <flux:button href="{{ route('admin.users.edit', $user) }}" variant="ghost" size="sm" color="blue">
+                                    <flux:button href="{{ route('admin.users.edit', $user) }}" variant="primary" size="sm">
                                         Asignar Rol
                                     </flux:button>
                                 @endif
                                 @if(!$user->isApproved() && !$user->isAdmin() && $user->role)
                                     <flux:button wire:click="approve({{ $user->id }})" 
                                         wire:confirm="¿Está seguro de aprobar este usuario?"
-                                        variant="ghost" 
-                                        size="sm"
-                                        color="green">
+                                        variant="primary" 
+                                        size="sm">
                                         Aprobar
                                     </flux:button>
                                 @endif

@@ -21,6 +21,7 @@ class SystemRule extends Model
         'valid_to',
         'priority',
         'notes',
+        'document_path',
     ];
 
     protected function casts(): array
@@ -78,5 +79,15 @@ class SystemRule extends Model
         }
 
         return true;
+    }
+
+    /**
+     * Get the URL to the document.
+     */
+    public function documentUrl(): ?string
+    {
+        return $this->document_path
+            ? asset('storage/'.$this->document_path)
+            : null;
     }
 }

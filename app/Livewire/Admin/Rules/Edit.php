@@ -4,10 +4,14 @@ namespace App\Livewire\Admin\Rules;
 
 use App\Http\Requests\Admin\RuleRequest;
 use App\Models\SystemRule;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Edit extends Component
 {
+    use WithFileUploads;
+
     public SystemRule $rule;
 
     public string $type = '';
@@ -30,6 +34,10 @@ class Edit extends Component
 
     public ?string $notes = null;
 
+    public $document;
+
+    public bool $removeDocument = false;
+
     public function mount(SystemRule $rule): void
     {
         $this->rule = $rule;
@@ -47,7 +55,34 @@ class Edit extends Component
 
     public function save(): void
     {
-        $validated = $this->validate((new RuleRequest())->rules());
+        $validated = $this->validate((new RuleRequest)->rules());
+
+        // Validar documento si fue subido
+        if ($this->document) {
+            $this->validate([
+                'document' => 'file|mimes:pdf|max:10240', // 10MB max
+            ], [
+                'document.mimes' => 'El documento debe ser un archivo PDF.',
+                'document.max' => 'El documento no puede superar los 10MB.',
+            ]);
+        }
+
+        $documentPath = $this->rule->document_path;
+
+        // Si se marca para eliminar el documento
+        if ($this->removeDocument && $documentPath) {
+            Storage::disk('public')->delete($documentPath);
+            $documentPath = null;
+        }
+
+        // Si se sube un nuevo documento
+        if ($this->document) {
+            // Eliminar el documento anterior si existe
+            if ($documentPath) {
+                Storage::disk('public')->delete($documentPath);
+            }
+            $documentPath = $this->document->store('documents', 'public');
+        }
 
         $this->rule->update([
             'type' => $validated['type'],
@@ -60,6 +95,7 @@ class Edit extends Component
             'valid_to' => $validated['valid_to'],
             'priority' => $validated['priority'],
             'notes' => $validated['notes'],
+            'document_path' => $documentPath,
         ]);
 
         session()->flash('message', 'Regla actualizada correctamente.');

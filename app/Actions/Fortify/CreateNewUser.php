@@ -28,12 +28,14 @@ class CreateNewUser implements CreatesNewUsers
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
+            'requested_unit_id' => ['required', 'exists:units,id'],
         ])->validate();
 
         return User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
+            'requested_unit_id' => $input['requested_unit_id'],
             'role' => null, // No role by default - must be assigned by admin
             'approved_at' => null, // New users need admin approval
         ]);

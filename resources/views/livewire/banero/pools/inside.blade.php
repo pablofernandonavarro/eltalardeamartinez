@@ -90,7 +90,38 @@
                             </div>
                         </td>
                         <td class="p-3">{{ $entry->unit->full_identifier }}</td>
-                        <td class="p-3 text-center">{{ $entry->guests_count }}</td>
+                        <td class="p-3">
+                            @if($entry->guests_count > 0)
+                                <details class="group">
+                                    <summary class="cursor-pointer text-center font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                                        {{ $entry->guests_count }} invitado(s)
+                                    </summary>
+                                    <div class="mt-2 space-y-1 text-sm">
+                                        @foreach($entry->guests as $guest)
+                                            <div class="flex items-center gap-2 p-2 rounded bg-zinc-50 dark:bg-zinc-800">
+                                                @php $gPhoto = $guest->profilePhotoUrl(); @endphp
+                                                @if($gPhoto)
+                                                    <img src="{{ $gPhoto }}" alt="{{ $guest->name }}" class="h-6 w-6 rounded-full object-cover" />
+                                                @else
+                                                    <div class="h-6 w-6 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs font-semibold">
+                                                        {{ \Illuminate\Support\Str::of($guest->name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
+                                                    </div>
+                                                @endif
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="font-medium truncate">{{ $guest->name }}</div>
+                                                    <div class="text-xs text-gray-500 truncate">{{ $guest->document_type }} {{ $guest->document_number }}</div>
+                                                </div>
+                                                @if($guest->birth_date && $guest->birth_date->age < 18)
+                                                    <flux:badge color="yellow" size="sm">{{ $guest->birth_date->age }} años</flux:badge>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </details>
+                            @else
+                                <div class="text-center text-gray-400">0</div>
+                            @endif
+                        </td>
                         <td class="p-3 text-right">
                             <flux:button
                                 size="sm"

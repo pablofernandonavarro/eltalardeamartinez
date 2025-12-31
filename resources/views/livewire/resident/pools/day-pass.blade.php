@@ -110,11 +110,71 @@
                 </form>
             </div>
 
-            <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                <div class="flex items-center justify-between mb-4">
-                    <flux:heading size="lg">Tu QR</flux:heading>
-                    <div class="text-sm text-gray-500">Invitados: {{ $pass?->guests_allowed ?? 0 }}</div>
+            <div class="space-y-6">
+                {{-- QR Personal --}}
+                <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <flux:heading size="lg">Mi QR Personal</flux:heading>
+                        <flux:badge color="green">Permanente</flux:badge>
+                    </div>
+
+                    @if(!$currentResident)
+                        <flux:callout color="blue">Seleccioná una unidad para ver tu QR personal.</flux:callout>
+                    @elseif($currentResident->isMinor())
+                        <flux:callout color="yellow">
+                            Solo los residentes mayores de 18 años pueden tener un QR personal.
+                        </flux:callout>
+                    @elseif($currentResident->canHavePersonalQr() && $currentResident->qr_token)
+                        <div class="flex flex-col items-center gap-4">
+                            <p class="text-sm text-gray-600 dark:text-gray-400 text-center">
+                                Este QR es tuyo y permanente. Usalo para entrar solo a la pileta.
+                            </p>
+
+                            <div class="bg-white p-4 rounded-lg">
+                                <div id="resident-personal-qr" class="w-[220px] h-[220px]" wire:ignore></div>
+                            </div>
+
+                            <div class="w-full">
+                                <flux:field>
+                                    <flux:label>Código personal</flux:label>
+
+                                    <div class="flex gap-2 items-stretch">
+                                        <flux:input id="resident-personal-token" value="{{ $currentResident->qr_token }}" readonly class="flex-1" />
+
+                                        <button
+                                            id="resident-personal-copy-btn"
+                                            type="button"
+                                            class="px-3 border rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                            title="Copiar al portapapeles"
+                                        >
+                                            <flux:icon.document-duplicate variant="outline" class="size-5" />
+                                        </button>
+                                    </div>
+
+                                    <div id="resident-personal-copy-hint" class="text-xs text-gray-500 mt-1" style="display:none;">
+                                        Copiado.
+                                    </div>
+                                </flux:field>
+                            </div>
+
+                            <button
+                                type="button"
+                                wire:click="regeneratePersonalQr"
+                                wire:loading.attr="disabled"
+                                class="text-sm px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Regenerar QR personal
+                            </button>
+                        </div>
+                    @endif
                 </div>
+
+                {{-- QR Diario --}}
+                <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <flux:heading size="lg">QR Diario (con invitados)</flux:heading>
+                        <div class="text-sm text-gray-500">Invitados: {{ $pass?->guests_allowed ?? 0 }}</div>
+                    </div>
 
                 @if(!$pass)
                     <flux:callout color="blue">Seleccioná una unidad para generar el QR.</flux:callout>
@@ -155,6 +215,7 @@
                         </div>
                     </div>
                 @endif
+                </div>
             </div>
         </div>
     @endif
@@ -163,6 +224,7 @@
     <script>
         (function () {
             let currentToken = @json($pass?->token);
+            let currentPersonalToken = @json($currentResident?->qr_token);
 
             async function copyTokenToClipboard(token) {
                 if (!token) return;
@@ -268,6 +330,106 @@
             // Livewire despacha eventos en window, pero escuchamos también en document por compatibilidad
             window.addEventListener('resident-daypass-qr-updated', onTokenUpdated);
             document.addEventListener('resident-daypass-qr-updated', onTokenUpdated);
+
+            // Personal QR handling
+            function bindPersonalCopyButton() {
+                const btn = document.getElementById('resident-personal-copy-btn');
+                if (!btn || btn.__bound) return;
+                btn.__bound = true;
+
+                btn.addEventListener('click', async () => {
+                    await copyPersonalTokenToClipboard(currentPersonalToken);
+                    showPersonalCopiedHint();
+                });
+            }
+
+            async function copyPersonalTokenToClipboard(token) {
+                if (!token) return;
+
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(token);
+                        return;
+                    }
+                } catch (e) {
+                    // fallback abajo
+                }
+
+                const input = document.getElementById('resident-personal-token');
+                if (input) {
+                    input.focus();
+                    input.select();
+                    document.execCommand('copy');
+                }
+            }
+
+            function showPersonalCopiedHint() {
+                const hint = document.getElementById('resident-personal-copy-hint');
+                if (!hint) return;
+                hint.style.display = 'block';
+                setTimeout(() => { hint.style.display = 'none'; }, 1200);
+            }
+
+            function renderPersonalQR(token) {
+                const el = document.getElementById('resident-personal-qr');
+                if (!el) return;
+
+                currentPersonalToken = token;
+
+                if (!token) {
+                    el.innerHTML = '';
+                    return;
+                }
+
+                const tryRender = () => {
+                    if (typeof window.QRCode === 'undefined') {
+                        setTimeout(tryRender, 100);
+                        return;
+                    }
+
+                    el.innerHTML = '';
+
+                    new window.QRCode(el, {
+                        text: token,
+                        width: 220,
+                        height: 220,
+                        correctLevel: window.QRCode.CorrectLevel.M,
+                    });
+                };
+
+                tryRender();
+            }
+
+            function renderPersonalFromBlade() {
+                renderPersonalQR(@json($currentResident?->qr_token));
+            }
+
+            function onPersonalTokenUpdated(event) {
+                bindPersonalCopyButton();
+
+                const token = event?.detail?.token || null;
+
+                const input = document.getElementById('resident-personal-token');
+                if (input && token) {
+                    input.value = token;
+                }
+
+                renderPersonalQR(token);
+            }
+
+            // Render personal QR on load
+            window.addEventListener('load', () => {
+                bindPersonalCopyButton();
+                renderPersonalFromBlade();
+            });
+
+            document.addEventListener('livewire:navigated', () => {
+                bindPersonalCopyButton();
+                renderPersonalFromBlade();
+            });
+
+            window.addEventListener('resident-personal-qr-updated', onPersonalTokenUpdated);
+            document.addEventListener('resident-personal-qr-updated', onPersonalTokenUpdated);
         })();
     </script>
 </div>

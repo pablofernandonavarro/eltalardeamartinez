@@ -124,6 +124,52 @@
             <flux:error name="notes" />
         </flux:field>
 
+        <flux:field>
+            <flux:label>Documento de Reglamento (PDF)</flux:label>
+            
+            @if($rule->document_path && !$removeDocument)
+                <div class="mb-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                            </svg>
+                            <div>
+                                <div class="font-medium text-sm">Documento actual</div>
+                                <div class="text-xs text-gray-500">{{ basename($rule->document_path) }}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="{{ $rule->documentUrl() }}" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                Ver PDF
+                            </a>
+                            <flux:button type="button" size="sm" variant="danger" wire:click="$set('removeDocument', true)">
+                                Eliminar
+                            </flux:button>
+                        </div>
+                    </div>
+                </div>
+            @elseif($removeDocument)
+                <div class="mb-3">
+                    <flux:callout color="yellow">
+                        El documento será eliminado al guardar.
+                        <flux:button type="button" size="sm" variant="ghost" wire:click="$set('removeDocument', false)">
+                            Cancelar
+                        </flux:button>
+                    </flux:callout>
+                </div>
+            @endif
+            
+            <input type="file" wire:model="document" accept=".pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            <flux:error name="document" />
+            <flux:description>Suba un nuevo archivo PDF para {{ $rule->document_path ? 'reemplazar' : 'agregar' }} el reglamento (máximo 10MB)</flux:description>
+            @if($document)
+                <div class="mt-2">
+                    <flux:badge color="green">Nuevo archivo: {{ $document->getClientOriginalName() }}</flux:badge>
+                </div>
+            @endif
+        </flux:field>
+
         <div class="flex gap-4">
             <flux:button type="submit" variant="primary">
                 Actualizar

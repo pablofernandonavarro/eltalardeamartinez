@@ -23,6 +23,7 @@ class Unit extends Model
         'area',
         'has_pets',
         'notes',
+        'owner',
     ];
 
     protected function casts(): array

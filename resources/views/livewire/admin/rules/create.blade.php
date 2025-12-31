@@ -124,6 +124,18 @@
             <flux:error name="notes" />
         </flux:field>
 
+        <flux:field>
+            <flux:label>Documento de Reglamento (PDF)</flux:label>
+            <input type="file" wire:model="document" accept=".pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            <flux:error name="document" />
+            <flux:description>Suba un archivo PDF con el reglamento completo (máximo 10MB)</flux:description>
+            @if($document)
+                <div class="mt-2">
+                    <flux:badge color="green">Archivo seleccionado: {{ $document->getClientOriginalName() }}</flux:badge>
+                </div>
+            @endif
+        </flux:field>
+
         <div class="flex gap-4">
             <flux:button type="submit" variant="primary">
                 Guardar

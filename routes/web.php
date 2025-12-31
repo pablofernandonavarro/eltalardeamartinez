@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DocumentController;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -8,8 +9,16 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    return view('landing');
+    $news = \App\Models\News::published()
+        ->orderBy('order')
+        ->orderBy('event_date', 'desc')
+        ->limit(3)
+        ->get();
+
+    return view('landing', compact('news'));
 })->name('home');
+
+Route::get('/descargar-reglamento', [DocumentController::class, 'downloadRegulation'])->name('regulation.download');
 
 Route::get('dashboard', function () {
     $user = auth()->user();
@@ -51,6 +60,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/household', \App\Livewire\Resident\Unit\Household::class)->name('household');
 
         Route::prefix('pools')->name('pools.')->group(function () {
+            Route::get('/my-qr', \App\Livewire\Resident\MyPoolQr::class)->name('my-qr');
             Route::get('/day-pass', \App\Livewire\Resident\Pools\DayPass::class)->name('day-pass');
 
             Route::prefix('guests')->name('guests.')->group(function () {

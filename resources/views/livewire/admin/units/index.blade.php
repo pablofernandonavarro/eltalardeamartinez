@@ -100,6 +100,11 @@
                                         <flux:badge color="blue" size="sm" class="mt-1 w-fit">Responsable Pago</flux:badge>
                                     @endif
                                 </div>
+                            @elseif($unit->owner)
+                                <div class="flex flex-col">
+                                    <span class="font-medium text-gray-600">{{ $unit->owner }}</span>
+                                    <span class="text-xs text-gray-400">(Dato del Excel - No registrado)</span>
+                                </div>
                             @else
                                 <span class="text-gray-400">Sin propietario</span>
                             @endif

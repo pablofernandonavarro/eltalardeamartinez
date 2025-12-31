@@ -13,6 +13,9 @@ use App\Livewire\Admin\Buildings\Units\Create as BuildingUnitsCreate;
 use App\Livewire\Admin\Buildings\Units\Edit as BuildingUnitsEdit;
 use App\Livewire\Admin\Buildings\Units\Index as BuildingUnitsIndex;
 use App\Livewire\Admin\Expenses\Index as ExpensesIndex;
+use App\Livewire\Admin\News\Create as NewsCreate;
+use App\Livewire\Admin\News\Edit as NewsEdit;
+use App\Livewire\Admin\News\Index as NewsIndex;
 use App\Livewire\Admin\Pools\Index as PoolsIndex;
 use App\Livewire\Admin\Pools\RegisterEntry as PoolsRegisterEntry;
 use App\Livewire\Admin\Residents\Create as ResidentsCreate;
@@ -63,6 +66,12 @@ Route::prefix('rules')->name('rules.')->group(function () {
     Route::get('/', RulesIndex::class)->name('index');
     Route::get('/create', RulesCreate::class)->name('create');
     Route::get('/{rule}/edit', RulesEdit::class)->name('edit');
+});
+
+Route::prefix('news')->name('news.')->group(function () {
+    Route::get('/', NewsIndex::class)->name('index');
+    Route::get('/create', NewsCreate::class)->name('create');
+    Route::get('/{news}/edit', NewsEdit::class)->name('edit');
 });
 
 Route::prefix('buildings')->name('buildings.')->group(function () {

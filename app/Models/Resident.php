@@ -15,10 +15,12 @@ class Resident extends Model
     protected $fillable = [
         'unit_id',
         'user_id',
+        'auth_user_id',
         'name',
         'profile_photo_path',
         'document_type',
         'document_number',
+        'qr_token',
         'birth_date',
         'relationship',
         'started_at',
@@ -49,6 +51,14 @@ class Resident extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the authenticated user account for this resident (if they have one).
+     */
+    public function authUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'auth_user_id');
     }
 
     /**
@@ -96,5 +106,42 @@ class Resident extends Model
     public function scopeActive($query)
     {
         return $query->whereNull('ended_at');
+    }
+
+    /**
+     * Generate a unique QR token for this resident (only if 18+ years old and has auth account).
+     */
+    public function generateQrToken(): void
+    {
+        if (! $this->canHavePersonalQr()) {
+            return;
+        }
+
+        $this->qr_token = (string) \Illuminate\Support\Str::uuid();
+        $this->save();
+    }
+
+    /**
+     * Check if resident can have a personal QR (must be 18+ and have auth account).
+     */
+    public function canHavePersonalQr(): bool
+    {
+        return ! $this->isMinor() && $this->auth_user_id !== null;
+    }
+
+    /**
+     * Check if resident is eligible to be invited (18+ and no auth account yet).
+     */
+    public function canBeInvited(): bool
+    {
+        return ! $this->isMinor() && $this->auth_user_id === null;
+    }
+
+    /**
+     * Check if this resident has their own auth account.
+     */
+    public function hasAuthAccount(): bool
+    {
+        return $this->auth_user_id !== null;
     }
 }

@@ -35,6 +35,25 @@
                 placeholder="email@example.com"
             />
 
+            <!-- Unidad Funcional -->
+            <flux:field>
+                <flux:label>{{ __('Unidad Funcional') }} *</flux:label>
+                <flux:select name="requested_unit_id" required>
+                    <option value="">{{ __('Seleccione su unidad') }}</option>
+                    @foreach(\App\Models\Unit::with('building')->orderBy('number')->get() as $unit)
+                        <option value="{{ $unit->id }}" {{ old('requested_unit_id') == $unit->id ? 'selected' : '' }}>
+                            {{ $unit->full_identifier }}
+                        </option>
+                    @endforeach
+                </flux:select>
+                <flux:description>
+                    {{ __('Seleccione la unidad funcional a la que pertenece. Esta información será verificada por el administrador.') }}
+                </flux:description>
+                @error('requested_unit_id')
+                    <flux:error>{{ $message }}</flux:error>
+                @enderror
+            </flux:field>
+
             <!-- Password -->
             <flux:input
                 name="password"

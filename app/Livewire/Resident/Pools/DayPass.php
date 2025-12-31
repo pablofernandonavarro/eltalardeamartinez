@@ -3,6 +3,7 @@
 namespace App\Livewire\Resident\Pools;
 
 use App\Models\PoolDayPass;
+use App\Models\Resident;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -19,6 +20,8 @@ class DayPass extends Component
 
     public ?PoolDayPass $pass = null;
 
+    public ?Resident $currentResident = null;
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -27,11 +30,13 @@ class DayPass extends Component
         $this->unitId = $units[0] ?? null;
 
         $this->loadOrCreatePass();
+        $this->loadCurrentResident();
     }
 
     public function updatedUnitId(): void
     {
         $this->loadOrCreatePass();
+        $this->loadCurrentResident();
     }
 
     public function updatedSelectedGuestIds(): void
@@ -39,7 +44,6 @@ class DayPass extends Component
         // Normalizar: Livewire puede mandar strings y/o duplicados
         $this->selectedGuestIds = array_values(array_unique(array_map('intval', $this->selectedGuestIds)));
     }
-
 
     protected function loadOrCreatePass(): void
     {
@@ -78,6 +82,53 @@ class DayPass extends Component
         $this->selectedGuestIds = $pass->guests()->pluck('pool_guests.id')->map(fn ($id) => (int) $id)->all();
 
         $this->dispatch('resident-daypass-qr-updated', token: $pass->token);
+    }
+
+    protected function loadCurrentResident(): void
+    {
+        $user = auth()->user();
+
+        if (! $this->unitId) {
+            $this->currentResident = null;
+            $this->dispatch('resident-personal-qr-updated', token: null);
+
+            return;
+        }
+
+        // Buscar el residente asociado al usuario en esta unidad
+        $resident = Resident::query()
+            ->where('unit_id', $this->unitId)
+            ->where('user_id', $user->id)
+            ->active()
+            ->first();
+
+        $this->currentResident = $resident;
+
+        // Si el residente existe, es mayor de 18 y no tiene QR, generarlo
+        if ($resident && $resident->canHavePersonalQr() && ! $resident->qr_token) {
+            $resident->generateQrToken();
+            $resident->refresh();
+            $this->currentResident = $resident;
+        }
+
+        $this->dispatch('resident-personal-qr-updated', token: $resident?->qr_token);
+    }
+
+    public function regeneratePersonalQr(): void
+    {
+        if (! $this->currentResident || ! $this->currentResident->canHavePersonalQr()) {
+            $this->addError('error', 'No se puede regenerar el QR personal.');
+
+            return;
+        }
+
+        $this->currentResident->qr_token = (string) Str::uuid();
+        $this->currentResident->save();
+        $this->currentResident->refresh();
+
+        $this->dispatch('resident-personal-qr-updated', token: $this->currentResident->qr_token);
+
+        session()->flash('message', 'QR personal regenerado.');
     }
 
     protected function hasOpenEntryToday(): bool
