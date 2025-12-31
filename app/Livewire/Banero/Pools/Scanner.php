@@ -232,14 +232,13 @@ class Scanner extends Component
                 'pool_entry_id' => $entry->id,
             ]);
 
-            session()->flash('message', 'Ingreso registrado correctamente.');
+            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
 
-            // Reset parcial para siguiente escaneo
-            $this->token = '';
-            $this->pass = null;
+            // Actualizar estado a 'exit' porque ahora está adentro
+            $this->action = 'exit';
             $this->poolId = null;
-            $this->exitNotes = null;
             $this->selectedGuestIds = [];
+            // Mantenemos pass y token para facilitar la salida
         } catch (\Exception $e) {
             $this->addError('error', $e->getMessage());
         }
@@ -306,15 +305,12 @@ class Scanner extends Component
             // Registrar entrada del residente sin invitados
             $poolAccessService->registerResidentEntry($pool, $unit, $this->scannedResident, 0, now()->toDateTimeString());
 
-            session()->flash('message', 'Ingreso registrado correctamente.');
+            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
 
-            // Reset para siguiente escaneo
-            $this->token = '';
-            $this->scannedResident = null;
-            $this->pass = null;
+            // Actualizar estado a 'exit' porque ahora está adentro
+            $this->action = 'exit';
             $this->poolId = null;
-            $this->exitNotes = null;
-            $this->selectedGuestIds = [];
+            // Mantenemos scannedResident y token para facilitar la salida
         } catch (\Exception $e) {
             $this->addError('error', $e->getMessage());
         }
@@ -351,7 +347,7 @@ class Scanner extends Component
             'exit_notes' => $this->exitNotes,
         ]);
 
-        session()->flash('message', 'Salida registrada correctamente. Puede registrar un nuevo ingreso.');
+        session()->flash('message', 'Salida registrada correctamente. Puede registrar un nuevo ingreso sin volver a escanear.');
 
         // Mantener el QR cargado pero limpiar notas y resetear acción a 'entry'
         $this->exitNotes = null;
