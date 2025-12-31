@@ -44,7 +44,7 @@
             <flux:error name="floor" />
         </flux:field>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <flux:field>
                 <flux:label>Coeficiente <span class="text-red-500">*</span></flux:label>
                 <flux:input type="number" wire:model="coefficient" step="0.0001" min="0" max="9999.9999" placeholder="1.0000" />
@@ -56,10 +56,11 @@
                 <flux:label>Área (m²)</flux:label>
                 <flux:input type="number" wire:model="area" step="0.01" min="0" placeholder="Ej: 45.50" />
                 <flux:error name="area" />
+                <flux:description class="invisible">&nbsp;</flux:description>
             </flux:field>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <flux:field>
                 <flux:label>Ambientes</flux:label>
                 <flux:input type="number" wire:model="rooms" min="1" max="4" placeholder="1-4" />
@@ -71,6 +72,7 @@
                 <flux:label>Terrazas</flux:label>
                 <flux:input type="number" wire:model="terrazas" min="0" placeholder="0" />
                 <flux:error name="terrazas" />
+                <flux:description class="invisible">&nbsp;</flux:description>
             </flux:field>
         </div>
 
