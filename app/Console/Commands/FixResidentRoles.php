@@ -20,7 +20,7 @@ class FixResidentRoles extends Command
      *
      * @var string
      */
-    protected $description = 'Fix roles for resident users (set to null)';
+    protected $description = 'Fix roles for resident users (set to residente)';
 
     /**
      * Execute the console command.
@@ -41,14 +41,17 @@ class FixResidentRoles extends Command
             return 0;
         }
 
-        // Buscar usuarios residentes que tengan algún rol asignado
+        // Buscar usuarios residentes que no tengan el rol 'residente'
         $usersToUpdate = User::query()
             ->whereIn('id', $residentUserIds)
-            ->whereNotNull('role')
+            ->where(function ($query) {
+                $query->whereNull('role')
+                      ->orWhere('role', '!=', 'residente');
+            })
             ->get();
 
         if ($usersToUpdate->isEmpty()) {
-            $this->info('✓ Todos los usuarios residentes ya tienen el rol correcto (null).');
+            $this->info('✓ Todos los usuarios residentes ya tienen el rol correcto (residente).');
 
             return 0;
         }
@@ -61,7 +64,7 @@ class FixResidentRoles extends Command
 
         $updated = 0;
         foreach ($usersToUpdate as $user) {
-            $user->update(['role' => null]);
+            $user->update(['role' => 'residente']);
             $updated++;
             $bar->advance();
         }
@@ -71,7 +74,7 @@ class FixResidentRoles extends Command
         $this->newLine();
 
         $this->info("✓ Se actualizaron {$updated} usuarios residentes.");
-        $this->info('✓ Ahora todos los residentes tienen role = null.');
+        $this->info('✓ Ahora todos los residentes tienen role = residente.');
 
         return 0;
     }

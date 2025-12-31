@@ -8,6 +8,7 @@ enum Role: string
     case Banero = 'banero';
     case Propietario = 'propietario';
     case Inquilino = 'inquilino';
+    case Residente = 'residente';
 
     /**
      * Get the display label for the role.
@@ -19,6 +20,7 @@ enum Role: string
             self::Banero => 'Bañero',
             self::Propietario => 'Propietario',
             self::Inquilino => 'Inquilino',
+            self::Residente => 'Residente',
         };
     }
 
@@ -52,5 +54,13 @@ enum Role: string
     public function isInquilino(): bool
     {
         return $this === self::Inquilino;
+    }
+
+    /**
+     * Check if the role is residente.
+     */
+    public function isResidente(): bool
+    {
+        return $this === self::Residente;
     }
 }
