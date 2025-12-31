@@ -65,7 +65,7 @@
                         </div>
                     </div>
 
-                    @if($pass)
+                    @if($pass || $scannedResident)
                         @if($action === 'entry')
                             <flux:badge color="green">Entrada</flux:badge>
                         @else
@@ -76,10 +76,79 @@
             </div>
 
             <div class="p-4">
-                @if(!$pass)
+                @if(!$pass && !$scannedResident)
                     <div class="rounded-lg border border-dashed border-zinc-200 dark:border-zinc-700 p-6 text-center">
-                        <div class="text-sm text-gray-500">Escaneá un QR para ver los datos del titular.</div>
+                        <div class="text-sm text-gray-500">Escanea un QR para ver los datos del titular.</div>
                     </div>
+                @elseif($scannedResident)
+                    {{-- Residente con QR personal --}}
+                    @php
+                        $photo = $scannedResident->profilePhotoUrl();
+                        $name = $scannedResident->name;
+                    @endphp
+
+                    <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 mb-4">
+                        <div class="flex items-center gap-3">
+                            @if($photo)
+                                <img src="{{ $photo }}" alt="{{ $name }}" class="h-12 w-12 rounded-full object-cover" />
+                            @else
+                                <div class="h-12 w-12 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold">
+                                    {{ \Illuminate\Support\Str::of($name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
+                                </div>
+                            @endif
+
+                            <div class="min-w-0 flex-1">
+                                <div class="font-semibold truncate">{{ $name }}</div>
+                                <div class="text-sm text-gray-500 truncate">
+                                    {{ $scannedResident->unit->full_identifier }} · {{ $scannedResident->unit->building->complex->name }}
+                                </div>
+                                <div class="mt-1 flex flex-wrap gap-2">
+                                    <flux:badge color="blue">QR Personal</flux:badge>
+                                    @if($scannedResident->age)
+                                        <flux:badge color="gray">{{ $scannedResident->age }} años</flux:badge>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($action === 'entry')
+                        <form wire:submit="confirm" class="space-y-4">
+                            <flux:field>
+                                <flux:label>Pileta <span class="text-red-500">*</span></flux:label>
+                                <flux:select wire:model="poolId" placeholder="Seleccione una pileta">
+                                    <option value="">Seleccione una pileta</option>
+                                    @foreach($pools as $pool)
+                                        <option value="{{ $pool->id }}">{{ $pool->name }}</option>
+                                    @endforeach
+                                </flux:select>
+                                <flux:error name="poolId" />
+                            </flux:field>
+
+                            <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
+                                <flux:button class="w-full" type="submit" variant="primary" wire:loading.attr="disabled">
+                                    Registrar ingreso
+                                </flux:button>
+                            </div>
+                        </form>
+                    @else
+                        <div class="space-y-4">
+                            <flux:callout color="green">
+                                Este QR tiene un ingreso abierto. Corresponde registrar <b>Salida</b>.
+                            </flux:callout>
+
+                            <flux:field>
+                                <flux:label>Notas (opcional)</flux:label>
+                                <flux:textarea rows="2" wire:model="exitNotes" />
+                            </flux:field>
+
+                            <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
+                                <flux:button class="w-full" type="button" variant="primary" wire:click="checkout">
+                                    Registrar salida
+                                </flux:button>
+                            </div>
+                        </div>
+                    @endif
                 @else
                     @php
                         $photo = $pass->resident?->profilePhotoUrl() ?? $pass->user?->profilePhotoUrl();
