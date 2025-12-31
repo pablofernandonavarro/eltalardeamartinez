@@ -12,7 +12,7 @@
     <form wire:submit="save" class="space-y-6">
         <flux:field>
             <flux:label>Unidad Funcional <span class="text-red-500">*</span></flux:label>
-            <flux:select wire:model.live="unitId" placeholder="Seleccione una unidad funcional">
+            <flux:select wire:model.live="unitId" placeholder="Seleccione una unidad funcional" disabled>
                 <option value="">Seleccione una unidad funcional</option>
                 @foreach($units as $unit)
                     @if($unit->building && $unit->building->complex)
@@ -21,6 +21,7 @@
                 @endforeach
             </flux:select>
             <flux:error name="unitId" />
+            <flux:description>La unidad funcional no se puede cambiar al editar. Si necesita mover el residente, cree uno nuevo en la unidad correcta.</flux:description>
         </flux:field>
 
         <flux:field>
