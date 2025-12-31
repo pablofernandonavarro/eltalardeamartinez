@@ -42,6 +42,31 @@ class Resident extends Model
     }
 
     /**
+     * Set the resident's name (normalized).
+     */
+    public function setNameAttribute(string $value): void
+    {
+        $this->attributes['name'] = $this->normalizeName($value);
+    }
+
+    /**
+     * Normalize name: trim, collapse spaces, title case.
+     */
+    protected function normalizeName(string $name): string
+    {
+        // Trim espacios
+        $name = trim($name);
+        
+        // Reemplazar múltiples espacios por uno solo
+        $name = preg_replace('/\s+/', ' ', $name);
+        
+        // Convertir a title case (primera letra de cada palabra en mayúscula)
+        $name = mb_convert_case($name, MB_CASE_TITLE, 'UTF-8');
+        
+        return $name;
+    }
+
+    /**
      * Get the unit this resident belongs to.
      */
     public function unit(): BelongsTo
