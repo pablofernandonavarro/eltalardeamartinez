@@ -87,7 +87,7 @@ class AcceptInvitation extends Component
         $this->redirect(route('resident.pools.my-qr'), navigate: true);
     }
 
-    #[Layout('components.layouts.guest')]
+    #[Layout('components.layouts.auth')]
     public function render()
     {
         return view('livewire.resident.accept-invitation');
