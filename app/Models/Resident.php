@@ -17,10 +17,13 @@ class Resident extends Model
         'user_id',
         'auth_user_id',
         'name',
+        'email',
         'profile_photo_path',
         'document_type',
         'document_number',
         'qr_token',
+        'invitation_token',
+        'invitation_sent_at',
         'birth_date',
         'relationship',
         'started_at',
@@ -34,6 +37,7 @@ class Resident extends Model
             'birth_date' => 'date',
             'started_at' => 'date',
             'ended_at' => 'date',
+            'invitation_sent_at' => 'datetime',
         ];
     }
 
@@ -143,5 +147,29 @@ class Resident extends Model
     public function hasAuthAccount(): bool
     {
         return $this->auth_user_id !== null;
+    }
+
+    /**
+     * Generate invitation token for this resident.
+     */
+    public function generateInvitationToken(): string
+    {
+        $this->invitation_token = \Illuminate\Support\Str::random(32);
+        $this->invitation_sent_at = now();
+        $this->save();
+
+        return $this->invitation_token;
+    }
+
+    /**
+     * Get invitation URL.
+     */
+    public function getInvitationUrl(): ?string
+    {
+        if (! $this->invitation_token) {
+            return null;
+        }
+
+        return route('resident.accept-invitation', ['token' => $this->invitation_token]);
     }
 }

@@ -38,6 +38,10 @@ class Household extends Component
 
     public $residentPhoto;
 
+    public int|null $editingResidentId = null;
+
+    public string $residentEmail = '';
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -240,6 +244,95 @@ class Household extends Component
         ]);
 
         session()->flash('message', 'Residente finalizado.');
+    }
+
+    public function editResidentEmail(int $residentId): void
+    {
+        if (! $this->canEdit || ! $this->unit) {
+            session()->flash('error', 'Solo el responsable de pago puede editar residentes.');
+
+            return;
+        }
+
+        $resident = Resident::query()
+            ->where('id', $residentId)
+            ->where('unit_id', $this->unit->id)
+            ->firstOrFail();
+
+        $this->editingResidentId = $residentId;
+        $this->residentEmail = $resident->email ?? '';
+    }
+
+    public function saveResidentEmail(): void
+    {
+        if (! $this->canEdit || ! $this->unit) {
+            session()->flash('error', 'Solo el responsable de pago puede editar residentes.');
+
+            return;
+        }
+
+        $validated = $this->validate([
+            'residentEmail' => 'required|email|max:255',
+        ], [
+            'residentEmail.required' => 'El email es obligatorio.',
+            'residentEmail.email' => 'Ingrese un email válido.',
+        ]);
+
+        $resident = Resident::query()
+            ->where('id', $this->editingResidentId)
+            ->where('unit_id', $this->unit->id)
+            ->firstOrFail();
+
+        $resident->update([
+            'email' => $validated['residentEmail'],
+        ]);
+
+        $this->editingResidentId = null;
+        $this->residentEmail = '';
+
+        session()->flash('message', 'Email actualizado.');
+    }
+
+    public function cancelEditEmail(): void
+    {
+        $this->editingResidentId = null;
+        $this->residentEmail = '';
+        $this->resetErrorBag('residentEmail');
+    }
+
+    public function sendInvitation(int $residentId): void
+    {
+        if (! $this->canEdit || ! $this->unit) {
+            session()->flash('error', 'Solo el responsable de pago puede enviar invitaciones.');
+
+            return;
+        }
+
+        $resident = Resident::query()
+            ->where('id', $residentId)
+            ->where('unit_id', $this->unit->id)
+            ->firstOrFail();
+
+        if (! $resident->canBeInvited()) {
+            session()->flash('error', 'Este residente no puede ser invitado (debe ser mayor de 18 años y no tener cuenta).');
+
+            return;
+        }
+
+        if (! $resident->email) {
+            session()->flash('error', 'Debe agregar un email al residente antes de enviar la invitación.');
+
+            return;
+        }
+
+        $resident->generateInvitationToken();
+
+        $invitationUrl = $resident->getInvitationUrl();
+
+        // Aquí podrías enviar un email con el link
+        // Mail::to($resident->email)->send(new ResidentInvitation($resident, $invitationUrl));
+
+        session()->flash('message', "Invitación generada. Link: {$invitationUrl}");
     }
 
     public function render()

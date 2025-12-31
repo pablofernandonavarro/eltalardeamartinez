@@ -20,6 +20,10 @@ Route::get('/', function () {
 
 Route::get('/descargar-reglamento', [DocumentController::class, 'downloadRegulation'])->name('regulation.download');
 
+// Ruta pública para aceptar invitación de residente
+Route::get('/invitacion/{token}', \App\Livewire\Resident\AcceptInvitation::class)
+    ->name('resident.accept-invitation');
+
 Route::get('dashboard', function () {
     $user = auth()->user();
 
