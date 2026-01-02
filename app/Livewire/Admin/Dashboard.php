@@ -18,9 +18,9 @@ class Dashboard extends Component
         $stats = [
             'total_units' => Unit::count(),
             'occupied_units' => Unit::whereHas('residents', function ($q) {
-                $q->where('is_active', true);
+                $q->active();
             })->count(),
-            'total_residents' => Resident::where('is_active', true)->count(),
+            'total_residents' => Resident::active()->count(),
             'total_users' => User::count(),
             'total_buildings' => Building::count(),
         ];
