@@ -34,6 +34,9 @@ use App\Livewire\Admin\UnitUsers\Show as UnitUsersShow;
 use App\Livewire\Admin\Users\Create as UsersCreate;
 use App\Livewire\Admin\Users\Edit as UsersEdit;
 use App\Livewire\Admin\Users\Index as UsersIndex;
+use App\Livewire\Admin\Amenities\Create as AmenitiesCreate;
+use App\Livewire\Admin\Amenities\Edit as AmenitiesEdit;
+use App\Livewire\Admin\Amenities\Index as AmenitiesIndex;
 
 Route::prefix('users')->name('users.')->group(function () {
     Route::get('/', UsersIndex::class)->name('index');
@@ -94,4 +97,10 @@ Route::prefix('expenses')->name('expenses.')->group(function () {
 Route::prefix('pools')->name('pools.')->group(function () {
     Route::get('/', PoolsIndex::class)->name('index');
     Route::get('/register-entry', PoolsRegisterEntry::class)->name('register-entry');
+});
+
+Route::prefix('amenities')->name('amenities.')->group(function () {
+    Route::get('/', AmenitiesIndex::class)->name('index');
+    Route::get('/create', AmenitiesCreate::class)->name('create');
+    Route::get('/{amenity}/edit', AmenitiesEdit::class)->name('edit');
 });
