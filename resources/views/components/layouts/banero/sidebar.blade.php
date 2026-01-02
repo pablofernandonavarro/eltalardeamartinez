@@ -12,8 +12,13 @@
             </a>
 
             <flux:navlist variant="outline">
+                <flux:navlist.group :heading="__('Mi Turno')" class="grid">
+                    <flux:navlist.item icon="clock" :href="route('banero.my-shift')" :current="request()->routeIs('banero.my-shift')" wire:navigate>
+                        {{ __('Gestionar turno') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
                 <flux:navlist.group :heading="__('Control Pileta')" class="grid">
-                    <flux:navlist.item icon="qr-code" :href="route('banero.pools.scan')" :current="request()->routeIs('banero.pools.scan')" wire:navigate>
+                    <flux:navlist.item icon="qr-code" :href="route('banero.pools.scanner')" :current="request()->routeIs('banero.pools.scanner')" wire:navigate>
                         {{ __('Escanear QR') }}
                     </flux:navlist.item>
                     <flux:navlist.item icon="user-group" :href="route('banero.pools.inside')" :current="request()->routeIs('banero.pools.inside')" wire:navigate>
