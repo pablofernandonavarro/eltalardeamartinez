@@ -6,6 +6,50 @@
         </p>
     </div>
 
+    {{-- Información de límites según reglamento --}}
+    @if($limitsInfo['has_limits'])
+        <flux:callout color="{{ $limitsInfo['available_month'] > 0 ? 'blue' : 'yellow' }}" icon="information-circle" class="mb-6">
+            <div class="space-y-3">
+                <div>
+                    <strong class="text-base">📅 Límites del Reglamento</strong>
+                </div>
+
+                @if($limitsInfo['is_weekend'])
+                    <div class="text-sm space-y-1">
+                        <div><strong>Sábados, Domingos y Feriados:</strong></div>
+                        <div>• Máximo <strong>2 invitados por mes</strong> por unidad funcional.</div>
+                        <div class="mt-2 px-3 py-2 bg-white/50 dark:bg-zinc-800/50 rounded">
+                            <strong>Este mes:</strong> Usaste {{ $limitsInfo['used_this_month'] }} de {{ $limitsInfo['max_guests_month'] }} invitados. 
+                            @if($limitsInfo['available_month'] > 0)
+                                <span class="text-green-600 dark:text-green-400 font-semibold">Te quedan {{ $limitsInfo['available_month'] }} disponibles.</span>
+                            @else
+                                <span class="text-red-600 dark:text-red-400 font-semibold">Cupo agotado.</span>
+                            @endif
+                        </div>
+                    </div>
+                @else
+                    <div class="text-sm space-y-1">
+                        <div><strong>Lunes a Viernes:</strong></div>
+                        <div>• Hasta <strong>2 invitados por día</strong></div>
+                        <div>• Máximo <strong>5 visitas mensuales</strong> por unidad funcional</div>
+                        <div class="mt-2 px-3 py-2 bg-white/50 dark:bg-zinc-800/50 rounded">
+                            <strong>Este mes:</strong> Usaste {{ $limitsInfo['used_this_month'] }} de {{ $limitsInfo['max_guests_month'] }} invitados. 
+                            @if($limitsInfo['available_month'] > 0)
+                                <span class="text-green-600 dark:text-green-400 font-semibold">Te quedan {{ $limitsInfo['available_month'] }} disponibles.</span>
+                            @else
+                                <span class="text-red-600 dark:text-red-400 font-semibold">Cupo agotado.</span>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                <div class="text-xs text-gray-600 dark:text-gray-400 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <strong>⚠️ Importante:</strong> Como anfitrión, debés estar presente obligatoriamente durante toda la permanencia de tus invitados. Los préstamos transitorios de unidad no dan derecho al uso de la pileta.
+                </div>
+            </div>
+        </flux:callout>
+    @endif
+
     @if($errors->has('error'))
         <flux:callout color="red" class="mb-4">
             {{ $errors->first('error') }}

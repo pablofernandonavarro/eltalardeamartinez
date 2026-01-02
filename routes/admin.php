@@ -1,10 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Admin\Dashboard;
 
-Route::get('/', function () {
-    return view('admin.dashboard');
-})->name('dashboard');
+Route::get('/', Dashboard::class)->name('dashboard');
 
 use App\Livewire\Admin\Buildings\Create as BuildingsCreate;
 use App\Livewire\Admin\Buildings\Edit as BuildingsEdit;

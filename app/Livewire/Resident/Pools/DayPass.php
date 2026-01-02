@@ -237,11 +237,90 @@ class DayPass extends Component
 
         $selectedGuestsCount = count(array_values(array_unique(array_map('intval', $this->selectedGuestIds))));
 
+        // Calcular límites disponibles para hoy
+        $limitsInfo = $this->calculateAvailableLimits();
+
         return view('livewire.resident.pools.day-pass', [
             'units' => $units,
             'guests' => $guests,
             'pass' => $this->pass,
             'selectedGuestsCount' => $selectedGuestsCount,
+            'limitsInfo' => $limitsInfo,
         ])->layout('components.layouts.resident', ['title' => 'Mi QR de Pileta (hoy)']);
+    }
+
+    protected function calculateAvailableLimits(): array
+    {
+        if (! $this->unitId) {
+            return [
+                'has_limits' => false,
+                'is_weekend' => false,
+                'max_guests_today' => null,
+                'max_guests_month' => null,
+                'used_this_month' => 0,
+                'available_month' => null,
+                'message' => null,
+            ];
+        }
+
+        $unit = \App\Models\Unit::find($this->unitId);
+        if (! $unit) {
+            return ['has_limits' => false];
+        }
+
+        $today = now();
+        $isWeekend = $today->isWeekend();
+        $dayOfWeek = $today->dayOfWeek;
+
+        // Obtener pool habilitado (asumimos el primero)
+        $pool = \App\Models\Pool::query()->first();
+        if (! $pool) {
+            return ['has_limits' => false];
+        }
+
+        // Calcular invitados usados este mes
+        $monthStart = $today->copy()->startOfMonth();
+        $monthEnd = $today->copy()->endOfMonth();
+        $usedThisMonth = \App\Models\PoolEntry::forUnit($unit->id)
+            ->where('pool_id', $pool->id)
+            ->whereBetween('entered_at', [$monthStart, $monthEnd])
+            ->sum('guests_count');
+
+        // Límites según día de semana
+        if ($isWeekend) {
+            // Fin de semana: máximo 2 invitados por mes
+            $maxGuestsMonth = 2;
+            $maxGuestsToday = 2;
+            $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+
+            return [
+                'has_limits' => true,
+                'is_weekend' => true,
+                'max_guests_today' => min($maxGuestsToday, $availableMonth),
+                'max_guests_month' => $maxGuestsMonth,
+                'used_this_month' => $usedThisMonth,
+                'available_month' => $availableMonth,
+                'message' => $availableMonth > 0
+                    ? "Este mes podés llevar hasta {$availableMonth} invitado(s) los fines de semana."
+                    : 'Ya utilizaste el cupo mensual de invitados para fines de semana (2 invitados/mes).',
+            ];
+        } else {
+            // Lunes a viernes: máximo 2 por día, 5 al mes
+            $maxGuestsToday = 2;
+            $maxGuestsMonth = 5;
+            $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+
+            return [
+                'has_limits' => true,
+                'is_weekend' => false,
+                'max_guests_today' => min($maxGuestsToday, $availableMonth),
+                'max_guests_month' => $maxGuestsMonth,
+                'used_this_month' => $usedThisMonth,
+                'available_month' => $availableMonth,
+                'message' => $availableMonth > 0
+                    ? "Hoy podés llevar hasta {$maxGuestsToday} invitados. Este mes te quedan {$availableMonth} de {$maxGuestsMonth} disponibles."
+                    : 'Ya utilizaste el cupo mensual de 5 invitados para días de semana.',
+            ];
+        }
     }
 }

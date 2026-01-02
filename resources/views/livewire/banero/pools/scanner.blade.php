@@ -90,7 +90,9 @@
                     <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 mb-4">
                         <div class="flex items-center gap-3">
                             @if($photo)
-                                <img src="{{ $photo }}" alt="{{ $name }}" class="h-12 w-12 rounded-full object-cover" />
+                                <button type="button" onclick="document.getElementById('photoModal').classList.remove('hidden')" class="flex-shrink-0">
+                                    <img src="{{ $photo }}" alt="{{ $name }}" class="h-12 w-12 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity" />
+                                </button>
                             @else
                                 <div class="h-12 w-12 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold">
                                     {{ \Illuminate\Support\Str::of($name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
@@ -111,6 +113,24 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- Modal para ver foto en grande --}}
+                    @if($photo)
+                        <div id="photoModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onclick="this.classList.add('hidden')">
+                            <div class="relative max-w-2xl w-full" onclick="event.stopPropagation()">
+                                <button type="button" onclick="document.getElementById('photoModal').classList.add('hidden')" class="absolute -top-10 right-0 text-white hover:text-gray-300">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                                <img src="{{ $photo }}" alt="{{ $name }}" class="w-full h-auto rounded-lg" />
+                                <div class="mt-4 text-white text-center">
+                                    <div class="font-semibold text-lg">{{ $name }}</div>
+                                    <div class="text-sm text-gray-300">{{ $scannedResident->unit->full_identifier }} · {{ $scannedResident->unit->building->complex->name }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     @if($action === 'entry')
                         <form wire:submit="confirm" class="space-y-4">
@@ -133,8 +153,9 @@
                         </form>
                     @else
                         <div class="space-y-4">
-                            <flux:callout color="green">
-                                Este QR tiene un ingreso abierto. Corresponde registrar <b>Salida</b>.
+                            <flux:callout color="yellow" icon="exclamation-triangle">
+                                <strong class="text-lg">⚠️ YA ESTÁ ADENTRO</strong><br>
+                                Este residente tiene un ingreso abierto. Debe registrar la <b>SALIDA</b>.
                             </flux:callout>
 
                             <flux:field>
@@ -164,7 +185,9 @@
                     <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 mb-4">
                         <div class="flex items-center gap-3">
                             @if($photo)
-                                <img src="{{ $photo }}" alt="{{ $name }}" class="h-12 w-12 rounded-full object-cover" />
+                                <button type="button" onclick="document.getElementById('photoModalPass').classList.remove('hidden')" class="flex-shrink-0">
+                                    <img src="{{ $photo }}" alt="{{ $name }}" class="h-12 w-12 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity" />
+                                </button>
                             @else
                                 <div class="h-12 w-12 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold">
                                     {{ \Illuminate\Support\Str::of($name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
@@ -182,6 +205,24 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- Modal para ver foto en grande --}}
+                    @if($photo)
+                        <div id="photoModalPass" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onclick="this.classList.add('hidden')">
+                            <div class="relative max-w-2xl w-full" onclick="event.stopPropagation()">
+                                <button type="button" onclick="document.getElementById('photoModalPass').classList.add('hidden')" class="absolute -top-10 right-0 text-white hover:text-gray-300">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                                <img src="{{ $photo }}" alt="{{ $name }}" class="w-full h-auto rounded-lg" />
+                                <div class="mt-4 text-white text-center">
+                                    <div class="font-semibold text-lg">{{ $name }}</div>
+                                    <div class="text-sm text-gray-300">{{ $pass->unit->full_identifier }} · {{ $pass->unit->building->complex->name }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     @if($action === 'entry')
                         <form wire:submit="confirm" class="space-y-4">
@@ -225,7 +266,9 @@
                                                 <label class="flex items-center gap-3 p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
                                                     <input type="checkbox" value="{{ $guest->id }}" wire:model="selectedGuestIds" class="h-5 w-5" />
                                                     @if($gPhoto)
-                                                        <img src="{{ $gPhoto }}" alt="{{ $guest->name }}" class="h-10 w-10 rounded-full object-cover" />
+                                                        <button type="button" onclick="document.getElementById('guestPhotoModal{{ $guest->id }}').classList.remove('hidden'); event.preventDefault()" class="flex-shrink-0">
+                                                            <img src="{{ $gPhoto }}" alt="{{ $guest->name }}" class="h-10 w-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity" />
+                                                        </button>
                                                     @else
                                                         <div class="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs font-semibold">
                                                             {{ \Illuminate\Support\Str::of($guest->name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
@@ -239,6 +282,23 @@
                                                         @endif
                                                     </div>
                                                 </label>
+                                                {{-- Modal para foto del invitado --}}
+                                                @if($gPhoto)
+                                                    <div id="guestPhotoModal{{ $guest->id }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onclick="this.classList.add('hidden')">
+                                                        <div class="relative max-w-2xl w-full" onclick="event.stopPropagation()">
+                                                            <button type="button" onclick="document.getElementById('guestPhotoModal{{ $guest->id }}').classList.add('hidden')" class="absolute -top-10 right-0 text-white hover:text-gray-300">
+                                                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                </svg>
+                                                            </button>
+                                                            <img src="{{ $gPhoto }}" alt="{{ $guest->name }}" class="w-full h-auto rounded-lg" />
+                                                            <div class="mt-4 text-white text-center">
+                                                                <div class="font-semibold text-lg">{{ $guest->name }}</div>
+                                                                <div class="text-sm text-gray-300">{{ $guest->document_type }} {{ $guest->document_number }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             @endforeach
                                         </div>
                                     @endif
@@ -253,8 +313,9 @@
                         </form>
                     @else
                         <div class="space-y-4">
-                            <flux:callout color="green">
-                                Este QR tiene un ingreso abierto. Corresponde registrar <b>Salida</b>.
+                            <flux:callout color="yellow" icon="exclamation-triangle">
+                                <strong class="text-lg">⚠️ YA ESTÁ ADENTRO</strong><br>
+                                Este QR tiene un ingreso abierto. Debe registrar la <b>SALIDA</b>.
                             </flux:callout>
 
                             <flux:field>

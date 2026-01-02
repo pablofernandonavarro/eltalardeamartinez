@@ -12,6 +12,8 @@ use Livewire\Component;
 
 class Scanner extends Component
 {
+    public ?\App\Models\PoolShift $activeShift = null;
+
     /**
      * action: entry | exit (se decide automáticamente al escanear)
      */
@@ -35,6 +37,16 @@ class Scanner extends Component
     public array $selectedGuestIds = [];
 
     public bool $showGuestList = false;
+
+    public function mount(): void
+    {
+        $this->activeShift = \App\Models\PoolShift::getActiveShiftForUser(auth()->id());
+
+        if (! $this->activeShift) {
+            session()->flash('error', 'Debes iniciar tu turno antes de poder escanear QRs.');
+            $this->redirect(route('banero.my-shift'), navigate: true);
+        }
+    }
 
     public function updatedToken(): void
     {

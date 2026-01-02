@@ -16,9 +16,13 @@ class Index extends Component
 
     public string $search = '';
 
+    public ?int $ownerId = null; // ID del propietario específico
+
+    public ?int $tenantId = null; // ID del inquilino específico
+
     public function resetFilters(): void
     {
-        $this->reset(['buildingId', 'complexId', 'search']);
+        $this->reset(['buildingId', 'complexId', 'search', 'ownerId', 'tenantId']);
         $this->resetPage();
     }
 
@@ -55,6 +59,18 @@ class Index extends Component
                 $q->where('number', 'like', "%{$this->search}%")
                     ->orWhere('floor', 'like', "%{$this->search}%");
             })
+            ->when($this->ownerId, function ($q) {
+                $q->whereHas('currentUsers', function ($query) {
+                    $query->where('is_owner', true)
+                        ->where('user_id', $this->ownerId);
+                });
+            })
+            ->when($this->tenantId, function ($q) {
+                $q->whereHas('currentUsers', function ($query) {
+                    $query->where('is_owner', false)
+                        ->where('user_id', $this->tenantId);
+                });
+            })
             ->orderBy('building_id')
             ->orderBy('number')
             ->paginate(15);
@@ -70,10 +86,30 @@ class Index extends Component
             ->orderBy('name')
             ->get();
 
+        // Obtener usuarios que son propietarios
+        $owners = \App\Models\User::query()
+            ->whereHas('unitUsers', function ($q) {
+                $q->where('is_owner', true)
+                    ->whereNull('ended_at');
+            })
+            ->orderBy('name')
+            ->get();
+
+        // Obtener usuarios que son inquilinos
+        $tenants = \App\Models\User::query()
+            ->whereHas('unitUsers', function ($q) {
+                $q->where('is_owner', false)
+                    ->whereNull('ended_at');
+            })
+            ->orderBy('name')
+            ->get();
+
         return view('livewire.admin.units.index', [
             'units' => $units,
             'buildings' => $buildings,
             'complexes' => $complexes,
+            'owners' => $owners,
+            'tenants' => $tenants,
         ])->layout('components.layouts.app', ['title' => 'Unidades Funcionales']);
     }
 }

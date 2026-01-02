@@ -18,7 +18,7 @@
         </flux:callout>
     @endif
 
-    <div class="mb-6 flex gap-4">
+    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <flux:field>
             <flux:label>Complejo</flux:label>
             <flux:select wire:model.live="complexId" placeholder="Todos los complejos">
@@ -44,8 +44,28 @@
             <flux:input wire:model.live.debounce.300ms="search" placeholder="Buscar por número o piso..." />
         </flux:field>
 
+        <flux:field>
+            <flux:label>Propietario</flux:label>
+            <flux:select wire:model.live="ownerId" placeholder="Todos los propietarios">
+                <option value="">Todos los propietarios</option>
+                @foreach($owners as $owner)
+                    <option value="{{ $owner->id }}">{{ $owner->name }}</option>
+                @endforeach
+            </flux:select>
+        </flux:field>
+
+        <flux:field>
+            <flux:label>Inquilino</flux:label>
+            <flux:select wire:model.live="tenantId" placeholder="Todos los inquilinos">
+                <option value="">Todos los inquilinos</option>
+                @foreach($tenants as $tenant)
+                    <option value="{{ $tenant->id }}">{{ $tenant->name }}</option>
+                @endforeach
+            </flux:select>
+        </flux:field>
+
         <div class="flex items-end">
-            <flux:button wire:click="resetFilters" variant="ghost">Limpiar</flux:button>
+            <flux:button wire:click="resetFilters" variant="ghost">Limpiar filtros</flux:button>
         </div>
     </div>
 
