@@ -133,28 +133,36 @@
         <flux:heading size="lg" class="mb-4">Accesos Rápidos</flux:heading>
         
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <flux:button href="{{ route('admin.pools.index') }}" variant="outline" class="justify-start" icon="water" wire:navigate>
+            <flux:button href="{{ route('admin.pools.index') }}" variant="outline" class="justify-start" wire:navigate>
+                <flux:icon.beaker class="size-5" />
                 Gestión de Piletas
             </flux:button>
-            <flux:button href="{{ route('admin.residents.index') }}" variant="outline" class="justify-start" icon="user-group" wire:navigate>
+            <flux:button href="{{ route('admin.residents.index') }}" variant="outline" class="justify-start" wire:navigate>
+                <flux:icon.user-group class="size-5" />
                 Residentes
             </flux:button>
-            <flux:button href="{{ route('admin.units.index') }}" variant="outline" class="justify-start" icon="building-office" wire:navigate>
+            <flux:button href="{{ route('admin.units.index') }}" variant="outline" class="justify-start" wire:navigate>
+                <flux:icon.building-office class="size-5" />
                 Unidades
             </flux:button>
-            <flux:button href="{{ route('admin.news.index') }}" variant="outline" class="justify-start" icon="newspaper" wire:navigate>
+            <flux:button href="{{ route('admin.news.index') }}" variant="outline" class="justify-start" wire:navigate>
+                <flux:icon.newspaper class="size-5" />
                 Noticias
             </flux:button>
-            <flux:button href="{{ route('admin.expenses.index') }}" variant="outline" class="justify-start" icon="currency-dollar" wire:navigate>
+            <flux:button href="{{ route('admin.expenses.index') }}" variant="outline" class="justify-start" wire:navigate>
+                <flux:icon.currency-dollar class="size-5" />
                 Expensas
             </flux:button>
-            <flux:button href="{{ route('admin.buildings.index') }}" variant="outline" class="justify-start" icon="building-office-2" wire:navigate>
+            <flux:button href="{{ route('admin.buildings.index') }}" variant="outline" class="justify-start" wire:navigate>
+                <flux:icon.building-office-2 class="size-5" />
                 Edificios
             </flux:button>
-            <flux:button href="{{ route('admin.users.index') }}" variant="outline" class="justify-start" icon="users" wire:navigate>
+            <flux:button href="{{ route('admin.users.index') }}" variant="outline" class="justify-start" wire:navigate>
+                <flux:icon.users class="size-5" />
                 Usuarios
             </flux:button>
-            <flux:button href="{{ route('admin.rules.index') }}" variant="outline" class="justify-start" icon="document-text" wire:navigate>
+            <flux:button href="{{ route('admin.rules.index') }}" variant="outline" class="justify-start" wire:navigate>
+                <flux:icon.document-text class="size-5" />
                 Reglamentos
             </flux:button>
         </div>
