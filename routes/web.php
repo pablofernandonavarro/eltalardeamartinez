@@ -15,7 +15,11 @@ Route::get('/', function () {
         ->limit(3)
         ->get();
 
-    return view('landing', compact('news'));
+    $amenities = \App\Models\Amenity::active()
+        ->ordered()
+        ->get();
+
+    return view('landing', compact('news', 'amenities'));
 })->name('home');
 
 Route::get('/descargar-reglamento', [DocumentController::class, 'downloadRegulation'])->name('regulation.download');

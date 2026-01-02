@@ -375,216 +375,106 @@
             </div>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                <!-- Pileta -->
-                <div class="group bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-blue-200 dark:border-blue-800">
-                    <div class="p-8">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-zinc-900 dark:text-white">Pileta</h3>
-                                <p class="text-sm text-blue-600 dark:text-blue-400 font-semibold">Temporada de Verano</p>
-                            </div>
-                        </div>
-                        <div class="space-y-3 text-zinc-700 dark:text-zinc-300">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
+                @forelse ($amenities as $amenity)
+                    @php
+                        $colors = $amenity->getColorClasses();
+                    @endphp
+                    <div class="group bg-gradient-to-br {{ $colors['gradient'] }} rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border {{ $colors['border'] }}">
+                        <div class="p-8">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-16 h-16 {{ $colors['bg'] }} rounded-full flex items-center justify-center shadow-lg">
+                                    {!! $amenity->getIconSvg() !!}
+                                </div>
                                 <div>
-                                    <p class="font-semibold text-zinc-900 dark:text-white">Lunes a Viernes</p>
-                                    <p class="text-sm">9:00 - 13:00 hs / 15:00 - 22:00 hs</p>
+                                    <h3 class="text-2xl font-bold text-zinc-900 dark:text-white">{{ $amenity->name }}</h3>
+                                    <p class="text-sm {{ $colors['text'] }} font-semibold">{{ $amenity->availability }}</p>
                                 </div>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div>
-                                    <p class="font-semibold text-zinc-900 dark:text-white">Fines de Semana</p>
-                                    <p class="text-sm">10:00 - 20:00 hs</p>
-                                </div>
-                            </div>
-                            <div class="mt-4 p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                                <p class="text-xs text-blue-800 dark:text-blue-200">
-                                    <strong>Importante:</strong> Menores de 12 años deben estar acompañados por un adulto
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            <div class="space-y-3 text-zinc-700 dark:text-zinc-300">
+                                @if($amenity->schedule_type === 'weekdays_weekends')
+                                    @if($amenity->weekday_schedule)
+                                        <div class="flex items-start gap-3">
+                                            <svg class="w-5 h-5 {{ $colors['text'] }} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <div>
+                                                <p class="font-semibold text-zinc-900 dark:text-white">Lunes a Viernes</p>
+                                                <p class="text-sm">{{ str_replace(',', ' / ', $amenity->weekday_schedule) }} hs</p>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @if($amenity->weekend_schedule)
+                                        <div class="flex items-start gap-3">
+                                            <svg class="w-5 h-5 {{ $colors['text'] }} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <div>
+                                                <p class="font-semibold text-zinc-900 dark:text-white">Fines de Semana</p>
+                                                <p class="text-sm">{{ $amenity->weekend_schedule }} hs</p>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @elseif($amenity->schedule_type === 'all_days')
+                                    <div class="flex items-start gap-3">
+                                        <svg class="w-5 h-5 {{ $colors['text'] }} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="font-semibold text-zinc-900 dark:text-white">Todos los días</p>
+                                            <p class="text-sm">{{ $amenity->weekday_schedule }}</p>
+                                        </div>
+                                    </div>
+                                @elseif($amenity->schedule_type === 'weekdays')
+                                    <div class="flex items-start gap-3">
+                                        <svg class="w-5 h-5 {{ $colors['text'] }} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="font-semibold text-zinc-900 dark:text-white">Lunes a Viernes</p>
+                                            <p class="text-sm">{{ $amenity->weekday_schedule }} hs</p>
+                                        </div>
+                                    </div>
+                                @elseif($amenity->schedule_type === 'by_reservation')
+                                    <div class="flex items-start gap-3">
+                                        <svg class="w-5 h-5 {{ $colors['text'] }} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="font-semibold text-zinc-900 dark:text-white">Sábados y Domingos</p>
+                                            <p class="text-sm">{{ $amenity->weekend_schedule }}</p>
+                                        </div>
+                                    </div>
+                                @elseif($amenity->schedule_type === 'open_access')
+                                    @if($amenity->description)
+                                        @foreach(explode(',', $amenity->description) as $item)
+                                            <div class="flex items-start gap-3">
+                                                <svg class="w-5 h-5 {{ $colors['text'] }} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                                <p class="text-sm">{{ trim($item) }}</p>
+                                            </div>
+                                        @endforeach
+                                    @endif
+                                @endif
 
-                <!-- Gimnasio -->
-                <div class="group bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-orange-200 dark:border-orange-800">
-                    <div class="p-8">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-zinc-900 dark:text-white">Gimnasio</h3>
-                                <p class="text-sm text-orange-600 dark:text-orange-400 font-semibold">Todo el Año</p>
-                            </div>
-                        </div>
-                        <div class="space-y-3 text-zinc-700 dark:text-zinc-300">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div>
-                                    <p class="font-semibold text-zinc-900 dark:text-white">Todos los días</p>
-                                    <p class="text-sm">7:00 - 23:00 hs</p>
-                                </div>
-                            </div>
-                            <div class="mt-4 p-3 bg-orange-100 dark:bg-orange-900/40 rounded-lg">
-                                <p class="text-xs text-orange-800 dark:text-orange-200">
-                                    <strong>Recordatorio:</strong> Uso exclusivo para mayores de 16 años. Traer toalla.
-                                </p>
+                                @if($amenity->additional_info)
+                                    <div class="mt-4 p-3 {{ str_replace('bg-', 'bg-', $colors['text']) }}100 dark:{{ str_replace('text-', 'bg-', $colors['text']) }}900/40 rounded-lg">
+                                        <p class="text-xs {{ str_replace('600', '800', str_replace('400', '200', $colors['text'])) }}">
+                                            {!! $amenity->additional_info !!}
+                                        </p>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- SUM (Salón de Usos Múltiples) -->
-                <div class="group bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-green-200 dark:border-green-800">
-                    <div class="p-8">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-zinc-900 dark:text-white">SUM</h3>
-                                <p class="text-sm text-green-600 dark:text-green-400 font-semibold">Con Reserva Previa</p>
-                            </div>
-                        </div>
-                        <div class="space-y-3 text-zinc-700 dark:text-zinc-300">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div>
-                                    <p class="font-semibold text-zinc-900 dark:text-white">Sábados y Domingos</p>
-                                    <p class="text-sm">Horario flexible según reserva</p>
-                                </div>
-                            </div>
-                            <div class="mt-4 p-3 bg-green-100 dark:bg-green-900/40 rounded-lg">
-                                <p class="text-xs text-green-800 dark:text-green-200">
-                                    <strong>Reservas:</strong> Con 15 días de anticipación en administración
-                                </p>
-                            </div>
-                        </div>
+                @empty
+                    <div class="col-span-3 text-center py-12">
+                        <svg class="w-16 h-16 mx-auto text-zinc-400 dark:text-zinc-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-xl text-zinc-600 dark:text-zinc-400">No hay amenidades disponibles en este momento.</p>
                     </div>
-                </div>
-
-                <!-- Espacios Comunes -->
-                <div class="group bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-purple-200 dark:border-purple-800">
-                    <div class="p-8">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-zinc-900 dark:text-white">Espacios Comunes</h3>
-                                <p class="text-sm text-purple-600 dark:text-purple-400 font-semibold">Acceso Libre</p>
-                            </div>
-                        </div>
-                        <div class="space-y-3 text-zinc-700 dark:text-zinc-300">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                <p class="text-sm">Quincho y parrillas</p>
-                            </div>
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                <p class="text-sm">Área de juegos infantiles</p>
-                            </div>
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                <p class="text-sm">Senderos peatonales</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seguridad -->
-                <div class="group bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-red-200 dark:border-red-800">
-                    <div class="p-8">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-zinc-900 dark:text-white">Seguridad</h3>
-                                <p class="text-sm text-red-600 dark:text-red-400 font-semibold">24 horas</p>
-                            </div>
-                        </div>
-                        <div class="space-y-3 text-zinc-700 dark:text-zinc-300">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                </svg>
-                                <div>
-                                    <p class="font-semibold text-zinc-900 dark:text-white">Emergencias</p>
-                                    <p class="text-sm">Interno 100</p>
-                                </div>
-                            </div>
-                            <div class="mt-4 p-3 bg-red-100 dark:bg-red-900/40 rounded-lg">
-                                <p class="text-xs text-red-800 dark:text-red-200">
-                                    <strong>Control de acceso:</strong> Solicitar autorización previa para visitas
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Administración -->
-                <div class="group bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-amber-200 dark:border-amber-800">
-                    <div class="p-8">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-zinc-900 dark:text-white">Administración</h3>
-                                <p class="text-sm text-amber-600 dark:text-amber-400 font-semibold">Atención al Propietario</p>
-                            </div>
-                        </div>
-                        <div class="space-y-3 text-zinc-700 dark:text-zinc-300">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div>
-                                    <p class="font-semibold text-zinc-900 dark:text-white">Lunes a Viernes</p>
-                                    <p class="text-sm">9:00 - 17:00 hs</p>
-                                </div>
-                            </div>
-                            <div class="mt-4 p-3 bg-amber-100 dark:bg-amber-900/40 rounded-lg">
-                                <p class="text-xs text-amber-800 dark:text-amber-200">
-                                    <strong>Contacto:</strong> admin@eltalardemartinez.com
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @endforelse
             </div>
 
             <div class="text-center">
