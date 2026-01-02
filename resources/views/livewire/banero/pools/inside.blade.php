@@ -4,7 +4,7 @@
             <flux:heading size="xl">En pileta</flux:heading>
             <p class="text-sm text-gray-500 mt-1">Personas con ingreso abierto (sin salida registrada).</p>
         </div>
-        <flux:button href="{{ route('banero.pools.scan') }}" variant="ghost" wire:navigate>
+        <flux:button href="{{ route('banero.pools.scanner') }}" variant="ghost" wire:navigate>
             Escanear QR
         </flux:button>
     </div>
