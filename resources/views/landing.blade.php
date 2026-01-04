@@ -190,31 +190,49 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                class="sm:hidden fixed inset-0 top-[56px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md"
+                class="sm:hidden fixed inset-0 top-[56px] bg-gradient-to-br from-zinc-50 via-white to-amber-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-900 backdrop-blur-md"
                 role="dialog"
                 aria-label="Acceso al portal"
                 x-cloak
             >
                 <div class="h-full flex flex-col items-center justify-center px-6 py-10">
-                    <div class="w-full max-w-sm text-center space-y-6">
-                        <h2 class="text-2xl font-bold text-zinc-900 dark:text-white">Acceso al Portal</h2>
-                        <p class="text-sm text-zinc-600 dark:text-zinc-400">Ingresá o creá tu cuenta para continuar</p>
+                    <div class="w-full max-w-sm space-y-8">
+                        <!-- Header con icono -->
+                        <div class="text-center">
+                            <div class="inline-flex items-center justify-center w-20 h-20 mb-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl shadow-2xl">
+                                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                            </div>
+                            <h2 class="text-3xl font-black text-zinc-900 dark:text-white mb-2">Bienvenido</h2>
+                            <p class="text-base text-zinc-600 dark:text-zinc-400 font-medium">Portal para Propietarios e Inquilinos</p>
+                        </div>
 
                         @guest
-                        <div class="grid gap-3">
+                        <div class="grid gap-4">
                             <a
                                 href="{{ route('login') }}"
                                 x-on:click="mobileMenuOpen = false"
-                                class="block px-6 py-4 rounded-xl text-center text-base font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all shadow-md border-2 border-amber-300 dark:border-amber-700"
+                                class="group relative block px-8 py-5 rounded-2xl text-center text-lg font-bold text-amber-800 dark:text-amber-200 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 hover:from-amber-100 hover:to-amber-200 dark:hover:from-amber-900/30 dark:hover:to-amber-800/30 transition-all shadow-lg hover:shadow-xl border-2 border-amber-300 dark:border-amber-700 transform hover:scale-105"
                             >
-                                🔐 Ingresar
+                                <div class="flex items-center justify-center gap-3">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                    </svg>
+                                    <span>Ingresar</span>
+                                </div>
                             </a>
                             <a
                                 href="{{ route('register') }}"
                                 x-on:click="mobileMenuOpen = false"
-                                class="block px-6 py-4 rounded-xl text-center text-base bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg"
+                                class="group relative block px-8 py-5 rounded-2xl text-center text-lg font-bold text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-amber-400"
                             >
-                                ✨ Registrarse
+                                <div class="flex items-center justify-center gap-3">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    <span>Registrarse</span>
+                                </div>
                             </a>
                         </div>
                         @else
@@ -241,9 +259,16 @@
                         </div>
                         @endguest
 
-                        <button type="button" @click="mobileMenuOpen = false" class="w-full px-6 py-3 rounded-xl text-center text-sm font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                            Cerrar
-                        </button>
+                        <!-- Indicador de texto descriptivo -->
+                        <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                            <p class="text-sm text-center text-zinc-500 dark:text-zinc-500 mb-4">
+                                🏢 Portal para Propietarios e Inquilinos de<br>
+                                <span class="font-bold text-amber-600 dark:text-amber-400">El Talar de Martínez</span>
+                            </p>
+                            <button type="button" @click="mobileMenuOpen = false" class="w-full px-6 py-3 rounded-xl text-center text-sm font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors border border-zinc-300 dark:border-zinc-700">
+                                Cerrar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
