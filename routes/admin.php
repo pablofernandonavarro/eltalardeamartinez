@@ -37,6 +37,7 @@ use App\Livewire\Admin\Users\Index as UsersIndex;
 use App\Livewire\Admin\Amenities\Create as AmenitiesCreate;
 use App\Livewire\Admin\Amenities\Edit as AmenitiesEdit;
 use App\Livewire\Admin\Amenities\Index as AmenitiesIndex;
+use App\Livewire\Admin\Baneros\Index as BanerosIndex;
 
 Route::prefix('users')->name('users.')->group(function () {
     Route::get('/', UsersIndex::class)->name('index');
@@ -103,4 +104,8 @@ Route::prefix('amenities')->name('amenities.')->group(function () {
     Route::get('/', AmenitiesIndex::class)->name('index');
     Route::get('/create', AmenitiesCreate::class)->name('create');
     Route::get('/{amenity}/edit', AmenitiesEdit::class)->name('edit');
+});
+
+Route::prefix('baneros')->name('baneros.')->group(function () {
+    Route::get('/', BanerosIndex::class)->name('index');
 });
