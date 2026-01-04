@@ -22,12 +22,15 @@
                 <flux:navlist.item icon="user-group" :href="route('admin.residents.index')" :current="request()->routeIs('admin.residents.*')" wire:navigate>{{ __('Residentes') }}</flux:navlist.item>
                 <flux:navlist.item icon="building-office" :href="route('admin.buildings.index')" :current="request()->routeIs('admin.buildings.*')" wire:navigate>{{ __('Edificios') }}</flux:navlist.item>
                 <flux:navlist.item icon="currency-dollar" :href="route('admin.expenses.index')" :current="request()->routeIs('admin.expenses.*')" wire:navigate>{{ __('Expensas') }}</flux:navlist.item>
-                <flux:navlist.item icon="beaker" :href="route('admin.pools.index')" :current="request()->routeIs('admin.pools.index')" wire:navigate>{{ __('Piletas') }}</flux:navlist.item>
-                <flux:navlist.item icon="cog" :href="route('admin.pools.settings')" :current="request()->routeIs('admin.pools.settings')" wire:navigate>{{ __('Configuración Pileta') }}</flux:navlist.item>
-                <flux:navlist.item icon="user-circle" :href="route('admin.baneros.index')" :current="request()->routeIs('admin.baneros.*')" wire:navigate>{{ __('Bañeros y Turnos') }}</flux:navlist.item>
                 <flux:navlist.item icon="newspaper" :href="route('admin.news.index')" :current="request()->routeIs('admin.news.*')" wire:navigate>{{ __('Novedades') }}</flux:navlist.item>
                 <flux:navlist.item icon="sparkles" :href="route('admin.amenities.index')" :current="request()->routeIs('admin.amenities.*')" wire:navigate>{{ __('Amenidades') }}</flux:navlist.item>
                 <flux:navlist.item icon="document-text" :href="route('admin.rules.index')" :current="request()->routeIs('admin.rules.*')" wire:navigate>{{ __('Reglas del Sistema') }}</flux:navlist.item>
+            </flux:navlist.group>
+
+            <flux:navlist.group :heading="__('Piscinas')" expandable class="grid">
+                <flux:navlist.item icon="beaker" :href="route('admin.pools.index')" :current="request()->routeIs('admin.pools.index')" wire:navigate>{{ __('Ingresos y Registros') }}</flux:navlist.item>
+                <flux:navlist.item icon="cog" :href="route('admin.pools.settings')" :current="request()->routeIs('admin.pools.settings')" wire:navigate>{{ __('Configuración de Límites') }}</flux:navlist.item>
+                <flux:navlist.item icon="user-circle" :href="route('admin.baneros.index')" :current="request()->routeIs('admin.baneros.*')" wire:navigate>{{ __('Bañeros y Turnos') }}</flux:navlist.item>
             </flux:navlist.group>
             </flux:navlist>
 
