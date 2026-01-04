@@ -324,13 +324,18 @@ class DayPass extends Component
             return ['has_limits' => false];
         }
 
-        // Calcular invitados usados este mes
+        // Calcular invitados Únicos usados este mes (no suma reingresos)
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
-        $usedThisMonth = \App\Models\PoolEntry::forUnit($unit->id)
-            ->where('pool_id', $pool->id)
-            ->whereBetween('entered_at', [$monthStart, $monthEnd])
-            ->sum('guests_count');
+        
+        // Contar invitados únicos: obtener IDs distintos de pool_guests que ingresaron este mes
+        $usedThisMonth = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+            ->distinct('pool_entry_guests.pool_guest_id')
+            ->count('pool_entry_guests.pool_guest_id');
 
         // ⚠️ LÍMITES CONFIGURABLES DINÁMICAMENTE
         $allowExtraPayment = PoolSetting::get('allow_extra_payment', false);

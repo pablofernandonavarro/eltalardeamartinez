@@ -238,23 +238,27 @@ class Scanner extends Component
             return;
         }
         
-        // VALIDACIÓN 3: Cumplir con el límite mensual
+        // VALIDACIÓN 3: Cumplir con el límite mensual (invitados únicos)
         $unit = Unit::findOrFail($this->pass->unit_id);
         $pool = Pool::findOrFail($this->poolId);
         $today = now();
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
         
-        $usedThisMonth = \App\Models\PoolEntry::forUnit($unit->id)
-            ->where('pool_id', $pool->id)
-            ->whereBetween('entered_at', [$monthStart, $monthEnd])
-            ->sum('guests_count');
+        // Contar invitados únicos este mes (no suma reingresos)
+        $usedThisMonth = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+            ->distinct('pool_entry_guests.pool_guest_id')
+            ->count('pool_entry_guests.pool_guest_id');
         
         $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
         $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
         
         if ($guestsCount > $availableMonth) {
-            $this->addError('selectedGuestIds', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxGuestsMonth} invitados este mes. Solo puedes agregar {$availableMonth} invitados más.");
+            $this->addError('selectedGuestIds', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxGuestsMonth} invitados únicos este mes. Solo puedes agregar {$availableMonth} invitados más.");
             
             return;
         }
@@ -471,13 +475,18 @@ class Scanner extends Component
             ? PoolSetting::get('max_guests_weekend', 2) 
             : PoolSetting::get('max_guests_weekday', 4);
 
-        // Calcular invitados usados este mes
+        // Calcular invitados únicos usados este mes (no suma reingresos)
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
-        $usedThisMonth = \App\Models\PoolEntry::forUnit($unit->id)
-            ->where('pool_id', $pool->id)
-            ->whereBetween('entered_at', [$monthStart, $monthEnd])
-            ->sum('guests_count');
+        
+        // Contar invitados únicos
+        $usedThisMonth = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+            ->distinct('pool_entry_guests.pool_guest_id')
+            ->count('pool_entry_guests.pool_guest_id');
 
         $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
         $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
