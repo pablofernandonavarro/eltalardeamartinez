@@ -99,7 +99,7 @@ class Resident extends Model
     }
 
     /**
-     * Check if the resident is a minor (under 18 years old).
+     * Check if the resident is a minor (under 15 years old for QR purposes).
      */
     public function isMinor(): bool
     {
@@ -107,7 +107,7 @@ class Resident extends Model
             return false;
         }
 
-        return $this->birth_date->age < 18;
+        return $this->birth_date->age < 15;
     }
 
     /**
@@ -138,7 +138,7 @@ class Resident extends Model
     }
 
     /**
-     * Generate a unique QR token for this resident (only if 18+ years old and has auth account).
+     * Generate a unique QR token for this resident (only if 15+ years old and has auth account).
      */
     public function generateQrToken(): void
     {
@@ -151,7 +151,7 @@ class Resident extends Model
     }
 
     /**
-     * Check if resident can have a personal QR (must be 18+ and have auth account).
+     * Check if resident can have a personal QR (must be 15+ and have auth account).
      */
     public function canHavePersonalQr(): bool
     {
@@ -159,7 +159,7 @@ class Resident extends Model
     }
 
     /**
-     * Check if resident is eligible to be invited (18+ and no auth account yet).
+     * Check if resident is eligible to be invited (15+ and no auth account yet).
      */
     public function canBeInvited(): bool
     {
