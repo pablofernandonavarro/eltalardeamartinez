@@ -63,10 +63,36 @@
 
         {{-- Límites según el tipo de regla --}}
         @if($type === 'unit_occupancy')
+            <div class="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-400 rounded-lg mb-4">
+                <div class="font-semibold mb-2">🏠 Configuración de Límite de Residentes</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Puedes elegir entre dos modos:
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li><strong>Por Ambiente:</strong> Cálculo automático basado en número de ambientes</li>
+                        <li><strong>Límite Fijo:</strong> Número fijo de residentes sin importar ambientes</li>
+                    </ul>
+                </div>
+            </div>
+
             <flux:field>
-                <flux:label>Máximo de Residentes Permitidos <span class="text-red-500">*</span></flux:label>
-                <flux:input type="number" wire:model="limits.max_residents" placeholder="Ej: 4" min="1" required />
+                <flux:label>Residentes por Ambiente <span class="text-red-500">*</span></flux:label>
+                <flux:input type="number" wire:model="limits.residents_per_room" placeholder="Ej: 2" min="1" max="10" />
+                <flux:error name="limits.residents_per_room" />
+                <flux:description>
+                    <strong>Fórmula:</strong> Ambientes × Residentes por Ambiente = Máximo permitido<br>
+                    <strong>Ejemplo:</strong> Una unidad de 3 ambientes con valor 2 = máximo 6 residentes
+                </flux:description>
+            </flux:field>
+
+            <div class="text-sm text-gray-500 p-3 bg-zinc-100 dark:bg-zinc-800 rounded">
+                <strong>Nota:</strong> Si prefieres un límite fijo sin considerar ambientes, usa el campo siguiente y deja este en blanco.
+            </div>
+
+            <flux:field>
+                <flux:label>Máximo Fijo de Residentes (Opcional)</flux:label>
+                <flux:input type="number" wire:model="limits.max_residents" placeholder="Ej: 4" min="1" />
                 <flux:error name="limits.max_residents" />
+                <flux:description>Solo se usa si NO está configurado "Residentes por Ambiente"</flux:description>
             </flux:field>
         @elseif($type === 'pool_weekly_guests')
             <flux:field>
