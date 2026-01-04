@@ -84,7 +84,11 @@ class Scanner extends Component
             return;
         }
 
-        $this->selectedGuestIds = $this->pass->guests->pluck('id')->map(fn ($id) => (int) $id)->all();
+        // Aplicar límite del reglamento
+        $maxAllowed = $this->calculateMaxGuestsAllowedToday();
+        $allGuestIds = $this->pass->guests->pluck('id')->map(fn ($id) => (int) $id)->all();
+        
+        $this->selectedGuestIds = array_slice($allGuestIds, 0, $maxAllowed);
     }
 
     public function clearGuests(): void
@@ -158,8 +162,10 @@ class Scanner extends Component
         $openEntry = $this->findOpenEntryForPass();
         $this->action = $openEntry ? 'exit' : 'entry';
 
-        // Por defecto, seleccionar todos los invitados precargados
-        $this->selectedGuestIds = $pass->guests->pluck('id')->map(fn ($id) => (int) $id)->all();
+        // Por defecto, seleccionar todos los invitados precargados (respetando límite del reglamento)
+        $maxAllowed = $this->calculateMaxGuestsAllowedToday();
+        $allGuestIds = $pass->guests->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $this->selectedGuestIds = array_slice($allGuestIds, 0, $maxAllowed);
     }
 
     public function confirm(PoolAccessService $poolAccessService): void
@@ -207,8 +213,21 @@ class Scanner extends Component
 
         $guestsCount = count($this->selectedGuestIds);
 
+        // VALIDACIÓN 1: No más que los precargados
         if ($guestsCount > $this->pass->guests_allowed) {
             $this->addError('selectedGuestIds', 'No puede registrar más invitados que los precargados por el usuario.');
+
+            return;
+        }
+
+        // VALIDACIÓN 2: Cumplir con el reglamento (límite absoluto)
+        $maxAllowedByRegulation = $this->calculateMaxGuestsAllowedToday();
+        if ($guestsCount > $maxAllowedByRegulation) {
+            $isWeekend = now()->isWeekend();
+            $limit = $isWeekend ? 2 : 4;
+            $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
+            
+            $this->addError('selectedGuestIds', "REGLAMENTO VIOLADO: Máximo {$limit} invitados permitidos en {$dayType}. No se aceptan pagos por invitados extra.");
 
             return;
         }
@@ -366,6 +385,20 @@ class Scanner extends Component
         $this->action = 'entry';
         $this->poolId = null;
         // NO limpiamos token, pass ni scannedResident para permitir reingreso inmediato
+    }
+
+    /**
+     * Calcula el límite máximo de invitados según el reglamento para HOY.
+     * 
+     * @return int
+     */
+    protected function calculateMaxGuestsAllowedToday(): int
+    {
+        $isWeekend = now()->isWeekend();
+        
+        // Lunes a Viernes: Máximo 4 invitados
+        // Sábado, Domingo y Feriados: Máximo 2 invitados
+        return $isWeekend ? 2 : 4;
     }
 
     public function render()

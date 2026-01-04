@@ -6,48 +6,66 @@
         </p>
     </div>
 
-    {{-- Información de límites según reglamento --}}
+    {{-- Panel de Estado del Reglamento --}}
     @if($limitsInfo['has_limits'])
-        <flux:callout color="{{ $limitsInfo['available_month'] > 0 ? 'blue' : 'yellow' }}" icon="information-circle" class="mb-6">
-            <div class="space-y-3">
-                <div>
-                    <strong class="text-base">📅 Límites del Reglamento</strong>
+        <div class="mb-6 p-6 border-2 rounded-xl {{ $limitsInfo['is_weekend'] ? 'border-orange-400 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20' : 'border-blue-400 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20' }}">
+            <div class="space-y-4">
+                {{-- Tipo de Día --}}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="h-12 w-12 rounded-full {{ $limitsInfo['is_weekend'] ? 'bg-orange-500' : 'bg-blue-500' }} flex items-center justify-center text-white text-xl font-bold">
+                            {{ $limitsInfo['is_weekend'] ? '🌞' : '💼' }}
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wider {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }} font-semibold">
+                                {{ $limitsInfo['is_weekend'] ? 'FIN DE SEMANA / FERIADO' : 'DÍA LABORAL (LUNES A VIERNES)' }}
+                            </div>
+                            <div class="text-lg font-bold text-gray-800 dark:text-gray-100">
+                                {{ now()->translatedFormat('l, d \d\e F') }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                @if($limitsInfo['is_weekend'])
-                    <div class="text-sm space-y-1">
-                        <div><strong>Sábados, Domingos y Feriados:</strong></div>
-                        <div>• Máximo <strong>2 invitados por mes</strong> por unidad funcional.</div>
-                        <div class="mt-2 px-3 py-2 bg-white/50 dark:bg-zinc-800/50 rounded">
-                            <strong>Este mes:</strong> Usaste {{ $limitsInfo['used_this_month'] }} de {{ $limitsInfo['max_guests_month'] }} invitados. 
-                            @if($limitsInfo['available_month'] > 0)
-                                <span class="text-green-600 dark:text-green-400 font-semibold">Te quedan {{ $limitsInfo['available_month'] }} disponibles.</span>
-                            @else
-                                <span class="text-red-600 dark:text-red-400 font-semibold">Cupo agotado.</span>
-                            @endif
+                {{-- Cupo Según Reglamento --}}
+                <div class="p-4 bg-white dark:bg-zinc-900 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">📋 Cupo Según Reglamento</span>
+                        <span class="text-3xl font-black {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
+                            {{ $limitsInfo['max_guests_today'] }}
+                        </span>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ $limitsInfo['message'] }}
+                    </div>
+                </div>
+
+                {{-- Estado de Cumplimiento --}}
+                @if($selectedGuestsCount <= $limitsInfo['max_guests_today'])
+                    <div class="p-3 bg-green-50 dark:bg-green-950/30 border-2 border-green-500 rounded-lg">
+                        <div class="flex items-center gap-2 text-green-700 dark:text-green-400 font-semibold">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>✅ REGLAMENTO RESPETADO: Acceso Concedido</span>
                         </div>
                     </div>
                 @else
-                    <div class="text-sm space-y-1">
-                        <div><strong>Lunes a Viernes:</strong></div>
-                        <div>• Hasta <strong>2 invitados por día</strong></div>
-                        <div>• Máximo <strong>5 visitas mensuales</strong> por unidad funcional</div>
-                        <div class="mt-2 px-3 py-2 bg-white/50 dark:bg-zinc-800/50 rounded">
-                            <strong>Este mes:</strong> Usaste {{ $limitsInfo['used_this_month'] }} de {{ $limitsInfo['max_guests_month'] }} invitados. 
-                            @if($limitsInfo['available_month'] > 0)
-                                <span class="text-green-600 dark:text-green-400 font-semibold">Te quedan {{ $limitsInfo['available_month'] }} disponibles.</span>
-                            @else
-                                <span class="text-red-600 dark:text-red-400 font-semibold">Cupo agotado.</span>
-                            @endif
+                    <div class="p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-500 rounded-lg">
+                        <div class="flex items-center gap-2 text-red-700 dark:text-red-400 font-semibold">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>⛔ LÍMITE EXCEDIDO: Ajustado automáticamente</span>
                         </div>
                     </div>
                 @endif
 
-                <div class="text-xs text-gray-600 dark:text-gray-400 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <strong>⚠️ Importante:</strong> Como anfitrión, debés estar presente obligatoriamente durante toda la permanencia de tus invitados. Los préstamos transitorios de unidad no dan derecho al uso de la pileta.
+                <div class="text-xs text-gray-600 dark:text-gray-400 pt-3 border-t border-gray-300 dark:border-gray-700">
+                    <strong>⚠️ Importante:</strong> Como anfitrión, debés estar presente obligatoriamente durante toda la permanencia de tus invitados. Los préstamos transitorios de unidad no dan derecho al uso de la pileta. <strong class="text-red-600 dark:text-red-400">No existe la posibilidad de pagar por invitados extra.</strong>
                 </div>
             </div>
-        </flux:callout>
+        </div>
     @endif
 
     @if($errors->has('error'))
@@ -104,11 +122,19 @@
                         @else
                             <div class="space-y-2 max-h-[320px] overflow-auto">
                                 @foreach($guests as $guest)
-                                    <label class="flex items-center gap-3 p-3 border border-zinc-200 dark:border-zinc-700 rounded">
+                                    @php
+                                        $isSelected = in_array($guest->id, $selectedGuestIds);
+                                        $currentCount = count($selectedGuestIds);
+                                        $maxAllowed = $limitsInfo['max_guests_today'] ?? 999;
+                                        // Deshabilitar checkbox si: no está seleccionado Y ya se alcanzó el límite
+                                        $isDisabled = !$isSelected && $currentCount >= $maxAllowed;
+                                    @endphp
+                                    <label class="flex items-center gap-3 p-3 border {{ $isDisabled ? 'border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 opacity-50 cursor-not-allowed' : 'border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800' }} rounded">
                                         <input
                                             type="checkbox"
                                             value="{{ $guest->id }}"
                                             wire:model="selectedGuestIds"
+                                            @disabled($isDisabled)
                                         />
 
                                         @if($guest->profilePhotoUrl())

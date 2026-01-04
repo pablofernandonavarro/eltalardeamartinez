@@ -37,12 +37,31 @@ class DayPass extends Component
     {
         $this->loadOrCreatePass();
         $this->loadCurrentResident();
+        
+        // SANITIZACIÓN AL CAMBIAR UNIDAD: Re-validar límites
+        $limits = $this->calculateAvailableLimits();
+        if ($limits['has_limits'] && $limits['max_guests_today'] !== null) {
+            $maxAllowed = $limits['max_guests_today'];
+            if (count($this->selectedGuestIds) > $maxAllowed) {
+                $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, $maxAllowed);
+            }
+        }
     }
 
     public function updatedSelectedGuestIds(): void
     {
         // Normalizar: Livewire puede mandar strings y/o duplicados
         $this->selectedGuestIds = array_values(array_unique(array_map('intval', $this->selectedGuestIds)));
+        
+        // SANITIZACIÓN AUTOMÁTICA: Forzar el límite del reglamento
+        $limits = $this->calculateAvailableLimits();
+        if ($limits['has_limits'] && $limits['max_guests_today'] !== null) {
+            $maxAllowed = $limits['max_guests_today'];
+            if (count($this->selectedGuestIds) > $maxAllowed) {
+                // TRUNCAR AUTOMÁTICAMENTE: No se puede exceder el límite
+                $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, $maxAllowed);
+            }
+        }
     }
 
     protected function loadOrCreatePass(): void
@@ -185,6 +204,20 @@ class DayPass extends Component
         // Si alguno no corresponde, lo descartamos (y volvemos a sincronizar limpio)
         $this->selectedGuestIds = array_values(array_unique($allowedGuests));
 
+        // VALIDACIÓN TRIPLE: Forzar cumplimiento absoluto del reglamento
+        $limitsInfo = $this->calculateAvailableLimits();
+        $maxAllowed = $limitsInfo['max_guests_today'] ?? 999;
+        
+        if (count($this->selectedGuestIds) > $maxAllowed) {
+            $isWeekend = $limitsInfo['is_weekend'] ?? false;
+            $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
+            
+            $this->addError('error', "REGLAMENTO VIOLADO: Máximo {$maxAllowed} invitados permitidos en {$dayType}. El sistema ha ajustado automáticamente la cantidad.");
+            
+            // Truncar automáticamente
+            $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, $maxAllowed);
+        }
+
         $this->pass->guests()->sync($this->selectedGuestIds);
         $this->pass->update([
             'guests_allowed' => count($this->selectedGuestIds),
@@ -286,40 +319,32 @@ class DayPass extends Component
             ->whereBetween('entered_at', [$monthStart, $monthEnd])
             ->sum('guests_count');
 
-        // Límites según día de semana
+        // ⚠️ LÍMITES ABSOLUTOS DEL REGLAMENTO - NO MODIFICABLES
         if ($isWeekend) {
-            // Fin de semana: máximo 2 invitados por mes
-            $maxGuestsMonth = 2;
+            // FINES DE SEMANA Y FERIADOS: Máximo 2 invitados (límite absoluto por día)
             $maxGuestsToday = 2;
-            $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
 
             return [
                 'has_limits' => true,
                 'is_weekend' => true,
-                'max_guests_today' => min($maxGuestsToday, $availableMonth),
-                'max_guests_month' => $maxGuestsMonth,
+                'max_guests_today' => $maxGuestsToday,
+                'max_guests_month' => null, // No hay límite mensual
                 'used_this_month' => $usedThisMonth,
-                'available_month' => $availableMonth,
-                'message' => $availableMonth > 0
-                    ? "Este mes podés llevar hasta {$availableMonth} invitado(s) los fines de semana."
-                    : 'Ya utilizaste el cupo mensual de invitados para fines de semana (2 invitados/mes).',
+                'available_month' => null,
+                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. No se aceptan pagos por invitados extra.",
             ];
         } else {
-            // Lunes a viernes: máximo 2 por día, 5 al mes
-            $maxGuestsToday = 2;
-            $maxGuestsMonth = 5;
-            $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+            // LUNES A VIERNES: Máximo 4 invitados (límite absoluto por día)
+            $maxGuestsToday = 4;
 
             return [
                 'has_limits' => true,
                 'is_weekend' => false,
-                'max_guests_today' => min($maxGuestsToday, $availableMonth),
-                'max_guests_month' => $maxGuestsMonth,
+                'max_guests_today' => $maxGuestsToday,
+                'max_guests_month' => null, // No hay límite mensual
                 'used_this_month' => $usedThisMonth,
-                'available_month' => $availableMonth,
-                'message' => $availableMonth > 0
-                    ? "Hoy podés llevar hasta {$maxGuestsToday} invitados. Este mes te quedan {$availableMonth} de {$maxGuestsMonth} disponibles."
-                    : 'Ya utilizaste el cupo mensual de 5 invitados para días de semana.',
+                'available_month' => null,
+                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. No se aceptan pagos por invitados extra.",
             ];
         }
     }
