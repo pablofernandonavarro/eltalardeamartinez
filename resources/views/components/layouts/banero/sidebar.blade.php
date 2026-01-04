@@ -11,6 +11,23 @@
                 <x-app-logo />
             </a>
 
+            @php
+                $activeShift = \App\Models\PoolShift::getActiveShiftForUser(auth()->id());
+            @endphp
+
+            @if($activeShift)
+                <div class="mx-2 mb-4 p-3 bg-green-500 dark:bg-green-600 rounded-lg">
+                    <div class="flex items-center gap-2 text-white mb-1">
+                        <flux:icon.check class="size-4" />
+                        <span class="text-xs font-semibold uppercase tracking-wide">En Turno</span>
+                    </div>
+                    <div class="text-white font-bold">{{ $activeShift->pool->name }}</div>
+                    <div class="text-xs text-green-100 mt-1">
+                        Desde {{ $activeShift->started_at->format('H:i') }}
+                    </div>
+                </div>
+            @endif
+
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Mi Turno')" class="grid">
                     <flux:navlist.item icon="clock" :href="route('banero.my-shift')" :current="request()->routeIs('banero.my-shift')" wire:navigate>
