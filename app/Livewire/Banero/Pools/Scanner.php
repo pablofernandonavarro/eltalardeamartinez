@@ -54,6 +54,11 @@ class Scanner extends Component
 
     public function updatedToken(): void
     {
+        \Log::info('📱 updatedToken disparado', [
+            'token_length' => strlen(trim($this->token)),
+            'will_load' => strlen(trim($this->token)) >= 10
+        ]);
+        
         // Autocargar cuando el scanner setea el token
         if (strlen(trim($this->token)) >= 10) {
             $this->loadPass();
@@ -102,7 +107,11 @@ class Scanner extends Component
 
     public function loadPass(): void
     {
-        \Log::info('loadPass llamado con token:', ['token' => substr($this->token, 0, 20) . '...']);
+        \Log::info('🔍 loadPass INICIADO', [
+            'token' => substr($this->token, 0, 20) . '...',
+            'token_completo' => $this->token,
+            'poolId' => $this->poolId
+        ]);
         
         $this->resetErrorBag();
         $this->pass = null;
@@ -158,32 +167,55 @@ class Scanner extends Component
         }
 
         if ($pass->date->toDateString() !== now()->toDateString()) {
+            \Log::warning('⚠️ Fecha incorrecta', ['pass_date' => $pass->date->toDateString(), 'today' => now()->toDateString()]);
             $this->addError('token', 'El pase no corresponde a hoy.');
 
             return;
         }
 
         $this->pass = $pass;
+        \Log::info('✅ Pass cargado', [
+            'pass_id' => $pass->id,
+            'unit_id' => $pass->unit_id,
+            'guests_count' => $pass->guests->count(),
+            'guests_allowed' => $pass->guests_allowed
+        ]);
 
         // Acción automática según estado actual
         $openEntry = $this->findOpenEntryForPass();
         $this->action = $openEntry ? 'exit' : 'entry';
+        \Log::info('📍 Acción determinada', ['action' => $this->action, 'openEntry_exists' => (bool)$openEntry]);
 
         // Por defecto, seleccionar todos los invitados precargados (respetando límite del reglamento)
         $maxAllowed = $this->calculateMaxGuestsAllowedToday();
         $allGuestIds = $pass->guests->pluck('id')->map(fn ($id) => (int) $id)->all();
         $this->selectedGuestIds = array_slice($allGuestIds, 0, $maxAllowed);
+        \Log::info('👥 Invitados seleccionados', [
+            'maxAllowed' => $maxAllowed,
+            'allGuestIds' => $allGuestIds,
+            'selectedGuestIds' => $this->selectedGuestIds
+        ]);
     }
 
     public function confirm(PoolAccessService $poolAccessService): void
     {
+        \Log::info('🟢 confirm() LLAMADO', [
+            'has_pass' => (bool)$this->pass,
+            'has_resident' => (bool)$this->scannedResident,
+            'action' => $this->action,
+            'poolId' => $this->poolId,
+            'selectedGuestIds' => $this->selectedGuestIds
+        ]);
+        
         if (! $this->pass && ! $this->scannedResident) {
+            \Log::error('❌ No hay pass ni residente');
             $this->addError('error', 'Primero escanee un QR.');
 
             return;
         }
 
         if ($this->action !== 'entry') {
+            \Log::warning('⚠️ Acción no es entry', ['action' => $this->action]);
             $this->addError('error', 'Este QR indica que hay un ingreso abierto. Registre la salida.');
 
             return;
