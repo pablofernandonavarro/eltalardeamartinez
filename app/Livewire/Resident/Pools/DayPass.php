@@ -208,7 +208,11 @@ class DayPass extends Component
         // VALIDACIÓN TRIPLE: Forzar cumplimiento absoluto del reglamento
         $limitsInfo = $this->calculateAvailableLimits();
         $maxAllowed = $limitsInfo['max_guests_today'] ?? 999;
+        $maxMonthly = $limitsInfo['max_guests_month'] ?? 999;
+        $usedThisMonth = $limitsInfo['used_this_month'] ?? 0;
+        $availableMonth = $limitsInfo['available_month'] ?? 999;
         
+        // Validar límite diario
         if (count($this->selectedGuestIds) > $maxAllowed) {
             $isWeekend = $limitsInfo['is_weekend'] ?? false;
             $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
@@ -217,6 +221,14 @@ class DayPass extends Component
             
             // Truncar automáticamente
             $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, $maxAllowed);
+        }
+        
+        // Validar límite mensual
+        if (count($this->selectedGuestIds) > $availableMonth) {
+            $this->addError('error', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxMonthly} invitados este mes. Solo puedes agregar {$availableMonth} invitados más.");
+            
+            // Truncar al disponible mensual
+            $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, (int)$availableMonth);
         }
 
         $this->pass->guests()->sync($this->selectedGuestIds);
@@ -322,6 +334,8 @@ class DayPass extends Component
 
         // ⚠️ LÍMITES CONFIGURABLES DINÁMICAMENTE
         $allowExtraPayment = PoolSetting::get('allow_extra_payment', false);
+        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
+        $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
         
         if ($isWeekend) {
             // FINES DE SEMANA Y FERIADOS: Leer de configuración
@@ -335,11 +349,11 @@ class DayPass extends Component
                 'has_limits' => true,
                 'is_weekend' => true,
                 'max_guests_today' => $maxGuestsToday,
-                'max_guests_month' => null,
+                'max_guests_month' => $maxGuestsMonth,
                 'used_this_month' => $usedThisMonth,
-                'available_month' => null,
+                'available_month' => $availableMonth,
                 'allow_extra_payment' => $allowExtraPayment,
-                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. {$paymentMessage}",
+                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
             ];
         } else {
             // LUNES A VIERNES: Leer de configuración
@@ -353,11 +367,11 @@ class DayPass extends Component
                 'has_limits' => true,
                 'is_weekend' => false,
                 'max_guests_today' => $maxGuestsToday,
-                'max_guests_month' => null,
+                'max_guests_month' => $maxGuestsMonth,
                 'used_this_month' => $usedThisMonth,
-                'available_month' => null,
+                'available_month' => $availableMonth,
                 'allow_extra_payment' => $allowExtraPayment,
-                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. {$paymentMessage}",
+                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
             ];
         }
     }

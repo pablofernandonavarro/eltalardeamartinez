@@ -72,6 +72,30 @@
                     </flux:field>
                 </div>
 
+                {{-- Límite Mensual --}}
+                <div class="p-4 bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-400 rounded-lg">
+                    <flux:field>
+                        <flux:label class="flex items-center gap-2 text-base font-semibold">
+                            <span class="text-2xl">📅</span>
+                            <span>Límite Mensual de Invitados</span>
+                        </flux:label>
+                        <flux:description>
+                            Máximo total de invitados permitidos por unidad por mes (independiente del día)
+                        </flux:description>
+                        <div class="flex items-center gap-4 mt-2">
+                            <flux:input 
+                                type="number" 
+                                wire:model="maxGuestsMonth" 
+                                min="0" 
+                                max="50"
+                                class="w-24 text-xl font-bold text-center"
+                            />
+                            <span class="text-sm text-gray-600 dark:text-gray-400">invitados por mes</span>
+                        </div>
+                        <flux:error name="maxGuestsMonth" />
+                    </flux:field>
+                </div>
+
                 {{-- Pagos Extra --}}
                 <div class="p-4 bg-red-50 dark:bg-red-950/30 border-2 border-red-400 rounded-lg">
                     <flux:field>

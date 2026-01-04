@@ -9,6 +9,7 @@ class Settings extends Component
 {
     public int $maxGuestsWeekday = 4;
     public int $maxGuestsWeekend = 2;
+    public int $maxGuestsMonth = 5;
     public bool $allowExtraPayment = false;
 
     public function mount(): void
@@ -20,6 +21,7 @@ class Settings extends Component
     {
         $this->maxGuestsWeekday = PoolSetting::get('max_guests_weekday', 4);
         $this->maxGuestsWeekend = PoolSetting::get('max_guests_weekend', 2);
+        $this->maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
         $this->allowExtraPayment = PoolSetting::get('allow_extra_payment', false);
     }
 
@@ -28,6 +30,7 @@ class Settings extends Component
         $this->validate([
             'maxGuestsWeekday' => 'required|integer|min:0|max:20',
             'maxGuestsWeekend' => 'required|integer|min:0|max:20',
+            'maxGuestsMonth' => 'required|integer|min:0|max:50',
             'allowExtraPayment' => 'boolean',
         ], [
             'maxGuestsWeekday.required' => 'El límite de días de semana es obligatorio.',
@@ -36,10 +39,14 @@ class Settings extends Component
             'maxGuestsWeekend.required' => 'El límite de fin de semana es obligatorio.',
             'maxGuestsWeekend.min' => 'El límite debe ser al menos 0.',
             'maxGuestsWeekend.max' => 'El límite no puede exceder 20.',
+            'maxGuestsMonth.required' => 'El límite mensual es obligatorio.',
+            'maxGuestsMonth.min' => 'El límite debe ser al menos 0.',
+            'maxGuestsMonth.max' => 'El límite no puede exceder 50.',
         ]);
 
         PoolSetting::set('max_guests_weekday', $this->maxGuestsWeekday);
         PoolSetting::set('max_guests_weekend', $this->maxGuestsWeekend);
+        PoolSetting::set('max_guests_month', $this->maxGuestsMonth);
         PoolSetting::set('allow_extra_payment', $this->allowExtraPayment ? 'true' : 'false');
 
         // Limpiar caché para que los cambios se apliquen inmediatamente
@@ -52,6 +59,7 @@ class Settings extends Component
     {
         $this->maxGuestsWeekday = 4;
         $this->maxGuestsWeekend = 2;
+        $this->maxGuestsMonth = 5;
         $this->allowExtraPayment = false;
 
         session()->flash('info', 'Valores restaurados a los predeterminados. Haz clic en "Guardar Configuración" para aplicarlos.');
