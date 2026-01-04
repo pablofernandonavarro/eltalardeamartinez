@@ -8,58 +8,56 @@
 
     {{-- Panel de Estado del Reglamento --}}
     @if($limitsInfo['has_limits'])
-        <div class="mb-6 p-6 border-2 rounded-xl {{ $limitsInfo['is_weekend'] ? 'border-orange-400 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20' : 'border-blue-400 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20' }}">
-            <div class="space-y-4">
+        <div class="mb-6 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+            <div class="space-y-3">
                 {{-- Tipo de Día --}}
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="h-12 w-12 rounded-full {{ $limitsInfo['is_weekend'] ? 'bg-orange-500' : 'bg-blue-500' }} flex items-center justify-center text-white text-xl font-bold">
-                            {{ $limitsInfo['is_weekend'] ? '🌞' : '💼' }}
+                <div class="flex items-center gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-700">
+                    <div class="h-10 w-10 rounded-full {{ $limitsInfo['is_weekend'] ? 'bg-orange-500' : 'bg-blue-500' }} flex items-center justify-center text-white text-lg">
+                        {{ $limitsInfo['is_weekend'] ? '🌞' : '💼' }}
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-xs uppercase tracking-wider {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }} font-semibold">
+                            {{ $limitsInfo['is_weekend'] ? 'FIN DE SEMANA / FERIADO' : 'DÍA LABORAL' }}
                         </div>
-                        <div>
-                            <div class="text-xs uppercase tracking-wider {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }} font-semibold">
-                                {{ $limitsInfo['is_weekend'] ? 'FIN DE SEMANA / FERIADO' : 'DÍA LABORAL (LUNES A VIERNES)' }}
-                            </div>
-                            <div class="text-lg font-bold text-gray-800 dark:text-gray-100">
-                                {{ now()->translatedFormat('l, d \d\e F') }}
-                            </div>
+                        <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
+                            {{ now()->translatedFormat('l, d \\d\\e F') }}
                         </div>
                     </div>
                 </div>
 
-                {{-- Cupo Según Reglamento --}}
-                <div class="p-4 bg-white dark:bg-zinc-900 rounded-lg border-2 border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">📋 Cupo Diario</span>
-                        <span class="text-3xl font-black {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
+                {{-- Grid de Cupos --}}
+                <div class="grid grid-cols-2 gap-3">
+                    {{-- Cupo Diario --}}
+                    <div class="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                        <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">📋 Hoy</div>
+                        <div class="text-2xl font-black {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
                             {{ $limitsInfo['max_guests_today'] }}
-                        </span>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">máx. invitados</div>
                     </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                        Máximo de invitados permitidos hoy
+
+                    {{-- Uso Mensual --}}
+                    <div class="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                        <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">📅 Este mes</div>
+                        <div class="text-2xl font-black {{ $limitsInfo['available_month'] <= 0 ? 'text-red-600 dark:text-red-400' : ($limitsInfo['available_month'] <= 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400') }}">
+                            {{ $limitsInfo['available_month'] }}
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ $limitsInfo['used_this_month'] }}/{{ $limitsInfo['max_guests_month'] }} usados
+                        </div>
                     </div>
                 </div>
 
-                {{-- Uso Mensual --}}
-                <div class="p-4 bg-white dark:bg-zinc-900 rounded-lg border-2 border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">📅 Uso Mensual</span>
-                        <div class="text-right">
-                            <div class="text-3xl font-black {{ $limitsInfo['available_month'] <= 0 ? 'text-red-600 dark:text-red-400' : ($limitsInfo['available_month'] <= 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400') }}">
-                                {{ $limitsInfo['available_month'] }}
-                            </div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">disponibles</div>
-                        </div>
+                {{-- Alertas --}}
+                @if($limitsInfo['available_month'] <= 0)
+                    <div class="p-2 bg-red-50 dark:bg-red-950/30 border border-red-500 rounded text-xs text-red-700 dark:text-red-400 font-semibold">
+                        ⚠️ LÍMITE MENSUAL AGOTADO
                     </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                        Usados: <strong>{{ $limitsInfo['used_this_month'] }}</strong> de <strong>{{ $limitsInfo['max_guests_month'] }}</strong> este mes
-                        @if($limitsInfo['available_month'] <= 0)
-                            <span class="block mt-1 text-red-600 dark:text-red-400 font-bold">⚠️ LÍMITE MENSUAL AGOTADO</span>
-                        @elseif($limitsInfo['available_month'] <= 2)
-                            <span class="block mt-1 text-yellow-600 dark:text-yellow-400 font-semibold">⚠️ Quedan pocos invitados disponibles</span>
-                        @endif
+                @elseif($limitsInfo['available_month'] <= 2)
+                    <div class="p-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-500 rounded text-xs text-yellow-700 dark:text-yellow-400 font-semibold">
+                        ⚠️ Quedan pocos invitados disponibles este mes
                     </div>
-                </div>
+                @endif
 
                 {{-- Estado de Cumplimiento --}}
                 @if($selectedGuestsCount <= $limitsInfo['max_guests_today'])
