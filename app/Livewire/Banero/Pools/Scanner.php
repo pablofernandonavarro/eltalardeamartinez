@@ -102,6 +102,8 @@ class Scanner extends Component
 
     public function loadPass(): void
     {
+        \Log::info('loadPass llamado con token:', ['token' => substr($this->token, 0, 20) . '...']);
+        
         $this->resetErrorBag();
         $this->pass = null;
         $this->scannedResident = null;
@@ -113,6 +115,7 @@ class Scanner extends Component
 
         $token = trim($this->token);
         if ($token === '') {
+            \Log::warning('Token vacío');
             $this->addError('token', 'Debe ingresar o escanear un token.');
 
             return;
