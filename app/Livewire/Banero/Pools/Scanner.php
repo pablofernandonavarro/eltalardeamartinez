@@ -176,7 +176,31 @@ class Scanner extends Component
             return;
         }
 
-        // Si no es un QR de residente, buscar como day-pass
+        // Si no es QR de residente, buscar como QR personal de usuario
+        $user = User::query()
+            ->where('qr_token', $token)
+            ->whereNotNull('approved_at')
+            ->first();
+
+        if ($user) {
+            // Es un QR personal de usuario (propietario/inquilino)
+            // Crear un "residente virtual" con los datos del usuario para mantener compatibilidad
+            $this->scannedResident = new Resident([
+                'name' => $user->name,
+                'unit_id' => $user->currentUnitUsers()->first()?->unit_id,
+            ]);
+            $this->scannedResident->id = null; // Marcar como "virtual"
+            $this->scannedResident->user_id = $user->id;
+            $this->scannedResident->auth_user_id = $user->id;
+            
+            // Acción automática según estado actual
+            $openEntry = $this->findOpenEntryForUser($user);
+            $this->action = $openEntry ? 'exit' : 'entry';
+
+            return;
+        }
+
+        // Si no es un QR de usuario ni residente, buscar como day-pass
         $pass = PoolDayPass::query()
             ->with(['unit.building.complex', 'user', 'resident', 'guests', 'poolEntry.pool', 'poolEntry.guests'])
             ->where('token', $token)
@@ -410,6 +434,23 @@ class Scanner extends Component
         return \App\Models\PoolEntry::query()
             ->where('unit_id', $resident->unit_id)
             ->where('resident_id', $resident->id)
+            ->whereDate('entered_at', now()->toDateString())
+            ->whereNull('exited_at')
+            ->latest('entered_at')
+            ->first();
+    }
+
+    protected function findOpenEntryForUser(User $user): ?\App\Models\PoolEntry
+    {
+        $unitId = $user->currentUnitUsers()->first()?->unit_id;
+        if (!$unitId) {
+            return null;
+        }
+
+        return \App\Models\PoolEntry::query()
+            ->where('unit_id', $unitId)
+            ->where('user_id', $user->id)
+            ->whereNull('resident_id')
             ->whereDate('entered_at', now()->toDateString())
             ->whereNull('exited_at')
             ->latest('entered_at')

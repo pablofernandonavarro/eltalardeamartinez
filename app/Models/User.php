@@ -29,6 +29,7 @@ class User extends Authenticatable
         'role',
         'approved_at',
         'requested_unit_id',
+        'qr_token',
     ];
 
     /**
