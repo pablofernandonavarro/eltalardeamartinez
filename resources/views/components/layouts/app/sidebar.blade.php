@@ -15,11 +15,14 @@
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('admin.dashboard')" :current="request()->routeIs('admin.dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                 </flux:navlist.group>
-            <flux:navlist.group :heading="__('Gestión')" class="grid">
-                <flux:navlist.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>{{ __('Usuarios') }}</flux:navlist.item>
-                <flux:navlist.item icon="home-modern" :href="route('admin.units.index')" :current="request()->routeIs('admin.units.*')" wire:navigate>{{ __('Unidades Funcionales') }}</flux:navlist.item>
+            <flux:navlist.group :heading="__('Usuarios')" expandable class="grid">
+                <flux:navlist.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>{{ __('Cuentas de Usuario') }}</flux:navlist.item>
                 <flux:navlist.item icon="link" :href="route('admin.unit-users.index')" :current="request()->routeIs('admin.unit-users.*')" wire:navigate>{{ __('Asignaciones') }}</flux:navlist.item>
                 <flux:navlist.item icon="user-group" :href="route('admin.residents.index')" :current="request()->routeIs('admin.residents.*')" wire:navigate>{{ __('Residentes') }}</flux:navlist.item>
+            </flux:navlist.group>
+
+            <flux:navlist.group :heading="__('Gestión')" class="grid">
+                <flux:navlist.item icon="home-modern" :href="route('admin.units.index')" :current="request()->routeIs('admin.units.*')" wire:navigate>{{ __('Unidades Funcionales') }}</flux:navlist.item>
                 <flux:navlist.item icon="building-office" :href="route('admin.buildings.index')" :current="request()->routeIs('admin.buildings.*')" wire:navigate>{{ __('Edificios') }}</flux:navlist.item>
                 <flux:navlist.item icon="currency-dollar" :href="route('admin.expenses.index')" :current="request()->routeIs('admin.expenses.*')" wire:navigate>{{ __('Expensas') }}</flux:navlist.item>
                 <flux:navlist.item icon="newspaper" :href="route('admin.news.index')" :current="request()->routeIs('admin.news.*')" wire:navigate>{{ __('Novedades') }}</flux:navlist.item>
