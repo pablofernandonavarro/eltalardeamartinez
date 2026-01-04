@@ -74,6 +74,7 @@
             <thead>
                 <tr class="border-b">
                     <th class="text-left p-2">Unidad Funcional</th>
+                    <th class="text-center p-2">Ambientes</th>
                     <th class="text-left p-2">Propietario</th>
                     <th class="text-left p-2">Inquilino</th>
                     <th class="text-center p-2">Residentes</th>
@@ -110,6 +111,13 @@
                                     <span class="text-sm text-gray-400">Piso: {{ $unit->floor }}</span>
                                 @endif
                             </div>
+                        </td>
+                        <td class="p-2 text-center">
+                            @if($unit->rooms)
+                                <flux:badge color="blue">{{ $unit->rooms }}</flux:badge>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
                         </td>
                         <td class="p-2">
                             @if($owner && $owner->user)
@@ -175,7 +183,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="p-8 text-center text-gray-500">
+                        <td colspan="7" class="p-8 text-center text-gray-500">
                             No se encontraron unidades funcionales
                         </td>
                     </tr>

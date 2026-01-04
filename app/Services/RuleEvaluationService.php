@@ -26,13 +26,19 @@ class RuleEvaluationService
 
         foreach ($rules as $rule) {
             if ($this->matchesOccupancyConditions($rule, $unit, $currentOccupantsCount)) {
-                $maxAllowed = $rule->limits['max_residents'] ?? null;
+                // Calcular límite basado en ambientes
+                if (isset($rule->limits['residents_per_room']) && $unit->rooms) {
+                    $residentsPerRoom = (int) $rule->limits['residents_per_room'];
+                    $maxAllowed = $unit->rooms * $residentsPerRoom;
+                } else {
+                    $maxAllowed = $rule->limits['max_residents'] ?? null;
+                }
 
                 if ($maxAllowed && $currentOccupantsCount > $maxAllowed) {
                     $violations[] = [
                         'rule' => $rule,
                         'message' => $rule->limits['message'] ??
-                            "La unidad excede el máximo de {$maxAllowed} habitantes permitidos.",
+                            "La unidad excede el máximo de {$maxAllowed} habitantes permitidos ({$unit->rooms} ambientes x {$residentsPerRoom} residentes).",
                     ];
                 }
                 break; // Usar la primera regla que coincida (mayor prioridad)
