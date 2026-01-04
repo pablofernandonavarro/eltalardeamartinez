@@ -123,14 +123,14 @@
         <div class="grid grid-cols-2 gap-4">
             <flux:field>
                 <flux:label>Fecha de Inicio</flux:label>
-                <flux:input type="date" wire:model="validFrom" />
-                <flux:error name="validFrom" />
+                <flux:input type="date" wire:model="valid_from" />
+                <flux:error name="valid_from" />
             </flux:field>
 
             <flux:field>
                 <flux:label>Fecha de Fin</flux:label>
-                <flux:input type="date" wire:model="validTo" />
-                <flux:error name="validTo" />
+                <flux:input type="date" wire:model="valid_to" />
+                <flux:error name="valid_to" />
                 <flux:description>Dejar vacío para regla permanente</flux:description>
             </flux:field>
         </div>

@@ -26,9 +26,9 @@ class Edit extends Component
 
     public bool $is_active = true;
 
-    public ?string $validFrom = null;
+    public ?string $valid_from = null;
 
-    public ?string $validTo = null;
+    public ?string $valid_to = null;
 
     public int $priority = 0;
 
@@ -47,8 +47,8 @@ class Edit extends Component
         $this->conditions = $rule->conditions ?? [];
         $this->limits = $rule->limits ?? [];
         $this->is_active = $rule->is_active;
-        $this->validFrom = $rule->valid_from?->format('Y-m-d');
-        $this->validTo = $rule->valid_to?->format('Y-m-d');
+        $this->valid_from = $rule->valid_from?->format('Y-m-d');
+        $this->valid_to = $rule->valid_to?->format('Y-m-d');
         $this->priority = $rule->priority;
         $this->notes = $rule->notes;
     }

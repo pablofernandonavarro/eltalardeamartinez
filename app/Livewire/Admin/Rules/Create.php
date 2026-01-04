@@ -23,9 +23,9 @@ class Create extends Component
 
     public bool $is_active = true;
 
-    public ?string $validFrom = null;
+    public ?string $valid_from = null;
 
-    public ?string $validTo = null;
+    public ?string $valid_to = null;
 
     public int $priority = 0;
 
@@ -35,7 +35,7 @@ class Create extends Component
 
     public function mount(): void
     {
-        $this->validFrom = now()->format('Y-m-d');
+        $this->valid_from = now()->format('Y-m-d');
     }
 
     public function save(): void
