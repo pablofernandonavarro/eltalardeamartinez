@@ -14,6 +14,21 @@ class Inside extends Component
 
     public ?int $poolId = null;
 
+    public ?\App\Models\PoolShift $activeShift = null;
+
+    public function mount(): void
+    {
+        $this->activeShift = \App\Models\PoolShift::getActiveShiftForUser(auth()->id());
+
+        if (! $this->activeShift) {
+            session()->flash('error', 'Debes iniciar tu turno antes de ver quién está en la pileta.');
+            $this->redirect(route('banero.my-shift'), navigate: true);
+        }
+
+        // Asignar automáticamente la pileta del turno activo
+        $this->poolId = $this->activeShift->pool_id;
+    }
+
     public function checkoutEntry(int $entryId): void
     {
         $entry = PoolEntry::query()
@@ -34,12 +49,13 @@ class Inside extends Component
 
     public function render()
     {
-        $pools = Pool::query()->orderBy('name')->get();
+        // Solo mostrar la pileta del turno activo
+        $pool = $this->activeShift ? Pool::find($this->activeShift->pool_id) : null;
 
         $baseQuery = PoolEntry::query()
             ->whereDate('entered_at', now()->toDateString())
             ->whereNull('exited_at')
-            ->when($this->poolId, fn ($q) => $q->where('pool_id', $this->poolId));
+            ->where('pool_id', $this->poolId);
 
         // Metrics (global, not paginated)
         $openEntriesCount = (int) (clone $baseQuery)->count();
@@ -73,7 +89,7 @@ class Inside extends Component
             ->paginate(25);
 
         return view('livewire.banero.pools.inside', [
-            'pools' => $pools,
+            'pool' => $pool,
             'entries' => $entries,
             'totalPeopleCount' => $totalPeopleCount,
             'minorsCount' => $minorsCount,

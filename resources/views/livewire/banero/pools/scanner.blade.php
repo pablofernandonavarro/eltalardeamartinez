@@ -134,16 +134,10 @@
 
                     @if($action === 'entry')
                         <form wire:submit="confirm" class="space-y-4">
-                            <flux:field>
-                                <flux:label>Pileta <span class="text-red-500">*</span></flux:label>
-                                <flux:select wire:model="poolId" placeholder="Seleccione una pileta">
-                                    <option value="">Seleccione una pileta</option>
-                                    @foreach($pools as $pool)
-                                        <option value="{{ $pool->id }}">{{ $pool->name }}</option>
-                                    @endforeach
-                                </flux:select>
-                                <flux:error name="poolId" />
-                            </flux:field>
+                            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 bg-zinc-50 dark:bg-zinc-800">
+                                <div class="text-sm text-gray-500 mb-1">Pileta de turno:</div>
+                                <div class="font-semibold text-lg">{{ $pool->name ?? 'N/D' }}</div>
+                            </div>
 
                             <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
                                 <flux:button class="w-full" type="submit" variant="primary" wire:loading.attr="disabled">
@@ -226,16 +220,10 @@
 
                     @if($action === 'entry')
                         <form wire:submit="confirm" class="space-y-4">
-                            <flux:field>
-                                <flux:label>Pileta <span class="text-red-500">*</span></flux:label>
-                                <flux:select wire:model="poolId" placeholder="Seleccione una pileta">
-                                    <option value="">Seleccione una pileta</option>
-                                    @foreach($pools as $pool)
-                                        <option value="{{ $pool->id }}">{{ $pool->name }}</option>
-                                    @endforeach
-                                </flux:select>
-                                <flux:error name="poolId" />
-                            </flux:field>
+                            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 bg-zinc-50 dark:bg-zinc-800 mb-4">
+                                <div class="text-sm text-gray-500 mb-1">Pileta de turno:</div>
+                                <div class="font-semibold text-lg">{{ $pool->name ?? 'N/D' }}</div>
+                            </div>
 
                             <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
                                 <div class="flex items-center justify-between gap-3">

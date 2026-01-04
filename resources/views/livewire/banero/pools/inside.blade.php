@@ -15,16 +15,9 @@
         </flux:callout>
     @endif
 
-    <div class="mb-4">
-        <flux:field>
-            <flux:label>Pileta</flux:label>
-            <flux:select wire:model.live="poolId" placeholder="Todas">
-                <option value="">Todas</option>
-                @foreach($pools as $pool)
-                    <option value="{{ $pool->id }}">{{ $pool->name }}</option>
-                @endforeach
-            </flux:select>
-        </flux:field>
+    <div class="mb-4 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 bg-zinc-50 dark:bg-zinc-800">
+        <div class="text-sm text-gray-500 mb-1">Pileta de turno:</div>
+        <div class="font-semibold text-lg">{{ $pool->name ?? 'N/D' }}</div>
     </div>
 
     <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">

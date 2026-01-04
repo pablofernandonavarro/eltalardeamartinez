@@ -47,6 +47,9 @@ class Scanner extends Component
             session()->flash('error', 'Debes iniciar tu turno antes de poder escanear QRs.');
             $this->redirect(route('banero.my-shift'), navigate: true);
         }
+
+        // Asignar automáticamente la pileta del turno activo
+        $this->poolId = $this->activeShift->pool_id;
     }
 
     public function updatedToken(): void
@@ -427,10 +430,11 @@ class Scanner extends Component
 
     public function render()
     {
-        $pools = Pool::query()->orderBy('name')->get();
+        // Solo mostrar la pileta del turno activo
+        $pool = $this->activeShift ? Pool::find($this->activeShift->pool_id) : null;
 
         return view('livewire.banero.pools.scanner', [
-            'pools' => $pools,
+            'pool' => $pool,
             'pass' => $this->pass,
         ])->layout('components.layouts.banero', ['title' => 'Escanear QR']);
     }
