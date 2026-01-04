@@ -25,13 +25,13 @@
 
             <form wire:submit="save" class="space-y-6">
                 {{-- Días de Semana --}}
-                <div class="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-400 rounded-lg">
+                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500 dark:border-blue-500 rounded-lg">
                     <flux:field>
-                        <flux:label class="flex items-center gap-2 text-base font-semibold">
+                        <flux:label class="flex items-center gap-2 text-base font-semibold text-blue-900 dark:text-blue-100">
                             <span class="text-2xl">💼</span>
                             <span>Lunes a Viernes</span>
                         </flux:label>
-                        <flux:description>
+                        <flux:description class="text-blue-700 dark:text-blue-300">
                             Máximo de invitados permitidos en días laborales
                         </flux:description>
                         <div class="flex items-center gap-4 mt-2">
@@ -42,20 +42,20 @@
                                 max="20"
                                 class="w-24 text-xl font-bold text-center"
                             />
-                            <span class="text-sm text-gray-600 dark:text-gray-400">invitados por día</span>
+                            <span class="text-sm text-blue-700 dark:text-blue-300 font-medium">invitados por día</span>
                         </div>
                         <flux:error name="maxGuestsWeekday" />
                     </flux:field>
                 </div>
 
                 {{-- Fines de Semana --}}
-                <div class="p-4 bg-orange-50 dark:bg-orange-950/30 border-2 border-orange-400 rounded-lg">
+                <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-500 dark:border-orange-500 rounded-lg">
                     <flux:field>
-                        <flux:label class="flex items-center gap-2 text-base font-semibold">
+                        <flux:label class="flex items-center gap-2 text-base font-semibold text-orange-900 dark:text-orange-100">
                             <span class="text-2xl">🌞</span>
                             <span>Sábados, Domingos y Feriados</span>
                         </flux:label>
-                        <flux:description>
+                        <flux:description class="text-orange-700 dark:text-orange-300">
                             Máximo de invitados permitidos en fines de semana
                         </flux:description>
                         <div class="flex items-center gap-4 mt-2">
@@ -66,20 +66,20 @@
                                 max="20"
                                 class="w-24 text-xl font-bold text-center"
                             />
-                            <span class="text-sm text-gray-600 dark:text-gray-400">invitados por día</span>
+                            <span class="text-sm text-orange-700 dark:text-orange-300 font-medium">invitados por día</span>
                         </div>
                         <flux:error name="maxGuestsWeekend" />
                     </flux:field>
                 </div>
 
                 {{-- Límite Mensual --}}
-                <div class="p-4 bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-400 rounded-lg">
+                <div class="p-4 bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-500 dark:border-purple-500 rounded-lg">
                     <flux:field>
-                        <flux:label class="flex items-center gap-2 text-base font-semibold">
+                        <flux:label class="flex items-center gap-2 text-base font-semibold text-purple-900 dark:text-purple-100">
                             <span class="text-2xl">📅</span>
                             <span>Límite Mensual de Invitados</span>
                         </flux:label>
-                        <flux:description>
+                        <flux:description class="text-purple-700 dark:text-purple-300">
                             Máximo total de invitados permitidos por unidad por mes (independiente del día)
                         </flux:description>
                         <div class="flex items-center gap-4 mt-2">
@@ -90,22 +90,22 @@
                                 max="50"
                                 class="w-24 text-xl font-bold text-center"
                             />
-                            <span class="text-sm text-gray-600 dark:text-gray-400">invitados por mes</span>
+                            <span class="text-sm text-purple-700 dark:text-purple-300 font-medium">invitados por mes</span>
                         </div>
                         <flux:error name="maxGuestsMonth" />
                     </flux:field>
                 </div>
 
                 {{-- Pagos Extra --}}
-                <div class="p-4 bg-red-50 dark:bg-red-950/30 border-2 border-red-400 rounded-lg">
+                <div class="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-500 rounded-lg">
                     <flux:field>
                         <div class="flex items-center justify-between">
                             <div>
-                                <flux:label class="flex items-center gap-2 text-base font-semibold">
+                                <flux:label class="flex items-center gap-2 text-base font-semibold text-red-900 dark:text-red-100">
                                     <span class="text-2xl">💰</span>
                                     <span>Permitir Pagos por Invitados Extra</span>
                                 </flux:label>
-                                <flux:description>
+                                <flux:description class="text-red-700 dark:text-red-300">
                                     ⚠️ Si se habilita, permite que los residentes paguen para exceder el límite
                                 </flux:description>
                             </div>
