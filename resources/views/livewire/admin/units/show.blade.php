@@ -182,9 +182,19 @@
                                         @endif
                                     </td>
                                     <td class="p-2">
-                                        <flux:button href="{{ route('admin.residents.edit', $resident) }}" variant="ghost" size="sm">
-                                            Editar
-                                        </flux:button>
+                                        <div class="flex gap-2 justify-center">
+                                            <flux:button href="{{ route('admin.residents.edit', $resident) }}" variant="ghost" size="sm">
+                                                Editar
+                                            </flux:button>
+                                            <flux:button 
+                                                wire:click="deleteResident({{ $resident->id }})" 
+                                                wire:confirm="¿Está seguro de eliminar este residente? Esta acción no se puede deshacer."
+                                                variant="ghost" 
+                                                size="sm"
+                                                color="red">
+                                                Eliminar
+                                            </flux:button>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

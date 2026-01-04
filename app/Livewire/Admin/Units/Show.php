@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Units;
 
+use App\Models\Resident;
 use App\Models\Unit;
 use Livewire\Component;
 
@@ -19,6 +20,20 @@ class Show extends Component
         $this->unit->delete();
         session()->flash('message', 'Unidad funcional eliminada correctamente.');
         $this->redirect(route('admin.units.index'));
+    }
+
+    public function deleteResident(int $residentId): void
+    {
+        $resident = Resident::findOrFail($residentId);
+        
+        // Verificar que el residente pertenece a esta unidad
+        if ($resident->unit_id !== $this->unit->id) {
+            session()->flash('error', 'El residente no pertenece a esta unidad.');
+            return;
+        }
+        
+        $resident->delete();
+        session()->flash('message', 'Residente eliminado correctamente.');
     }
 
     public function render()

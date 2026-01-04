@@ -246,6 +246,24 @@ class Household extends Component
         session()->flash('message', 'Residente finalizado.');
     }
 
+    public function deleteResident(int $residentId): void
+    {
+        if (! $this->canEdit || ! $this->unit) {
+            session()->flash('error', 'Solo el responsable de pago puede eliminar residentes.');
+
+            return;
+        }
+
+        $resident = Resident::query()
+            ->where('id', $residentId)
+            ->where('unit_id', $this->unit->id)
+            ->firstOrFail();
+
+        $resident->delete();
+
+        session()->flash('message', 'Residente eliminado correctamente.');
+    }
+
     public function editResidentEmail(int $residentId): void
     {
         if (! $this->canEdit || ! $this->unit) {

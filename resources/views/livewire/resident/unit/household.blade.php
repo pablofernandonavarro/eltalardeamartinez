@@ -339,12 +339,24 @@
                                         type="button"
                                         size="sm"
                                         variant="ghost"
-                                        color="red"
+                                        color="yellow"
                                         wire:click="finishResident({{ $r->id }})"
                                         wire:confirm="¿Finalizar este residente (dejará de estar activo)?"
                                         :disabled="!$canEdit"
                                     >
                                         Finalizar
+                                    </flux:button>
+                                    
+                                    <flux:button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        color="red"
+                                        wire:click="deleteResident({{ $r->id }})"
+                                        wire:confirm="¿Está seguro de eliminar este residente? Esta acción no se puede deshacer."
+                                        :disabled="!$canEdit"
+                                    >
+                                        Eliminar
                                     </flux:button>
                                 </div>
                             </div>
