@@ -221,15 +221,35 @@ class Scanner extends Component
             return;
         }
 
-        // VALIDACIÓN 2: Cumplir con el reglamento (límite absoluto)
+        // VALIDACIÓN 2: Cumplir con el reglamento (límite diario absoluto)
         $maxAllowedByRegulation = $this->calculateMaxGuestsAllowedToday();
         if ($guestsCount > $maxAllowedByRegulation) {
             $isWeekend = now()->isWeekend();
-            $limit = $isWeekend ? 2 : 4;
             $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
             
-            $this->addError('selectedGuestIds', "REGLAMENTO VIOLADO: Máximo {$limit} invitados permitidos en {$dayType}. No se aceptan pagos por invitados extra.");
+            $this->addError('selectedGuestIds', "REGLAMENTO VIOLADO: Máximo {$maxAllowedByRegulation} invitados permitidos en {$dayType}. No se aceptan pagos por invitados extra.");
 
+            return;
+        }
+        
+        // VALIDACIÓN 3: Cumplir con el límite mensual
+        $unit = Unit::findOrFail($this->pass->unit_id);
+        $pool = Pool::findOrFail($this->poolId);
+        $today = now();
+        $monthStart = $today->copy()->startOfMonth();
+        $monthEnd = $today->copy()->endOfMonth();
+        
+        $usedThisMonth = \App\Models\PoolEntry::forUnit($unit->id)
+            ->where('pool_id', $pool->id)
+            ->whereBetween('entered_at', [$monthStart, $monthEnd])
+            ->sum('guests_count');
+        
+        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
+        $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+        
+        if ($guestsCount > $availableMonth) {
+            $this->addError('selectedGuestIds', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxGuestsMonth} invitados este mes. Solo puedes agregar {$availableMonth} invitados más.");
+            
             return;
         }
 

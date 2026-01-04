@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Pools;
 
 use App\Models\Pool;
+use App\Models\PoolSetting;
 use App\Models\Unit;
 use App\Models\User;
 use App\Role;
@@ -40,6 +41,36 @@ class RegisterEntry extends Component
             $pool = Pool::findOrFail($this->poolId);
             $unit = Unit::findOrFail($this->unitId);
             $user = User::findOrFail($this->userId);
+            
+            // Validar límite diario
+            $enteredAtDate = \Carbon\Carbon::parse($this->enteredAt);
+            $isWeekend = $enteredAtDate->isWeekend();
+            $maxGuestsToday = $isWeekend 
+                ? PoolSetting::get('max_guests_weekend', 2)
+                : PoolSetting::get('max_guests_weekday', 4);
+            
+            if ($this->guestsCount > $maxGuestsToday) {
+                $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
+                $this->addError('guestsCount', "Máximo {$maxGuestsToday} invitados permitidos en {$dayType}.");
+                return;
+            }
+            
+            // Validar límite mensual
+            $monthStart = $enteredAtDate->copy()->startOfMonth();
+            $monthEnd = $enteredAtDate->copy()->endOfMonth();
+            
+            $usedThisMonth = \App\Models\PoolEntry::forUnit($unit->id)
+                ->where('pool_id', $pool->id)
+                ->whereBetween('entered_at', [$monthStart, $monthEnd])
+                ->sum('guests_count');
+            
+            $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
+            $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+            
+            if ($this->guestsCount > $availableMonth) {
+                $this->addError('guestsCount', "Límite mensual excedido: {$usedThisMonth}/{$maxGuestsMonth} invitados usados. Disponible: {$availableMonth}.");
+                return;
+            }
 
             $poolAccessService->registerEntry($pool, $unit, $user, $this->guestsCount, $this->enteredAt);
 
