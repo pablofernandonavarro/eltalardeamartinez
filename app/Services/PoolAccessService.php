@@ -151,38 +151,41 @@ class PoolAccessService
             }
         }
 
-        // Validar reglas dinámicas del sistema
-        $ruleService = app(RuleEvaluationService::class);
+        // Validar reglas dinámicas del sistema SOLO si hay invitados
+        // Los propietarios/inquilinos pueden ingresar solos sin límites
+        if ($guestsCount > 0) {
+            $ruleService = app(RuleEvaluationService::class);
 
-        // Validar invitados por día de semana
-        $weeklyCheck = $ruleService->evaluatePoolWeeklyGuestRules(
-            $pool,
-            $unit,
-            $enteredAtDate,
-            $guestsCount
-        );
+            // Validar invitados por día de semana
+            $weeklyCheck = $ruleService->evaluatePoolWeeklyGuestRules(
+                $pool,
+                $unit,
+                $enteredAtDate,
+                $guestsCount
+            );
 
-        if (! $weeklyCheck['is_valid']) {
-            throw new \Exception($weeklyCheck['violations'][0]['message']);
-        }
+            if (! $weeklyCheck['is_valid']) {
+                throw new \Exception($weeklyCheck['violations'][0]['message']);
+            }
 
-        // Validar invitados mensuales
-        $monthStart = $enteredAtDate->copy()->startOfMonth();
-        $monthEnd = $enteredAtDate->copy()->endOfMonth();
-        $monthGuestsCount = PoolEntry::forUnit($unit->id)
-            ->where('pool_id', $pool->id)
-            ->whereBetween('entered_at', [$monthStart, $monthEnd])
-            ->sum('guests_count');
+            // Validar invitados mensuales
+            $monthStart = $enteredAtDate->copy()->startOfMonth();
+            $monthEnd = $enteredAtDate->copy()->endOfMonth();
+            $monthGuestsCount = PoolEntry::forUnit($unit->id)
+                ->where('pool_id', $pool->id)
+                ->whereBetween('entered_at', [$monthStart, $monthEnd])
+                ->sum('guests_count');
 
-        $monthlyCheck = $ruleService->evaluatePoolMonthlyGuestRules(
-            $pool,
-            $unit,
-            $enteredAtDate,
-            $monthGuestsCount + $guestsCount // Incluir los invitados actuales
-        );
+            $monthlyCheck = $ruleService->evaluatePoolMonthlyGuestRules(
+                $pool,
+                $unit,
+                $enteredAtDate,
+                $monthGuestsCount + $guestsCount // Incluir los invitados actuales
+            );
 
-        if (! $monthlyCheck['is_valid']) {
-            throw new \Exception($monthlyCheck['violations'][0]['message']);
+            if (! $monthlyCheck['is_valid']) {
+                throw new \Exception($monthlyCheck['violations'][0]['message']);
+            }
         }
     }
 
