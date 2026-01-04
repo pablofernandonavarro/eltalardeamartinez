@@ -73,16 +73,16 @@
             <div class="bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-600 rounded-lg p-4">
                 <div class="font-semibold mb-3">📊 Tabla de Límites por Cantidad de Ambientes</div>
                 
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    @for($i = 1; $i <= 10; $i++)
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    @for($i = 1; $i <= 4; $i++)
                         <flux:field>
                             <flux:label>{{ $i }} Ambiente{{ $i > 1 ? 's' : '' }}</flux:label>
                             <flux:input 
                                 type="number" 
                                 wire:model="limits.max_residents_by_rooms.{{ $i }}" 
-                                placeholder="Ej: {{ $i * 2 }}" 
+                                placeholder="Ej: {{ $i + 1 }}" 
                                 min="0" 
-                                max="50"
+                                max="10"
                             />
                         </flux:field>
                     @endfor

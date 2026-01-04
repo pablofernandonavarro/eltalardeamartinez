@@ -27,12 +27,6 @@ class ResidentsPerRoomRuleSeeder extends Seeder
                         2 => 3,   // 2 ambientes = 3 residentes
                         3 => 4,   // 3 ambientes = 4 residentes
                         4 => 5,   // 4 ambientes = 5 residentes (máximo)
-                        5 => 5,   // 5 ambientes = 5 residentes (máximo)
-                        6 => 5,   // 6 ambientes = 5 residentes (máximo)
-                        7 => 5,   // 7 ambientes = 5 residentes (máximo)
-                        8 => 5,   // 8 ambientes = 5 residentes (máximo)
-                        9 => 5,   // 9 ambientes = 5 residentes (máximo)
-                        10 => 5,  // 10 ambientes = 5 residentes (máximo)
                     ],
                 ],
                 'is_active' => true,
