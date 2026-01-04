@@ -67,7 +67,7 @@ class Scanner extends Component
         $this->token = '';
         $this->pass = null;
         $this->scannedResident = null;
-        $this->poolId = null;
+        // NO resetear poolId - debe mantenerse con la pileta del turno activo
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
         $this->showGuestList = false;
@@ -105,7 +105,7 @@ class Scanner extends Component
         $this->resetErrorBag();
         $this->pass = null;
         $this->scannedResident = null;
-        $this->poolId = null;
+        // NO resetear poolId - debe mantenerse con la pileta del turno activo
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
         $this->showGuestList = false;
@@ -291,7 +291,7 @@ class Scanner extends Component
 
             // Actualizar estado a 'exit' porque ahora está adentro
             $this->action = 'exit';
-            $this->poolId = null;
+            // NO resetear poolId - debe mantenerse con la pileta del turno activo
             $this->selectedGuestIds = [];
             // Mantenemos pass y token para facilitar la salida
         } catch (\Exception $e) {
@@ -364,7 +364,7 @@ class Scanner extends Component
 
             // Actualizar estado a 'exit' porque ahora está adentro
             $this->action = 'exit';
-            $this->poolId = null;
+            // NO resetear poolId - debe mantenerse con la pileta del turno activo
             // Mantenemos scannedResident y token para facilitar la salida
         } catch (\Exception $e) {
             $this->addError('error', $e->getMessage());
@@ -407,7 +407,7 @@ class Scanner extends Component
         // Mantener el QR cargado pero limpiar notas y resetear acción a 'entry'
         $this->exitNotes = null;
         $this->action = 'entry';
-        $this->poolId = null;
+        // NO resetear poolId - debe mantenerse con la pileta del turno activo
         // NO limpiamos token, pass ni scannedResident para permitir reingreso inmediato
     }
 
