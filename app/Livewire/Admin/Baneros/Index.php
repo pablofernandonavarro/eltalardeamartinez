@@ -4,7 +4,7 @@ namespace App\Livewire\Admin\Baneros;
 
 use App\Models\PoolShift;
 use App\Models\User;
-use App\UserRole;
+use App\Role;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -26,7 +26,7 @@ class Index extends Component
     public function render()
     {
         // Obtener bañeros
-        $baneros = User::where('role', UserRole::Banero)
+        $baneros = User::where('role', Role::Banero)
             ->orderBy('name')
             ->get();
 
