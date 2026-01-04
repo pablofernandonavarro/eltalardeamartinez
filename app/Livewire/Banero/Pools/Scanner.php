@@ -680,6 +680,17 @@ class Scanner extends Component
         // Solo mostrar la pileta del turno activo
         $pool = $this->activeShift ? Pool::find($this->activeShift->pool_id) : null;
 
+        // Si hay un usuario escaneado, recargar la unit en scannedResident
+        if ($this->scannedUserId && $this->scannedResident) {
+            $user = User::find($this->scannedUserId);
+            if ($user) {
+                $unitUser = $user->currentUnitUsers()->first();
+                if ($unitUser) {
+                    $this->scannedResident->setRelation('unit', Unit::with(['building.complex'])->find($unitUser->unit_id));
+                }
+            }
+        }
+
         // Calcular límites si hay un pase cargado
         $limitsInfo = null;
         if ($this->pass) {
