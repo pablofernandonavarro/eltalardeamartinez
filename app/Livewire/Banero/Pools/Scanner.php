@@ -39,6 +39,11 @@ class Scanner extends Component
 
     public bool $showGuestList = false;
 
+    /**
+     * Flag to prevent double loadPass() calls when scanning from JavaScript
+     */
+    private bool $skipUpdatedToken = false;
+
     public function mount(): void
     {
         $this->activeShift = \App\Models\PoolShift::getActiveShiftForUser(auth()->id());
@@ -54,12 +59,18 @@ class Scanner extends Component
 
     public function updatedToken(): void
     {
+        // Evitar doble llamada cuando se escanea desde JavaScript
+        if ($this->skipUpdatedToken) {
+            $this->skipUpdatedToken = false;
+            return;
+        }
+        
         \Log::info('📱 updatedToken disparado', [
             'token_length' => strlen(trim($this->token)),
             'will_load' => strlen(trim($this->token)) >= 10
         ]);
         
-        // Autocargar cuando el scanner setea el token
+        // Autocargar cuando el scanner setea el token manualmente
         if (strlen(trim($this->token)) >= 10) {
             $this->loadPass();
         }
@@ -103,6 +114,17 @@ class Scanner extends Component
     public function clearGuests(): void
     {
         $this->selectedGuestIds = [];
+    }
+
+    /**
+     * Método especial para cuando se escanea desde JavaScript
+     * Evita la doble llamada a loadPass()
+     */
+    public function loadPassFromScan(string $scannedToken): void
+    {
+        $this->skipUpdatedToken = true;
+        $this->token = $scannedToken;
+        $this->loadPass();
     }
 
     public function loadPass(): void
@@ -396,13 +418,21 @@ class Scanner extends Component
 
     protected function confirmResidentEntry(PoolAccessService $poolAccessService): void
     {
+        \Log::info('👤 confirmResidentEntry INICIADO', [
+            'resident_id' => $this->scannedResident?->id,
+            'resident_name' => $this->scannedResident?->name,
+            'poolId' => $this->poolId
+        ]);
+        
         if (! $this->scannedResident) {
+            \Log::error('❌ No hay residente escaneado');
             return;
         }
 
         // Evitar doble entrada
         $openEntry = $this->findOpenEntryForResident($this->scannedResident);
         if ($openEntry) {
+            \Log::warning('⚠️ Residente ya tiene entrada abierta', ['entry_id' => $openEntry->id]);
             $this->addError('error', 'Este residente ya está en la pileta. Registre la salida antes de volver a ingresar.');
 
             return;
@@ -417,12 +447,16 @@ class Scanner extends Component
         try {
             /** @var Pool $pool */
             $pool = Pool::findOrFail($this->poolId);
+            \Log::info('🏊 Pool encontrado', ['pool_name' => $pool->name]);
 
             /** @var Unit $unit */
             $unit = Unit::findOrFail($this->scannedResident->unit_id);
+            \Log::info('🏠 Unit encontrado', ['unit' => $unit->full_identifier]);
 
             // Registrar entrada del residente sin invitados
-            $poolAccessService->registerResidentEntry($pool, $unit, $this->scannedResident, 0, now()->toDateTimeString());
+            \Log::info('🟢 Llamando a registerResidentEntry...');
+            $entry = $poolAccessService->registerResidentEntry($pool, $unit, $this->scannedResident, 0, now()->toDateTimeString());
+            \Log::info('✅ Entrada registrada exitosamente', ['entry_id' => $entry->id]);
 
             session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
 
@@ -431,6 +465,10 @@ class Scanner extends Component
             // NO resetear poolId - debe mantenerse con la pileta del turno activo
             // Mantenemos scannedResident y token para facilitar la salida
         } catch (\Exception $e) {
+            \Log::error('🔴 ERROR al registrar entrada', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             $this->addError('error', $e->getMessage());
         }
     }

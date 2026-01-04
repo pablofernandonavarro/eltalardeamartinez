@@ -371,15 +371,26 @@
                     { facingMode: 'environment' },
                     { fps: 10, qrbox: 250 },
                     async (decodedText) => {
-                        // Evitar múltiples lecturas seguidas
-                        try { await qr.stop(); } catch (e) {}
+                        console.log('📦 QR escaneado:', decodedText);
+                        
+                        // Detener cámara
+                        try { await qr.stop(); } catch (e) { console.error('Error deteniendo cámara:', e); }
 
-                        @this.set('token', decodedText);
-                        @this.call('loadPass');
+                        // Llamar al método del componente
+                        console.log('📤 Llamando a loadPassFromScan...');
+                        @this.call('loadPassFromScan', decodedText)
+                            .then(() => {
+                                console.log('✅ Token procesado correctamente');
+                            })
+                            .catch((err) => {
+                                console.error('❌ Error procesando token:', err);
+                            });
                     },
-                    () => {}
-                ).catch(() => {
-                    // Silencioso
+                    (errorMessage) => {
+                        // Error durante el escaneo (se ejecuta continuamente, no loggeamos)
+                    }
+                ).catch((err) => {
+                    console.error('❌ Error al iniciar scanner:', err);
                 });
             };
 
