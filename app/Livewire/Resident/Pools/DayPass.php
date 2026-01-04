@@ -115,10 +115,11 @@ class DayPass extends Component
             return;
         }
 
-        // Buscar el residente asociado al usuario en esta unidad
+        // Buscar el residente que tenga cuenta de autenticación con este usuario
+        // El auth_user_id indica que este residente tiene su propia cuenta
         $resident = Resident::query()
             ->where('unit_id', $this->unitId)
-            ->where('user_id', $user->id)
+            ->where('auth_user_id', $user->id)
             ->active()
             ->first();
 
