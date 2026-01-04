@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Livewire\Admin\Pools;
+
+use App\Models\PoolSetting;
+use Livewire\Component;
+
+class Settings extends Component
+{
+    public int $maxGuestsWeekday = 4;
+    public int $maxGuestsWeekend = 2;
+    public bool $allowExtraPayment = false;
+
+    public function mount(): void
+    {
+        $this->loadSettings();
+    }
+
+    protected function loadSettings(): void
+    {
+        $this->maxGuestsWeekday = PoolSetting::get('max_guests_weekday', 4);
+        $this->maxGuestsWeekend = PoolSetting::get('max_guests_weekend', 2);
+        $this->allowExtraPayment = PoolSetting::get('allow_extra_payment', false);
+    }
+
+    public function save(): void
+    {
+        $this->validate([
+            'maxGuestsWeekday' => 'required|integer|min:0|max:20',
+            'maxGuestsWeekend' => 'required|integer|min:0|max:20',
+            'allowExtraPayment' => 'boolean',
+        ], [
+            'maxGuestsWeekday.required' => 'El límite de días de semana es obligatorio.',
+            'maxGuestsWeekday.min' => 'El límite debe ser al menos 0.',
+            'maxGuestsWeekday.max' => 'El límite no puede exceder 20.',
+            'maxGuestsWeekend.required' => 'El límite de fin de semana es obligatorio.',
+            'maxGuestsWeekend.min' => 'El límite debe ser al menos 0.',
+            'maxGuestsWeekend.max' => 'El límite no puede exceder 20.',
+        ]);
+
+        PoolSetting::set('max_guests_weekday', $this->maxGuestsWeekday);
+        PoolSetting::set('max_guests_weekend', $this->maxGuestsWeekend);
+        PoolSetting::set('allow_extra_payment', $this->allowExtraPayment ? 'true' : 'false');
+
+        // Limpiar caché para que los cambios se apliquen inmediatamente
+        PoolSetting::clearCache();
+
+        session()->flash('message', '✅ Configuración guardada correctamente. Los cambios están activos inmediatamente.');
+    }
+
+    public function resetToDefault(): void
+    {
+        $this->maxGuestsWeekday = 4;
+        $this->maxGuestsWeekend = 2;
+        $this->allowExtraPayment = false;
+
+        session()->flash('info', 'Valores restaurados a los predeterminados. Haz clic en "Guardar Configuración" para aplicarlos.');
+    }
+
+    public function render()
+    {
+        $allSettings = PoolSetting::all();
+
+        return view('livewire.admin.pools.settings', [
+            'allSettings' => $allSettings,
+        ])->layout('components.layouts.app', ['title' => 'Configuración de Pileta']);
+    }
+}

@@ -4,6 +4,7 @@ namespace App\Livewire\Banero\Pools;
 
 use App\Models\Pool;
 use App\Models\PoolDayPass;
+use App\Models\PoolSetting;
 use App\Models\Resident;
 use App\Models\Unit;
 use App\Models\User;
@@ -389,6 +390,7 @@ class Scanner extends Component
 
     /**
      * Calcula el límite máximo de invitados según el reglamento para HOY.
+     * Lee la configuración dinámica de la base de datos.
      * 
      * @return int
      */
@@ -396,9 +398,11 @@ class Scanner extends Component
     {
         $isWeekend = now()->isWeekend();
         
-        // Lunes a Viernes: Máximo 4 invitados
-        // Sábado, Domingo y Feriados: Máximo 2 invitados
-        return $isWeekend ? 2 : 4;
+        if ($isWeekend) {
+            return PoolSetting::get('max_guests_weekend', 2);
+        }
+        
+        return PoolSetting::get('max_guests_weekday', 4);
     }
 
     public function render()

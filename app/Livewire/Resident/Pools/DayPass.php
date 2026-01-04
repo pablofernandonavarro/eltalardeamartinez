@@ -3,6 +3,7 @@
 namespace App\Livewire\Resident\Pools;
 
 use App\Models\PoolDayPass;
+use App\Models\PoolSetting;
 use App\Models\Resident;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -319,32 +320,44 @@ class DayPass extends Component
             ->whereBetween('entered_at', [$monthStart, $monthEnd])
             ->sum('guests_count');
 
-        // ⚠️ LÍMITES ABSOLUTOS DEL REGLAMENTO - NO MODIFICABLES
+        // ⚠️ LÍMITES CONFIGURABLES DINÁMICAMENTE
+        $allowExtraPayment = PoolSetting::get('allow_extra_payment', false);
+        
         if ($isWeekend) {
-            // FINES DE SEMANA Y FERIADOS: Máximo 2 invitados (límite absoluto por día)
-            $maxGuestsToday = 2;
+            // FINES DE SEMANA Y FERIADOS: Leer de configuración
+            $maxGuestsToday = PoolSetting::get('max_guests_weekend', 2);
+
+            $paymentMessage = $allowExtraPayment 
+                ? 'Pods pagar por invitados extra si exceds el límite.' 
+                : 'No se aceptan pagos por invitados extra.';
 
             return [
                 'has_limits' => true,
                 'is_weekend' => true,
                 'max_guests_today' => $maxGuestsToday,
-                'max_guests_month' => null, // No hay límite mensual
+                'max_guests_month' => null,
                 'used_this_month' => $usedThisMonth,
                 'available_month' => null,
-                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. No se aceptan pagos por invitados extra.",
+                'allow_extra_payment' => $allowExtraPayment,
+                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. {$paymentMessage}",
             ];
         } else {
-            // LUNES A VIERNES: Máximo 4 invitados (límite absoluto por día)
-            $maxGuestsToday = 4;
+            // LUNES A VIERNES: Leer de configuración
+            $maxGuestsToday = PoolSetting::get('max_guests_weekday', 4);
+
+            $paymentMessage = $allowExtraPayment 
+                ? 'Pods pagar por invitados extra si exceds el límite.' 
+                : 'No se aceptan pagos por invitados extra.';
 
             return [
                 'has_limits' => true,
                 'is_weekend' => false,
                 'max_guests_today' => $maxGuestsToday,
-                'max_guests_month' => null, // No hay límite mensual
+                'max_guests_month' => null,
                 'used_this_month' => $usedThisMonth,
                 'available_month' => null,
-                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. No se aceptan pagos por invitados extra.",
+                'allow_extra_payment' => $allowExtraPayment,
+                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. {$paymentMessage}",
             ];
         }
     }
