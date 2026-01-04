@@ -217,20 +217,20 @@ class Scanner extends Component
 
         $guestsCount = count($this->selectedGuestIds);
 
-        // VALIDACIÓN 1: No más que los precargados
-        if ($guestsCount > $this->pass->guests_allowed) {
-            $this->addError('selectedGuestIds', 'No puede registrar más invitados que los precargados por el usuario.');
-
-            return;
-        }
-
-        // VALIDACIÓN 2: Cumplir con el reglamento (límite diario absoluto)
+        // VALIDACIÓN 1: Cumplir con el reglamento (límite diario absoluto) - DEBE SER LA PRIMERA
         $maxAllowedByRegulation = $this->calculateMaxGuestsAllowedToday();
         if ($guestsCount > $maxAllowedByRegulation) {
             $isWeekend = now()->isWeekend();
             $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
             
             $this->addError('selectedGuestIds', "REGLAMENTO VIOLADO: Máximo {$maxAllowedByRegulation} invitados permitidos en {$dayType}. No se aceptan pagos por invitados extra.");
+
+            return;
+        }
+
+        // VALIDACIÓN 2: No más que los precargados
+        if ($guestsCount > $this->pass->guests_allowed) {
+            $this->addError('selectedGuestIds', 'No puede registrar más invitados que los precargados por el usuario.');
 
             return;
         }
