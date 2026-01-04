@@ -18,15 +18,15 @@
         </flux:callout>
     @endif
 
-    @if(!$resident)
+    @if(!$resident && !$useUserQr)
         <flux:callout color="yellow">
-            No se encontró tu perfil de residente. Contactá al administrador.
+            No se encontró tu perfil. Contactá al administrador.
         </flux:callout>
-    @elseif(!$resident->canHavePersonalQr())
+    @elseif($resident && !$resident->canHavePersonalQr())
         <flux:callout color="blue">
             Tu cuenta aún no tiene un QR personal asignado. Contactá al responsable de tu unidad.
         </flux:callout>
-    @else
+    @elseif($qrToken)
         <div class="max-w-2xl mx-auto">
             <div class="p-6 border border-zinc-200 dark:border-zinc-700 rounded-lg">
                 <div class="flex items-center justify-between mb-6">
@@ -39,9 +39,15 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
                             Mostrá este QR al bañero para ingresar a la pileta
                         </p>
-                        <p class="text-xs text-gray-500">
-                            Unidad: <strong>{{ $resident->unit->full_identifier }}</strong>
-                        </p>
+                        @if($useUserQr)
+                            <p class="text-xs text-gray-500">
+                                Usuario: <strong>{{ $user->name }}</strong>
+                            </p>
+                        @else
+                            <p class="text-xs text-gray-500">
+                                Unidad: <strong>{{ $resident->unit->full_identifier }}</strong>
+                            </p>
+                        @endif
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow-sm">
@@ -55,7 +61,7 @@
                             <div class="flex gap-2 items-stretch">
                                 <flux:input 
                                     id="resident-qr-token" 
-                                    value="{{ $resident->qr_token }}" 
+                                    value="{{ $qrToken }}" 
                                     readonly 
                                     class="flex-1 font-mono text-sm" 
                                 />
@@ -97,7 +103,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script>
         (function () {
-            let currentToken = @json($resident?->qr_token);
+            let currentToken = @json($qrToken);
 
             async function copyTokenToClipboard(token) {
                 if (!token) return;
@@ -168,7 +174,7 @@
             }
 
             function renderFromBlade() {
-                renderQR(@json($resident?->qr_token));
+                renderQR(@json($qrToken));
             }
 
             // Initial render
