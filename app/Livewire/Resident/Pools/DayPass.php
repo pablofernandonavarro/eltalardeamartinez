@@ -352,6 +352,18 @@ class DayPass extends Component
         $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
         $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
         
+        // Contar cuántos fines de semana quedan este mes (desde hoy)
+        $remainingWeekends = 0;
+        $current = $today->copy();
+        $monthEnd = $today->copy()->endOfMonth();
+        
+        while ($current <= $monthEnd) {
+            if ($current->isWeekend()) {
+                $remainingWeekends++;
+            }
+            $current->addDay();
+        }
+        
         if ($isWeekend) {
             // FINES DE SEMANA Y FERIADOS: Leer de configuración
             $maxGuestsToday = PoolSetting::get('max_guests_weekend', 2);
@@ -368,6 +380,7 @@ class DayPass extends Component
                 'used_this_month' => $usedThisMonth,
                 'used_weekends_month' => $usedWeekendsThisMonth,
                 'available_month' => $availableMonth,
+                'remaining_weekends' => $remainingWeekends,
                 'allow_extra_payment' => $allowExtraPayment,
                 'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
             ];
@@ -387,6 +400,7 @@ class DayPass extends Component
                 'used_this_month' => $usedThisMonth,
                 'used_weekends_month' => $usedWeekendsThisMonth,
                 'available_month' => $availableMonth,
+                'remaining_weekends' => $remainingWeekends,
                 'allow_extra_payment' => $allowExtraPayment,
                 'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
             ];

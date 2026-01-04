@@ -537,6 +537,18 @@ class Scanner extends Component
 
         $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
         $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+        
+        // Contar cuántos fines de semana quedan este mes (desde hoy)
+        $remainingWeekends = 0;
+        $current = $today->copy();
+        $monthEnd = $today->copy()->endOfMonth();
+        
+        while ($current <= $monthEnd) {
+            if ($current->isWeekend()) {
+                $remainingWeekends++;
+            }
+            $current->addDay();
+        }
 
         return [
             'is_weekend' => $isWeekend,
@@ -547,6 +559,7 @@ class Scanner extends Component
             'used_this_month' => $usedThisMonth,
             'used_weekends_month' => $usedWeekendsThisMonth,
             'available_month' => $availableMonth,
+            'remaining_weekends' => $remainingWeekends,
         ];
     }
 }

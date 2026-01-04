@@ -44,7 +44,8 @@
                         </div>
                         <div class="text-xs text-gray-500 dark:text-gray-400">
                             {{ $limitsInfo['used_this_month'] }}/{{ $limitsInfo['max_guests_month'] }} usados<br>
-                            ({{ $limitsInfo['used_weekends_month'] }} en fines de semana)
+                            ({{ $limitsInfo['used_weekends_month'] }} en fines de semana)<br>
+                            🕒 Quedan: {{ $limitsInfo['remaining_weekends'] }} días de fin de semana
                         </div>
                     </div>
                 </div>
