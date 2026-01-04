@@ -21,6 +21,7 @@ class Unit extends Model
         'rooms',
         'terrazas',
         'area',
+        'max_residents',
         'has_pets',
         'notes',
         'owner',

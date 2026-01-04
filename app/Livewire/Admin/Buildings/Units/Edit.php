@@ -24,6 +24,8 @@ class Edit extends Component
 
     public ?float $area = null;
 
+    public ?int $max_residents = null;
+
     public ?string $notes = null;
 
     public function mount(Building $building, Unit $unit): void
@@ -41,6 +43,7 @@ class Edit extends Component
         $this->rooms = $unit->rooms;
         $this->terrazas = $unit->terrazas;
         $this->area = $unit->area ? (float) $unit->area : null;
+        $this->max_residents = $unit->max_residents;
         $this->notes = $unit->notes;
     }
 
@@ -58,6 +61,7 @@ class Edit extends Component
             'rooms' => ['nullable', 'integer', 'min:1', 'max:4'],
             'terrazas' => ['nullable', 'integer', 'min:0'],
             'area' => ['nullable', 'numeric', 'min:0'],
+            'max_residents' => ['nullable', 'integer', 'min:1'],
             'notes' => ['nullable', 'string'],
         ], [
             'number.required' => 'El número de unidad es obligatorio.',
@@ -73,6 +77,8 @@ class Edit extends Component
             'terrazas.min' => 'La cantidad de terrazas debe ser mayor o igual a 0.',
             'area.numeric' => 'El área debe ser un número.',
             'area.min' => 'El área debe ser mayor o igual a 0.',
+            'max_residents.integer' => 'El límite de habitantes debe ser un número entero.',
+            'max_residents.min' => 'El límite de habitantes debe ser al menos 1.',
         ]);
 
         $this->unit->update([
@@ -82,6 +88,7 @@ class Edit extends Component
             'rooms' => $validated['rooms'],
             'terrazas' => $validated['terrazas'],
             'area' => $validated['area'],
+            'max_residents' => $validated['max_residents'],
             'notes' => $validated['notes'],
         ]);
 

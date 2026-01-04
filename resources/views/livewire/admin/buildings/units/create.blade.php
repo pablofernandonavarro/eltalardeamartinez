@@ -48,6 +48,13 @@
         </div>
 
         <flux:field>
+            <flux:label>Límite de Habitantes</flux:label>
+            <flux:input type="number" wire:model="max_residents" min="1" placeholder="Ej: 4" />
+            <flux:error name="max_residents" />
+            <flux:description>Número máximo de personas que pueden habitar la unidad (propietario/inquilino + residentes)</flux:description>
+        </flux:field>
+
+        <flux:field>
             <flux:label>Notas</flux:label>
             <flux:textarea wire:model="notes" placeholder="Notas adicionales sobre la unidad funcional" rows="4" />
             <flux:error name="notes" />
