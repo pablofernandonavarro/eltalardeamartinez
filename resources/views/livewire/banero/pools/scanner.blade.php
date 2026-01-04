@@ -227,15 +227,40 @@
 
                             @if($limitsInfo)
                                 <flux:callout color="{{ ($limitsInfo['available_today'] <= 0 || $limitsInfo['available_month'] <= 0) ? 'red' : ($limitsInfo['available_today'] <= 1 || $limitsInfo['available_month'] <= 2 ? 'yellow' : 'blue') }}" class="mb-4">
-                                    <strong>Límites de invitados</strong><br>
-                                    • <strong>Hoy</strong> ({{ $limitsInfo['is_weekend'] ? 'fin de semana' : 'día de semana' }}): <b>{{ $limitsInfo['used_today'] }}</b>/{{ $limitsInfo['max_guests_today'] }} usados | Disponible: <b>{{ $limitsInfo['available_today'] }}</b><br>
-                                    • <strong>Este mes</strong>: <b>{{ $limitsInfo['used_this_month'] }}</b>/{{ $limitsInfo['max_guests_month'] }} usados ({{ $limitsInfo['used_weekends_month'] }} en fines de semana) | Disponible: <b>{{ $limitsInfo['available_month'] }}</b><br>
-                                    • <strong>Quedan</strong>: {{ $limitsInfo['remaining_weekends'] }} días de fin de semana este mes
-                                    @if($limitsInfo['available_today'] <= 0)
-                                        <br><span class="text-red-600 dark:text-red-400 font-bold">⚠️ LÍMITE DIARIO AGOTADO</span>
-                                    @elseif($limitsInfo['available_month'] <= 0)
-                                        <br><span class="text-red-600 dark:text-red-400 font-bold">⚠️ LÍMITE MENSUAL AGOTADO</span>
-                                    @endif
+                                    <div class="space-y-2">
+                                        <div class="font-bold text-base">Límites de invitados de esta unidad</div>
+                                        
+                                        <div class="space-y-1">
+                                            <div class="font-semibold text-sm">📅 Hoy ({{ $limitsInfo['is_weekend'] ? 'Fin de semana' : 'Día de semana' }})</div>
+                                            <div class="text-sm pl-4">
+                                                Invitados únicos usados: <span class="font-bold">{{ $limitsInfo['used_today'] }}</span> de {{ $limitsInfo['max_guests_today'] }}<br>
+                                                Disponible: <span class="font-bold {{ $limitsInfo['available_today'] <= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">{{ $limitsInfo['available_today'] }}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-1">
+                                            <div class="font-semibold text-sm">📆 Este mes</div>
+                                            <div class="text-sm pl-4">
+                                                Invitados únicos usados: <span class="font-bold">{{ $limitsInfo['used_this_month'] }}</span> de {{ $limitsInfo['max_guests_month'] }}<br>
+                                                ({{ $limitsInfo['used_weekends_month'] }} usados en fines de semana)<br>
+                                                Disponible: <span class="font-bold {{ $limitsInfo['available_month'] <= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">{{ $limitsInfo['available_month'] }}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-xs text-gray-600 dark:text-gray-400 pt-1">
+                                            📅 Quedan {{ $limitsInfo['remaining_weekends'] }} días de fin de semana este mes
+                                        </div>
+
+                                        @if($limitsInfo['available_today'] <= 0)
+                                            <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                                                <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITE DIARIO AGOTADO - No se pueden agregar más invitados hoy</span>
+                                            </div>
+                                        @elseif($limitsInfo['available_month'] <= 0)
+                                            <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                                                <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITE MENSUAL AGOTADO - No se pueden agregar más invitados este mes</span>
+                                            </div>
+                                        @endif
+                                    </div>
                                 </flux:callout>
                             @endif
 
