@@ -26,6 +26,8 @@ class Scanner extends Component
 
     public ?Resident $scannedResident = null;
 
+    public ?int $scannedUserId = null; // Para usuarios con QR personal
+
     public ?int $poolId = null;
 
     public ?string $exitNotes = null;
@@ -83,6 +85,7 @@ class Scanner extends Component
         $this->token = '';
         $this->pass = null;
         $this->scannedResident = null;
+        $this->scannedUserId = null;
         // NO resetear poolId - debe mantenerse con la pileta del turno activo
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
@@ -138,6 +141,7 @@ class Scanner extends Component
         $this->resetErrorBag();
         $this->pass = null;
         $this->scannedResident = null;
+        $this->scannedUserId = null;
         // NO resetear poolId - debe mantenerse con la pileta del turno activo
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
@@ -197,7 +201,10 @@ class Scanner extends Component
                 return;
             }
             
-            // Crear un "residente virtual" con los datos del usuario para mantener compatibilidad
+            // Guardar el ID del usuario para usarlo en confirm
+            $this->scannedUserId = $user->id;
+            
+            // Crear un "residente virtual" con los datos del usuario para mostrar en la UI
             $this->scannedResident = new Resident();
             $this->scannedResident->id = null; // Marcar como "virtual"
             $this->scannedResident->name = $user->name;
@@ -208,10 +215,10 @@ class Scanner extends Component
             // Cargar la relación unit manualmente
             $this->scannedResident->setRelation('unit', Unit::with(['building.complex'])->find($unitUser->unit_id));
             
-            \Log::info('✅ Residente virtual creado', [
-                'name' => $this->scannedResident->name,
-                'unit_id' => $this->scannedResident->unit_id,
-                'user_id' => $this->scannedResident->user_id
+            \Log::info('✅ Usuario guardado', [
+                'user_id' => $this->scannedUserId,
+                'name' => $user->name,
+                'unit_id' => $unitUser->unit_id
             ]);
             
             // Acción automática según estado actual
@@ -548,12 +555,17 @@ class Scanner extends Component
     protected function confirmUserEntry(PoolAccessService $poolAccessService): void
     {
         \Log::info('👥 confirmUserEntry INICIADO (QR de usuario)', [
-            'user_id' => $this->scannedResident?->user_id,
-            'name' => $this->scannedResident?->name,
+            'scannedUserId' => $this->scannedUserId,
             'poolId' => $this->poolId
         ]);
 
-        $user = User::findOrFail($this->scannedResident->user_id);
+        if (!$this->scannedUserId) {
+            \Log::error('❌ No hay scannedUserId');
+            $this->addError('error', 'Error: ID de usuario no encontrado');
+            return;
+        }
+
+        $user = User::findOrFail($this->scannedUserId);
 
         // Evitar doble entrada
         $openEntry = $this->findOpenEntryForUser($user);
@@ -573,7 +585,14 @@ class Scanner extends Component
             $pool = Pool::findOrFail($this->poolId);
             \Log::info('🏊 Pool encontrado', ['pool_name' => $pool->name]);
 
-            $unit = Unit::findOrFail($this->scannedResident->unit_id);
+            $unitUser = $user->currentUnitUsers()->first();
+            if (!$unitUser) {
+                \Log::error('❌ Usuario sin unidad activa');
+                $this->addError('error', 'El usuario no tiene una unidad activa.');
+                return;
+            }
+
+            $unit = Unit::findOrFail($unitUser->unit_id);
             \Log::info('🏠 Unit encontrado', ['unit' => $unit->full_identifier]);
 
             // Registrar entrada del usuario sin invitados
@@ -608,14 +627,12 @@ class Scanner extends Component
         }
 
         // Buscar siempre el ingreso abierto (sin salida)
-        if ($this->scannedResident) {
-            // Si es residente virtual (usuario), buscar por usuario
-            if ($this->scannedResident->id === null) {
-                $user = User::findOrFail($this->scannedResident->user_id);
-                $entry = $this->findOpenEntryForUser($user);
-            } else {
-                $entry = $this->findOpenEntryForResident($this->scannedResident);
-            }
+        if ($this->scannedUserId) {
+            // Es un usuario con QR personal
+            $user = User::findOrFail($this->scannedUserId);
+            $entry = $this->findOpenEntryForUser($user);
+        } elseif ($this->scannedResident) {
+            $entry = $this->findOpenEntryForResident($this->scannedResident);
         } else {
             $entry = $this->findOpenEntryForPass();
         }
