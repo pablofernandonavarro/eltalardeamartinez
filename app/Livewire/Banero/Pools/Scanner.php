@@ -184,14 +184,35 @@ class Scanner extends Component
 
         if ($user) {
             // Es un QR personal de usuario (propietario/inquilino)
-            // Crear un "residente virtual" con los datos del usuario para mantener compatibilidad
-            $this->scannedResident = new Resident([
-                'name' => $user->name,
-                'unit_id' => $user->currentUnitUsers()->first()?->unit_id,
+            \Log::info('👥 Usuario con QR personal encontrado', [
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'email' => $user->email
             ]);
+            
+            $unitUser = $user->currentUnitUsers()->first();
+            if (!$unitUser) {
+                \Log::error('❌ Usuario no tiene unidad activa');
+                $this->addError('token', 'El usuario no tiene una unidad activa asignada.');
+                return;
+            }
+            
+            // Crear un "residente virtual" con los datos del usuario para mantener compatibilidad
+            $this->scannedResident = new Resident();
             $this->scannedResident->id = null; // Marcar como "virtual"
+            $this->scannedResident->name = $user->name;
+            $this->scannedResident->unit_id = $unitUser->unit_id;
             $this->scannedResident->user_id = $user->id;
             $this->scannedResident->auth_user_id = $user->id;
+            
+            // Cargar la relación unit manualmente
+            $this->scannedResident->setRelation('unit', Unit::with(['building.complex'])->find($unitUser->unit_id));
+            
+            \Log::info('✅ Residente virtual creado', [
+                'name' => $this->scannedResident->name,
+                'unit_id' => $this->scannedResident->unit_id,
+                'user_id' => $this->scannedResident->user_id
+            ]);
             
             // Acción automática según estado actual
             $openEntry = $this->findOpenEntryForUser($user);
