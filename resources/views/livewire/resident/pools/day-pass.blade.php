@@ -30,13 +30,34 @@
                 {{-- Cupo Según Reglamento --}}
                 <div class="p-4 bg-white dark:bg-zinc-900 rounded-lg border-2 border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">📋 Cupo Según Reglamento</span>
+                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">📋 Cupo Diario</span>
                         <span class="text-3xl font-black {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
                             {{ $limitsInfo['max_guests_today'] }}
                         </span>
                     </div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $limitsInfo['message'] }}
+                        Máximo de invitados permitidos hoy
+                    </div>
+                </div>
+
+                {{-- Uso Mensual --}}
+                <div class="p-4 bg-white dark:bg-zinc-900 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">📅 Uso Mensual</span>
+                        <div class="text-right">
+                            <div class="text-3xl font-black {{ $limitsInfo['available_month'] <= 0 ? 'text-red-600 dark:text-red-400' : ($limitsInfo['available_month'] <= 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400') }}">
+                                {{ $limitsInfo['available_month'] }}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">disponibles</div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Usados: <strong>{{ $limitsInfo['used_this_month'] }}</strong> de <strong>{{ $limitsInfo['max_guests_month'] }}</strong> este mes
+                        @if($limitsInfo['available_month'] <= 0)
+                            <span class="block mt-1 text-red-600 dark:text-red-400 font-bold">⚠️ LÍMITE MENSUAL AGOTADO</span>
+                        @elseif($limitsInfo['available_month'] <= 2)
+                            <span class="block mt-1 text-yellow-600 dark:text-yellow-400 font-semibold">⚠️ Quedan pocos invitados disponibles</span>
+                        @endif
                     </div>
                 </div>
 
