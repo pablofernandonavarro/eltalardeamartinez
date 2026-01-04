@@ -462,11 +462,21 @@ class Scanner extends Component
         \Log::info('👤 confirmResidentEntry INICIADO', [
             'resident_id' => $this->scannedResident?->id,
             'resident_name' => $this->scannedResident?->name,
+            'is_virtual' => $this->scannedResident?->id === null,
             'poolId' => $this->poolId
         ]);
         
         if (! $this->scannedResident) {
             \Log::error('❌ No hay residente escaneado');
+            return;
+        }
+
+        // Detectar si es un residente virtual (usuario con QR personal)
+        $isVirtualResident = $this->scannedResident->id === null;
+
+        if ($isVirtualResident) {
+            // Es un usuario con QR personal, usar el método para usuarios
+            $this->confirmUserEntry($poolAccessService);
             return;
         }
 
@@ -514,6 +524,54 @@ class Scanner extends Component
         }
     }
 
+    protected function confirmUserEntry(PoolAccessService $poolAccessService): void
+    {
+        \Log::info('👥 confirmUserEntry INICIADO (QR de usuario)', [
+            'user_id' => $this->scannedResident?->user_id,
+            'name' => $this->scannedResident?->name,
+            'poolId' => $this->poolId
+        ]);
+
+        $user = User::findOrFail($this->scannedResident->user_id);
+
+        // Evitar doble entrada
+        $openEntry = $this->findOpenEntryForUser($user);
+        if ($openEntry) {
+            \Log::warning('⚠️ Usuario ya tiene entrada abierta', ['entry_id' => $openEntry->id]);
+            $this->addError('error', 'Este usuario ya está en la pileta. Registre la salida antes de volver a ingresar.');
+            return;
+        }
+
+        $this->validate([
+            'poolId' => 'required|exists:pools,id',
+        ], [
+            'poolId.required' => 'Debe seleccionar una pileta.',
+        ]);
+
+        try {
+            $pool = Pool::findOrFail($this->poolId);
+            \Log::info('🏊 Pool encontrado', ['pool_name' => $pool->name]);
+
+            $unit = Unit::findOrFail($this->scannedResident->unit_id);
+            \Log::info('🏠 Unit encontrado', ['unit' => $unit->full_identifier]);
+
+            // Registrar entrada del usuario sin invitados
+            \Log::info('🟢 Llamando a registerEntry (usuario)...');
+            $entry = $poolAccessService->registerEntry($pool, $unit, $user, 0, now()->toDateTimeString());
+            \Log::info('✅ Entrada registrada exitosamente', ['entry_id' => $entry->id]);
+
+            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
+
+            $this->action = 'exit';
+        } catch (\Exception $e) {
+            \Log::error('🔴 ERROR al registrar entrada de usuario', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->addError('error', $e->getMessage());
+        }
+    }
+
     public function checkout(): void
     {
         if (! $this->pass && ! $this->scannedResident) {
@@ -529,9 +587,17 @@ class Scanner extends Component
         }
 
         // Buscar siempre el ingreso abierto (sin salida)
-        $entry = $this->scannedResident
-            ? $this->findOpenEntryForResident($this->scannedResident)
-            : $this->findOpenEntryForPass();
+        if ($this->scannedResident) {
+            // Si es residente virtual (usuario), buscar por usuario
+            if ($this->scannedResident->id === null) {
+                $user = User::findOrFail($this->scannedResident->user_id);
+                $entry = $this->findOpenEntryForUser($user);
+            } else {
+                $entry = $this->findOpenEntryForResident($this->scannedResident);
+            }
+        } else {
+            $entry = $this->findOpenEntryForPass();
+        }
 
         if (! $entry) {
             $this->addError('error', 'No se encontró un ingreso abierto para hacer salida.');
