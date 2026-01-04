@@ -25,8 +25,10 @@
                 <option value="">Todos los roles</option>
                 <option value="null">Sin rol asignado</option>
                 <option value="{{ \App\Role::Admin->value }}">{{ \App\Role::Admin->label() }}</option>
+                <option value="{{ \App\Role::Banero->value }}">{{ \App\Role::Banero->label() }}</option>
                 <option value="{{ \App\Role::Propietario->value }}">{{ \App\Role::Propietario->label() }}</option>
                 <option value="{{ \App\Role::Inquilino->value }}">{{ \App\Role::Inquilino->label() }}</option>
+                <option value="{{ \App\Role::Residente->value }}">{{ \App\Role::Residente->label() }}</option>
             </flux:select>
         </flux:field>
 
@@ -69,7 +71,17 @@
                         <td class="p-2">{{ $user->email }}</td>
                         <td class="p-2">
                             @if($user->role)
-                                <flux:badge color="{{ $user->role === \App\Role::Admin ? 'red' : ($user->role === \App\Role::Propietario ? 'blue' : 'green') }}">
+                                @php
+                                    $badgeColor = match($user->role) {
+                                        \App\Role::Admin => 'red',
+                                        \App\Role::Banero => 'cyan',
+                                        \App\Role::Propietario => 'blue',
+                                        \App\Role::Inquilino => 'purple',
+                                        \App\Role::Residente => 'green',
+                                        default => 'zinc',
+                                    };
+                                @endphp
+                                <flux:badge color="{{ $badgeColor }}">
                                     {{ $user->role?->label() ?? 'Sin rol' }}
                                 </flux:badge>
                             @else
