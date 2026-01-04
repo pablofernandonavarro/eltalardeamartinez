@@ -17,19 +17,10 @@
                     <flux:navlist.item icon="home-modern" :href="route('resident.household')" :current="request()->routeIs('resident.household')" wire:navigate>{{ __('Mi hogar') }}</flux:navlist.item>
                 </flux:navlist.group>
                 <flux:navlist.group :heading="__('Mis Servicios')" class="grid">
-                    @php
-                        // Verificar si el usuario autenticado es un residente mayor de 18
-                        $isResident = \App\Models\Resident::query()
-                            ->where('auth_user_id', auth()->id())
-                            ->active()
-                            ->exists();
-                    @endphp
-                    
-                    @if($isResident)
-                        <flux:navlist.item icon="qr-code" :href="route('resident.pools.my-qr')" :current="request()->routeIs('resident.pools.my-qr')" wire:navigate>
-                            {{ __('Mi QR Personal') }}
-                        </flux:navlist.item>
-                    @endif
+                    {{-- Todos los usuarios aprobados pueden tener QR personal --}}
+                    <flux:navlist.item icon="qr-code" :href="route('resident.pools.my-qr')" :current="request()->routeIs('resident.pools.my-qr')" wire:navigate>
+                        {{ __('Mi QR Personal') }}
+                    </flux:navlist.item>
                     
                     <flux:navlist.item icon="ticket" :href="route('resident.pools.day-pass')" :current="request()->routeIs('resident.pools.day-pass')" wire:navigate>
                         {{ __('Mi QR de Pileta (hoy)') }}
