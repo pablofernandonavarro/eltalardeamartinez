@@ -225,6 +225,17 @@
                                 <div class="font-semibold text-lg">{{ $pool->name ?? 'N/D' }}</div>
                             </div>
 
+                            @if($limitsInfo)
+                                <flux:callout color="{{ $limitsInfo['available_month'] <= 0 ? 'red' : ($limitsInfo['available_month'] <= 2 ? 'yellow' : 'blue') }}" class="mb-4">
+                                    <strong>Límites de invitados</strong><br>
+                                    • Hoy ({{ $limitsInfo['is_weekend'] ? 'fin de semana' : 'día de semana' }}): Máx. <b>{{ $limitsInfo['max_guests_today'] }}</b> invitados<br>
+                                    • Este mes: <b>{{ $limitsInfo['used_this_month'] }}</b> de <b>{{ $limitsInfo['max_guests_month'] }}</b> usados | Disponible: <b>{{ $limitsInfo['available_month'] }}</b>
+                                    @if($limitsInfo['available_month'] <= 0)
+                                        <br><span class="text-red-600 dark:text-red-400 font-bold">⚠️ LÍMITE MENSUAL AGOTADO</span>
+                                    @endif
+                                </flux:callout>
+                            @endif
+
                             <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="font-semibold">Invitados</div>

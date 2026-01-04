@@ -433,9 +433,58 @@ class Scanner extends Component
         // Solo mostrar la pileta del turno activo
         $pool = $this->activeShift ? Pool::find($this->activeShift->pool_id) : null;
 
+        // Calcular límites si hay un pase cargado
+        $limitsInfo = null;
+        if ($this->pass) {
+            $limitsInfo = $this->calculateLimitsInfo();
+        }
+
         return view('livewire.banero.pools.scanner', [
             'pool' => $pool,
             'pass' => $this->pass,
+            'limitsInfo' => $limitsInfo,
         ])->layout('components.layouts.banero', ['title' => 'Escanear QR']);
+    }
+
+    protected function calculateLimitsInfo(): array
+    {
+        if (!$this->pass) {
+            return [];
+        }
+
+        $unit = Unit::find($this->pass->unit_id);
+        if (!$unit) {
+            return [];
+        }
+
+        $pool = Pool::find($this->poolId);
+        if (!$pool) {
+            return [];
+        }
+
+        $today = now();
+        $isWeekend = $today->isWeekend();
+        $maxGuestsToday = $isWeekend 
+            ? PoolSetting::get('max_guests_weekend', 2) 
+            : PoolSetting::get('max_guests_weekday', 4);
+
+        // Calcular invitados usados este mes
+        $monthStart = $today->copy()->startOfMonth();
+        $monthEnd = $today->copy()->endOfMonth();
+        $usedThisMonth = \App\Models\PoolEntry::forUnit($unit->id)
+            ->where('pool_id', $pool->id)
+            ->whereBetween('entered_at', [$monthStart, $monthEnd])
+            ->sum('guests_count');
+
+        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
+        $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+
+        return [
+            'is_weekend' => $isWeekend,
+            'max_guests_today' => $maxGuestsToday,
+            'max_guests_month' => $maxGuestsMonth,
+            'used_this_month' => $usedThisMonth,
+            'available_month' => $availableMonth,
+        ];
     }
 }
