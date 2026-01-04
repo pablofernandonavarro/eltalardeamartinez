@@ -43,7 +43,8 @@
                             {{ $limitsInfo['available_month'] }}
                         </div>
                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ $limitsInfo['used_this_month'] }}/{{ $limitsInfo['max_guests_month'] }} usados
+                            {{ $limitsInfo['used_this_month'] }}/{{ $limitsInfo['max_guests_month'] }} usados<br>
+                            ({{ $limitsInfo['used_weekends_month'] }} en fines de semana)
                         </div>
                     </div>
                 </div>

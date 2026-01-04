@@ -524,6 +524,16 @@ class Scanner extends Component
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
             ->distinct('pool_entry_guests.pool_guest_id')
             ->count('pool_entry_guests.pool_guest_id');
+        
+        // Contar invitados únicos usados en FINES DE SEMANA este mes
+        $usedWeekendsThisMonth = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+            ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
+            ->distinct('pool_entry_guests.pool_guest_id')
+            ->count('pool_entry_guests.pool_guest_id');
 
         $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
         $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
@@ -535,6 +545,7 @@ class Scanner extends Component
             'available_today' => $availableToday,
             'max_guests_month' => $maxGuestsMonth,
             'used_this_month' => $usedThisMonth,
+            'used_weekends_month' => $usedWeekendsThisMonth,
             'available_month' => $availableMonth,
         ];
     }

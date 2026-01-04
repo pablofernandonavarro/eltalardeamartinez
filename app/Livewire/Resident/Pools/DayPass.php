@@ -324,7 +324,7 @@ class DayPass extends Component
             return ['has_limits' => false];
         }
 
-        // Calcular invitados Únicos usados este mes (no suma reingresos)
+        // Contar invitados únicos usados este mes (no suma reingresos)
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
         
@@ -334,6 +334,16 @@ class DayPass extends Component
             ->where('pool_entries.unit_id', $unit->id)
             ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+            ->distinct('pool_entry_guests.pool_guest_id')
+            ->count('pool_entry_guests.pool_guest_id');
+        
+        // Contar invitados únicos usados en FINES DE SEMANA este mes
+        $usedWeekendsThisMonth = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+            ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
             ->distinct('pool_entry_guests.pool_guest_id')
             ->count('pool_entry_guests.pool_guest_id');
 
@@ -356,6 +366,7 @@ class DayPass extends Component
                 'max_guests_today' => $maxGuestsToday,
                 'max_guests_month' => $maxGuestsMonth,
                 'used_this_month' => $usedThisMonth,
+                'used_weekends_month' => $usedWeekendsThisMonth,
                 'available_month' => $availableMonth,
                 'allow_extra_payment' => $allowExtraPayment,
                 'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
@@ -374,6 +385,7 @@ class DayPass extends Component
                 'max_guests_today' => $maxGuestsToday,
                 'max_guests_month' => $maxGuestsMonth,
                 'used_this_month' => $usedThisMonth,
+                'used_weekends_month' => $usedWeekendsThisMonth,
                 'available_month' => $availableMonth,
                 'allow_extra_payment' => $allowExtraPayment,
                 'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
