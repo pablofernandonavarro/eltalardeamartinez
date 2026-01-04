@@ -21,7 +21,7 @@ class Create extends Component
 
     public array $limits = [];
 
-    public bool $isActive = true;
+    public bool $is_active = true;
 
     public ?string $validFrom = null;
 

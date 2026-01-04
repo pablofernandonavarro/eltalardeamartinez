@@ -145,8 +145,8 @@
 
             <flux:field>
                 <flux:label>Estado</flux:label>
-                <flux:checkbox wire:model="isActive">Regla activa</flux:checkbox>
-                <flux:error name="isActive" />
+                <flux:checkbox wire:model="is_active">Regla activa</flux:checkbox>
+                <flux:error name="is_active" />
             </flux:field>
         </div>
 
