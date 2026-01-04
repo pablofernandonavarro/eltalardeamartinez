@@ -226,11 +226,13 @@
                             </div>
 
                             @if($limitsInfo)
-                                <flux:callout color="{{ $limitsInfo['available_month'] <= 0 ? 'red' : ($limitsInfo['available_month'] <= 2 ? 'yellow' : 'blue') }}" class="mb-4">
+                                <flux:callout color="{{ ($limitsInfo['available_today'] <= 0 || $limitsInfo['available_month'] <= 0) ? 'red' : ($limitsInfo['available_today'] <= 1 || $limitsInfo['available_month'] <= 2 ? 'yellow' : 'blue') }}" class="mb-4">
                                     <strong>Límites de invitados</strong><br>
-                                    • Hoy ({{ $limitsInfo['is_weekend'] ? 'fin de semana' : 'día de semana' }}): Máx. <b>{{ $limitsInfo['max_guests_today'] }}</b> invitados<br>
-                                    • Este mes: <b>{{ $limitsInfo['used_this_month'] }}</b> de <b>{{ $limitsInfo['max_guests_month'] }}</b> usados | Disponible: <b>{{ $limitsInfo['available_month'] }}</b>
-                                    @if($limitsInfo['available_month'] <= 0)
+                                    • <strong>Hoy</strong> ({{ $limitsInfo['is_weekend'] ? 'fin de semana' : 'día de semana' }}): <b>{{ $limitsInfo['used_today'] }}</b>/{{ $limitsInfo['max_guests_today'] }} usados | Disponible: <b>{{ $limitsInfo['available_today'] }}</b><br>
+                                    • <strong>Este mes</strong>: <b>{{ $limitsInfo['used_this_month'] }}</b>/{{ $limitsInfo['max_guests_month'] }} usados | Disponible: <b>{{ $limitsInfo['available_month'] }}</b>
+                                    @if($limitsInfo['available_today'] <= 0)
+                                        <br><span class="text-red-600 dark:text-red-400 font-bold">⚠️ LÍMITE DIARIO AGOTADO</span>
+                                    @elseif($limitsInfo['available_month'] <= 0)
                                         <br><span class="text-red-600 dark:text-red-400 font-bold">⚠️ LÍMITE MENSUAL AGOTADO</span>
                                     @endif
                                 </flux:callout>

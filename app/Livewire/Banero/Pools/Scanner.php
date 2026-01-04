@@ -219,15 +219,40 @@ class Scanner extends Component
         $this->selectedGuestIds = $selected;
 
         $guestsCount = count($this->selectedGuestIds);
+        $unit = Unit::findOrFail($this->pass->unit_id);
+        $pool = Pool::findOrFail($this->poolId);
 
-        // VALIDACIÓN 1: Cumplir con el reglamento (límite diario absoluto) - DEBE SER LA PRIMERA
+        // VALIDACIÓN 1: Contar invitados únicos que YA INGRESARON HOY
+        $today = now()->toDateString();
+        $guestsUsedToday = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereDate('pool_entries.entered_at', $today)
+            ->distinct('pool_entry_guests.pool_guest_id')
+            ->count('pool_entry_guests.pool_guest_id');
+
+        // Verificar cuántos invitados NUEVOS (no repetidos) se intentan ingresar
+        $alreadyEnteredToday = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereDate('pool_entries.entered_at', $today)
+            ->whereIn('pool_entry_guests.pool_guest_id', $this->selectedGuestIds)
+            ->pluck('pool_entry_guests.pool_guest_id')
+            ->unique()
+            ->toArray();
+        
+        $newGuestsCount = count(array_diff($this->selectedGuestIds, $alreadyEnteredToday));
+        $totalUniqueTodayAfterEntry = $guestsUsedToday + $newGuestsCount;
+        
+        // Verificar límite diario según día de semana o fin de semana
         $maxAllowedByRegulation = $this->calculateMaxGuestsAllowedToday();
-        if ($guestsCount > $maxAllowedByRegulation) {
-            $isWeekend = now()->isWeekend();
-            $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
-            
-            $this->addError('selectedGuestIds', "REGLAMENTO VIOLADO: Máximo {$maxAllowedByRegulation} invitados permitidos en {$dayType}. No se aceptan pagos por invitados extra.");
-
+        $isWeekend = now()->isWeekend();
+        $dayType = $isWeekend ? 'fin de semana' : 'día de semana';
+        
+        if ($totalUniqueTodayAfterEntry > $maxAllowedByRegulation) {
+            $this->addError('selectedGuestIds', "REGLAMENTO VIOLADO: Ya usó {$guestsUsedToday} invitados únicos hoy ({$dayType}). Máximo {$maxAllowedByRegulation} permitidos. No se aceptan pagos por invitados extra.");
             return;
         }
 
@@ -475,11 +500,23 @@ class Scanner extends Component
             ? PoolSetting::get('max_guests_weekend', 2) 
             : PoolSetting::get('max_guests_weekday', 4);
 
+        // Contar invitados únicos usados HOY
+        $todayStr = $today->toDateString();
+        $usedToday = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereDate('pool_entries.entered_at', $todayStr)
+            ->distinct('pool_entry_guests.pool_guest_id')
+            ->count('pool_entry_guests.pool_guest_id');
+        
+        $availableToday = max(0, $maxGuestsToday - $usedToday);
+
         // Calcular invitados únicos usados este mes (no suma reingresos)
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
         
-        // Contar invitados únicos
+        // Contar invitados únicos este mes
         $usedThisMonth = \DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unit->id)
@@ -494,6 +531,8 @@ class Scanner extends Component
         return [
             'is_weekend' => $isWeekend,
             'max_guests_today' => $maxGuestsToday,
+            'used_today' => $usedToday,
+            'available_today' => $availableToday,
             'max_guests_month' => $maxGuestsMonth,
             'used_this_month' => $usedThisMonth,
             'available_month' => $availableMonth,
