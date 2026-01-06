@@ -725,6 +725,7 @@ class Scanner extends Component
                 
                 // Obtener usuarios activos de la unidad
                 $users = $unit->currentUsers()->get();
+                $userIds = $users->pluck('id')->toArray();
                 
                 // Combinar en una lista única
                 foreach ($users as $user) {
@@ -737,14 +738,18 @@ class Scanner extends Component
                     ];
                 }
                 
+                // Agregar residentes que NO sean usuarios (para evitar duplicados)
                 foreach ($residents as $resident) {
-                    $availableResidents[] = [
-                        'type' => 'resident',
-                        'id' => $resident->id,
-                        'user_id' => $resident->user_id,
-                        'name' => $resident->name,
-                        'role' => $resident->relationship ?? 'Residente',
-                    ];
+                    // Solo agregar si el residente no es un usuario de la unidad
+                    if (!in_array($resident->user_id, $userIds)) {
+                        $availableResidents[] = [
+                            'type' => 'resident',
+                            'id' => $resident->id,
+                            'user_id' => $resident->user_id,
+                            'name' => $resident->name,
+                            'role' => $resident->relationship ?? 'Residente',
+                        ];
+                    }
                 }
             }
         }
