@@ -152,18 +152,22 @@ class Scanner extends Component
         $this->showGuestList = false;
         $this->action = 'entry';
 
-        // Limpieza agresiva del token: trim, minúsculas, remover espacios internos
+        // DEBUG DETALLADO - Ver exactamente qué llega del scanner
+        \Log::info('===== SCAN QR - ANTES DE LIMPIAR =====');
+        \Log::info('Token ORIGINAL: "' . $this->token . '"');
+        \Log::info('Longitud: ' . strlen($this->token));
+        \Log::info('Hex completo: ' . bin2hex($this->token));
+        
+        // Limpieza agresiva del token: trim, minúsculas, remover espacios internos y caracteres de control
         $token = strtolower(trim($this->token));
         $token = preg_replace('/\s+/', '', $token); // Remover todos los espacios
+        $token = preg_replace('/[\x00-\x1F\x7F]/u', '', $token); // Remover caracteres de control (invisibles)
         
-        \Log::info('🧹 Token limpiado', [
-            'original' => $this->token,
-            'limpio' => $token,
-            'original_length' => strlen($this->token),
-            'clean_length' => strlen($token),
-            'original_hex' => bin2hex($this->token),
-            'clean_hex' => bin2hex($token)
-        ]);
+        \Log::info('===== SCAN QR - DESPUÉS DE LIMPIAR =====');
+        \Log::info('Token LIMPIADO: "' . $token . '"');
+        \Log::info('Longitud limpiada: ' . strlen($token));
+        \Log::info('Hex limpio: ' . bin2hex($token));
+        \Log::info('========================================');
         
         if ($token === '') {
             \Log::warning('Token vacío después de limpieza');
