@@ -349,6 +349,11 @@ class DayPass extends Component
             ->distinct('pool_entry_guests.pool_guest_id')
             ->count('pool_entry_guests.pool_guest_id');
 
+        // Obtener límite diario
+        $maxGuestsToday = $isWeekend 
+            ? PoolSetting::get('max_guests_weekend_day', 2)
+            : PoolSetting::get('max_guests_weekday_day', 4);
+
         if ($isWeekend) {
             // FINES DE SEMANA: Límite mensual de invitados únicos para fines de semana
             $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend', 2);
@@ -358,6 +363,7 @@ class DayPass extends Component
             return [
                 'has_limits' => true,
                 'is_weekend' => true,
+                'max_guests_today' => $maxGuestsToday,
                 'max_guests_weekend_month' => $maxGuestsWeekendMonth,
                 'used_weekends_month' => $usedWeekendsMonth,
                 'available_weekend_month' => $availableWeekendMonth,
@@ -375,6 +381,7 @@ class DayPass extends Component
             return [
                 'has_limits' => true,
                 'is_weekend' => false,
+                'max_guests_today' => $maxGuestsToday,
                 'max_guests_weekday_month' => $maxGuestsWeekdayMonth,
                 'used_weekdays_month' => $usedWeekdaysMonth,
                 'available_weekday_month' => $availableWeekdayMonth,
