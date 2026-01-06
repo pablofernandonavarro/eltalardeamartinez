@@ -754,7 +754,7 @@ class Scanner extends Component
             'pass' => $this->pass,
             'limitsInfo' => $limitsInfo,
             'availableResidents' => $availableResidents,
-        ])->layout('components.layouts.banero', ['title' => 'Escanear QR');
+        ])->layout('components.layouts.banero', ['title' => 'Escanear QR']);
     }
 
     protected function calculateLimitsInfo(): array
