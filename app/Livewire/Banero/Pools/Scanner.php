@@ -28,6 +28,8 @@ class Scanner extends Component
 
     public ?int $scannedUserId = null; // Para usuarios con QR personal
 
+    public ?int $selectedResidentId = null; // Residente seleccionado para day-pass
+
     public ?int $poolId = null;
 
     public ?string $exitNotes = null;
@@ -86,6 +88,7 @@ class Scanner extends Component
         $this->pass = null;
         $this->scannedResident = null;
         $this->scannedUserId = null;
+        $this->selectedResidentId = null;
         // NO resetear poolId - debe mantenerse con la pileta del turno activo
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
@@ -142,6 +145,7 @@ class Scanner extends Component
         $this->pass = null;
         $this->scannedResident = null;
         $this->scannedUserId = null;
+        $this->selectedResidentId = null;
         // NO resetear poolId - debe mantenerse con la pileta del turno activo
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
@@ -273,9 +277,10 @@ class Scanner extends Component
 
     public function confirm(PoolAccessService $poolAccessService): void
     {
-        \Log::info('🟢 confirm() LLAMADO', [
+        \Log::info('🟢 🟢 🟢 confirm() LLAMADO 🟢 🟢 🟢', [
             'has_pass' => (bool)$this->pass,
             'has_resident' => (bool)$this->scannedResident,
+            'scannedUserId' => $this->scannedUserId,
             'action' => $this->action,
             'poolId' => $this->poolId,
             'selectedGuestIds' => $this->selectedGuestIds
@@ -312,6 +317,7 @@ class Scanner extends Component
 
         $this->validate([
             'poolId' => 'required|exists:pools,id',
+            'selectedResidentId' => 'nullable|integer|exists:residents,id',
             'selectedGuestIds' => 'array',
             'selectedGuestIds.*' => 'integer',
         ], [
@@ -403,7 +409,16 @@ class Scanner extends Component
 
             $entry = null;
 
-            if ($this->pass->resident_id) {
+            // Si se seleccionó un residente específico, usarlo
+            if ($this->selectedResidentId) {
+                /** @var Resident $resident */
+                $resident = Resident::findOrFail($this->selectedResidentId);
+                // Verificar que el residente pertenezca a la unidad del pass
+                if ($resident->unit_id !== $this->pass->unit_id) {
+                    throw new \Exception('El residente seleccionado no pertenece a esta unidad.');
+                }
+                $entry = $poolAccessService->registerResidentEntry($pool, $unit, $resident, $guestsCount, now()->toDateTimeString());
+            } elseif ($this->pass->resident_id) {
                 /** @var Resident $resident */
                 $resident = Resident::findOrFail($this->pass->resident_id);
                 $entry = $poolAccessService->registerResidentEntry($pool, $unit, $resident, $guestsCount, now()->toDateTimeString());
@@ -697,11 +712,49 @@ class Scanner extends Component
             $limitsInfo = $this->calculateLimitsInfo();
         }
 
+        // Obtener residentes y usuarios disponibles de la unidad para day-pass
+        $availableResidents = [];
+        if ($this->pass) {
+            $unit = Unit::find($this->pass->unit_id);
+            if ($unit) {
+                // Obtener residentes activos de la unidad
+                $residents = Resident::where('unit_id', $unit->id)
+                    ->active()
+                    ->orderBy('name')
+                    ->get();
+                
+                // Obtener usuarios activos de la unidad
+                $users = $unit->currentUsers()->get();
+                
+                // Combinar en una lista única
+                foreach ($users as $user) {
+                    $availableResidents[] = [
+                        'type' => 'user',
+                        'id' => null, // Los usuarios no tienen resident_id
+                        'user_id' => $user->id,
+                        'name' => $user->name,
+                        'role' => $user->pivot->role ?? 'Usuario',
+                    ];
+                }
+                
+                foreach ($residents as $resident) {
+                    $availableResidents[] = [
+                        'type' => 'resident',
+                        'id' => $resident->id,
+                        'user_id' => $resident->user_id,
+                        'name' => $resident->name,
+                        'role' => $resident->relationship ?? 'Residente',
+                    ];
+                }
+            }
+        }
+
         return view('livewire.banero.pools.scanner', [
             'pool' => $pool,
             'pass' => $this->pass,
             'limitsInfo' => $limitsInfo,
-        ])->layout('components.layouts.banero', ['title' => 'Escanear QR']);
+            'availableResidents' => $availableResidents,
+        ])->layout('components.layouts.banero', ['title' => 'Escanear QR');
     }
 
     protected function calculateLimitsInfo(): array

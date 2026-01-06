@@ -264,6 +264,26 @@
                                 </flux:callout>
                             @endif
 
+                            {{-- Selector de quién ingresa --}}
+                            @if(!empty($availableResidents))
+                                <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 mb-4">
+                                    <flux:field>
+                                        <flux:label>¿Quién ingresa? (opcional)</flux:label>
+                                        <flux:select wire:model="selectedResidentId">
+                                            <option value="">{{ $pass->resident ? $pass->resident->name : $pass->user->name }} (por defecto)</option>
+                                            @foreach($availableResidents as $resident)
+                                                @if($resident['id'] || $pass->user_id !== $resident['user_id'])
+                                                    <option value="{{ $resident['id'] ?? '' }}">
+                                                        {{ $resident['name'] }} ({{ $resident['role'] }})
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        </flux:select>
+                                        <flux:description>Seleccioná quién ingresa físicamente con los invitados</flux:description>
+                                    </flux:field>
+                                </div>
+                            @endif
+
                             <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="font-semibold">Invitados</div>
