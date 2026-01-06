@@ -80,12 +80,6 @@ class UsedGuests extends Component
             return [];
         }
 
-        // Obtener pool habilitado (asumimos el primero)
-        $pool = Pool::query()->first();
-        if (!$pool) {
-            return [];
-        }
-
         // Obtener configuración de límites MENSUALES por tipo de día
         $maxGuestsWeekdayMonth = PoolSetting::get('max_guests_weekday', 4); // 4 invitados únicos para usar en días de semana del mes
         $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend', 2); // 2 invitados únicos para usar en fines de semana del mes
@@ -95,21 +89,19 @@ class UsedGuests extends Component
         $endDate = $startDate->copy()->endOfMonth();
         $today = now();
 
-        // Contar invitados únicos usados en DÍAS DE SEMANA del mes
+        // Contar invitados únicos usados en DÍAS DE SEMANA del mes (TODOS LOS POOLS)
         $usedWeekdaysMonth = DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unitId)
-            ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$startDate, $endDate])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
             ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
             ->value('total');
 
-        // Contar invitados únicos usados en FINES DE SEMANA del mes
+        // Contar invitados únicos usados en FINES DE SEMANA del mes (TODOS LOS POOLS)
         $usedWeekendsMonth = DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unitId)
-            ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$startDate, $endDate])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
             ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
@@ -124,7 +116,6 @@ class UsedGuests extends Component
             $usedToday = DB::table('pool_entry_guests')
                 ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
                 ->where('pool_entries.unit_id', $unitId)
-                ->where('pool_entries.pool_id', $pool->id)
                 ->whereDate('pool_entries.entered_at', $today->toDateString())
                 ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
                 ->value('total');

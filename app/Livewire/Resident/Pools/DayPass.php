@@ -319,31 +319,23 @@ class DayPass extends Component
         $isWeekend = $today->isWeekend();
         $dayOfWeek = $today->dayOfWeek;
 
-        // Obtener pool habilitado (asumimos el primero)
-        $pool = \App\Models\Pool::query()->first();
-        if (! $pool) {
-            return ['has_limits' => false];
-        }
-
-        // Contar invitados únicos por tipo de día este mes
+        // Contar invitados únicos por tipo de día este mes (TODOS LOS POOLS - el límite es por unidad)
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
         
-        // Contar invitados únicos usados en DÍAS DE SEMANA este mes
+        // Contar invitados únicos usados en DÍAS DE SEMANA este mes (TODOS LOS POOLS)
         $usedWeekdaysMonth = \DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
             ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
             ->value('total');
         
-        // Contar invitados únicos usados en FINES DE SEMANA este mes
+        // Contar invitados únicos usados en FINES DE SEMANA este mes (TODOS LOS POOLS)
         $usedWeekendsMonth = \DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
             ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
