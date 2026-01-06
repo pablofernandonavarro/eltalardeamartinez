@@ -57,7 +57,8 @@ class UsedGuests extends Component
                     'pool_entries.entered_at',
                     'pool_entries.exited_at',
                     'pools.name as pool_name',
-                    DB::raw('COALESCE(users.name, residents.name) as entered_by_name'),
+                    // Priorizar resident_id sobre user_id porque resident_id indica quien ingresó físicamente
+                    DB::raw('COALESCE(residents.name, users.name) as entered_by_name'),
                 ])
                 ->orderBy('pool_entries.entered_at', 'desc')
                 ->get();
