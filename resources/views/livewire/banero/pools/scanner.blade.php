@@ -352,6 +352,38 @@
                                 @endif
                             </div>
 
+                            {{-- Resumen compacto de invitados seleccionados --}}
+                            @if(count($selectedGuestIds ?? []) > 0)
+                                <div class="rounded-lg border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 p-4">
+                                    <div class="font-semibold text-sm text-green-800 dark:text-green-200 mb-2">
+                                        👥 Invitados que ingresarán ({{ count($selectedGuestIds) }})
+                                    </div>
+                                    <div class="space-y-2">
+                                        @foreach($pass->guests->whereIn('id', $selectedGuestIds) as $guest)
+                                            <div class="flex items-center gap-2 text-sm">
+                                                @php $gPhoto = $guest->profilePhotoUrl(); @endphp
+                                                @if($gPhoto)
+                                                    <img src="{{ $gPhoto }}" alt="{{ $guest->name }}" class="h-8 w-8 rounded-full object-cover" />
+                                                @else
+                                                    <div class="h-8 w-8 rounded-full bg-green-200 dark:bg-green-700 flex items-center justify-center text-xs font-semibold">
+                                                        {{ \Illuminate\Support\Str::of($guest->name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
+                                                    </div>
+                                                @endif
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-green-900 dark:text-green-100">{{ $guest->name }}</div>
+                                                    <div class="text-xs text-green-700 dark:text-green-300">
+                                                        {{ $guest->document_type }} {{ $guest->document_number }}
+                                                        @if($guest->birth_date)
+                                                            • {{ $guest->birth_date->age }} años
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
                                 <flux:button class="w-full" type="submit" variant="primary" wire:loading.attr="disabled">
                                     Registrar ingreso
