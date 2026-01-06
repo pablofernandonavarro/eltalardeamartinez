@@ -206,30 +206,30 @@ class DayPass extends Component
         // Si alguno no corresponde, lo descartamos (y volvemos a sincronizar limpio)
         $this->selectedGuestIds = array_values(array_unique($allowedGuests));
 
-        // VALIDACIÓN TRIPLE: Forzar cumplimiento absoluto del reglamento
+        // VALIDACIÓN: Forzar cumplimiento absoluto del reglamento mensual
         $limitsInfo = $this->calculateAvailableLimits();
-        $maxAllowed = $limitsInfo['max_guests_today'] ?? 999;
-        $maxMonthly = $limitsInfo['max_guests_month'] ?? 999;
-        $usedThisMonth = $limitsInfo['used_this_month'] ?? 0;
-        $availableMonth = $limitsInfo['available_month'] ?? 999;
+        $isWeekend = $limitsInfo['is_weekend'] ?? false;
         
-        // Validar límite diario
-        if (count($this->selectedGuestIds) > $maxAllowed) {
-            $isWeekend = $limitsInfo['is_weekend'] ?? false;
-            $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
+        // Obtener el límite mensual disponible según tipo de día
+        $availableMonth = $isWeekend 
+            ? ($limitsInfo['available_weekend_month'] ?? 999)
+            : ($limitsInfo['available_weekday_month'] ?? 999);
+        
+        $usedThisMonth = $isWeekend
+            ? ($limitsInfo['used_weekends_month'] ?? 0)
+            : ($limitsInfo['used_weekdays_month'] ?? 0);
             
-            $this->addError('error', "REGLAMENTO VIOLADO: Máximo {$maxAllowed} invitados permitidos en {$dayType}. El sistema ha ajustado automáticamente la cantidad.");
-            
-            // Truncar automáticamente
-            $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, $maxAllowed);
-        }
+        $maxMonthly = $isWeekend
+            ? ($limitsInfo['max_guests_weekend_month'] ?? 2)
+            : ($limitsInfo['max_guests_weekday_month'] ?? 4);
         
         // Validar límite mensual
         if (count($this->selectedGuestIds) > $availableMonth) {
-            $this->addError('error', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxMonthly} invitados este mes. Solo puedes agregar {$availableMonth} invitados más.");
+            $dayType = $isWeekend ? 'fines de semana' : 'días de semana';
+            $this->addError('error', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxMonthly} invitados únicos en {$dayType} este mes. Solo podés agregar {$availableMonth} invitados más.");
             
             // Truncar al disponible mensual
-            $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, (int)$availableMonth);
+            $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, max(0, (int)$availableMonth));
         }
 
         $this->pass->guests()->sync($this->selectedGuestIds);

@@ -136,7 +136,11 @@
                                     @php
                                         $isSelected = in_array($guest->id, $selectedGuestIds);
                                         $currentCount = count($selectedGuestIds);
-                                        $maxAllowed = $limitsInfo['max_guests_today'] ?? 999;
+                                        // Usar el límite disponible mensual según tipo de día (no el diario)
+                                        $isWeekend = $limitsInfo['is_weekend'] ?? false;
+                                        $maxAllowed = $isWeekend 
+                                            ? ($limitsInfo['available_weekend_month'] ?? 999)
+                                            : ($limitsInfo['available_weekday_month'] ?? 999);
                                         // Deshabilitar checkbox si: no está seleccionado Y ya se alcanzó el límite
                                         $isDisabled = !$isSelected && $currentCount >= $maxAllowed;
                                     @endphp
