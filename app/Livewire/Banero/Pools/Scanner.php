@@ -334,69 +334,80 @@ class Scanner extends Component
         $unit = Unit::findOrFail($this->pass->unit_id);
         $pool = Pool::findOrFail($this->poolId);
 
-        // VALIDACIÓN 1: Contar invitados únicos que YA INGRESARON HOY
-        $today = now()->toDateString();
-        $guestsUsedToday = \DB::table('pool_entry_guests')
-            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
-            ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
-            ->whereDate('pool_entries.entered_at', $today)
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
-
-        // Verificar cuántos invitados NUEVOS (no repetidos) se intentan ingresar
-        $alreadyEnteredToday = \DB::table('pool_entry_guests')
-            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
-            ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
-            ->whereDate('pool_entries.entered_at', $today)
-            ->whereIn('pool_entry_guests.pool_guest_id', $this->selectedGuestIds)
-            ->pluck('pool_entry_guests.pool_guest_id')
-            ->unique()
-            ->toArray();
+        // VALIDACIÓN 1: Límites mensuales separados por tipo de día
+        $today = now();
+        $isWeekend = $today->isWeekend();
+        $monthStart = $today->copy()->startOfMonth();
+        $monthEnd = $today->copy()->endOfMonth();
         
-        $newGuestsCount = count(array_diff($this->selectedGuestIds, $alreadyEnteredToday));
-        $totalUniqueTodayAfterEntry = $guestsUsedToday + $newGuestsCount;
-        
-        // Verificar límite diario según día de semana o fin de semana
-        $maxAllowedByRegulation = $this->calculateMaxGuestsAllowedToday();
-        $isWeekend = now()->isWeekend();
-        $dayType = $isWeekend ? 'fin de semana' : 'día de semana';
-        
-        if ($totalUniqueTodayAfterEntry > $maxAllowedByRegulation) {
-            $this->addError('selectedGuestIds', "REGLAMENTO VIOLADO: Ya usó {$guestsUsedToday} invitados únicos hoy ({$dayType}). Máximo {$maxAllowedByRegulation} permitidos. No se aceptan pagos por invitados extra.");
-            return;
+        if ($isWeekend) {
+            // Es fin de semana: validar contra invitados usados en fines de semana del mes
+            $usedWeekendsMonth = \DB::table('pool_entry_guests')
+                ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+                ->where('pool_entries.unit_id', $unit->id)
+                ->where('pool_entries.pool_id', $pool->id)
+                ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+                ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
+                ->distinct('pool_entry_guests.pool_guest_id')
+                ->count('pool_entry_guests.pool_guest_id');
+            
+            // Verificar cuántos invitados NUEVOS se intentan ingresar
+            $alreadyUsedWeekendsMonth = \DB::table('pool_entry_guests')
+                ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+                ->where('pool_entries.unit_id', $unit->id)
+                ->where('pool_entries.pool_id', $pool->id)
+                ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+                ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)')
+                ->whereIn('pool_entry_guests.pool_guest_id', $this->selectedGuestIds)
+                ->pluck('pool_entry_guests.pool_guest_id')
+                ->unique()
+                ->toArray();
+            
+            $newGuestsCount = count(array_diff($this->selectedGuestIds, $alreadyUsedWeekendsMonth));
+            $maxAllowedMonth = PoolSetting::get('max_guests_weekend', 2);
+            $availableMonth = max(0, $maxAllowedMonth - $usedWeekendsMonth);
+            
+            if ($newGuestsCount > $availableMonth) {
+                $this->addError('selectedGuestIds', "LÍMITE MENSUAL DE FIN DE SEMANA EXCEDIDO: Has usado {$usedWeekendsMonth} de {$maxAllowedMonth} invitados únicos en fines de semana este mes. Solo puedes agregar {$availableMonth} invitados nuevos. Puedes reingresar con los mismos invitados el mismo día.");
+                return;
+            }
+        } else {
+            // Es día de semana: validar contra invitados usados en días de semana del mes
+            $usedWeekdaysMonth = \DB::table('pool_entry_guests')
+                ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+                ->where('pool_entries.unit_id', $unit->id)
+                ->where('pool_entries.pool_id', $pool->id)
+                ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+                ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
+                ->distinct('pool_entry_guests.pool_guest_id')
+                ->count('pool_entry_guests.pool_guest_id');
+            
+            // Verificar cuántos invitados NUEVOS se intentan ingresar
+            $alreadyUsedWeekdaysMonth = \DB::table('pool_entry_guests')
+                ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+                ->where('pool_entries.unit_id', $unit->id)
+                ->where('pool_entries.pool_id', $pool->id)
+                ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+                ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)')
+                ->whereIn('pool_entry_guests.pool_guest_id', $this->selectedGuestIds)
+                ->pluck('pool_entry_guests.pool_guest_id')
+                ->unique()
+                ->toArray();
+            
+            $newGuestsCount = count(array_diff($this->selectedGuestIds, $alreadyUsedWeekdaysMonth));
+            $maxAllowedMonth = PoolSetting::get('max_guests_weekday', 4);
+            $availableMonth = max(0, $maxAllowedMonth - $usedWeekdaysMonth);
+            
+            if ($newGuestsCount > $availableMonth) {
+                $this->addError('selectedGuestIds', "LÍMITE MENSUAL DE DÍA DE SEMANA EXCEDIDO: Has usado {$usedWeekdaysMonth} de {$maxAllowedMonth} invitados únicos en días de semana este mes. Solo puedes agregar {$availableMonth} invitados nuevos. Puedes reingresar con los mismos invitados el mismo día.");
+                return;
+            }
         }
 
         // VALIDACIÓN 2: No más que los precargados
         if ($guestsCount > $this->pass->guests_allowed) {
             $this->addError('selectedGuestIds', 'No puede registrar más invitados que los precargados por el usuario.');
 
-            return;
-        }
-        
-        // VALIDACIÓN 3: Cumplir con el límite mensual (invitados únicos)
-        $unit = Unit::findOrFail($this->pass->unit_id);
-        $pool = Pool::findOrFail($this->poolId);
-        $today = now();
-        $monthStart = $today->copy()->startOfMonth();
-        $monthEnd = $today->copy()->endOfMonth();
-        
-        // Contar invitados únicos este mes (no suma reingresos)
-        $usedThisMonth = \DB::table('pool_entry_guests')
-            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
-            ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
-            ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
-        
-        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
-        $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
-        
-        if ($guestsCount > $availableMonth) {
-            $this->addError('selectedGuestIds', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxGuestsMonth} invitados únicos este mes. Solo puedes agregar {$availableMonth} invitados más.");
-            
             return;
         }
 
