@@ -464,9 +464,13 @@ class Scanner extends Component
             ->whereNull('exited_at');
 
         if ($this->pass->resident_id) {
+            // Si el pass es de un residente, buscar por resident_id
             $q->where('resident_id', $this->pass->resident_id);
         } else {
-            $q->where('user_id', $this->pass->user_id);
+            // Si el pass es de un usuario, buscar por user_id Y sin resident_id
+            // (para no confundir con entradas donde un residente usó el QR del usuario)
+            $q->where('user_id', $this->pass->user_id)
+              ->whereNull('resident_id');
         }
 
         return $q->latest('entered_at')->first();
