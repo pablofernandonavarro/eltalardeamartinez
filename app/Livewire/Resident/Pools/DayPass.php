@@ -336,8 +336,8 @@ class DayPass extends Component
             ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
+            ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
+            ->value('total');
         
         // Contar invitados únicos usados en FINES DE SEMANA este mes
         $usedWeekendsMonth = \DB::table('pool_entry_guests')
@@ -346,8 +346,8 @@ class DayPass extends Component
             ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
+            ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
+            ->value('total');
 
         // Obtener límites mensuales para ambos tipos de día
         $maxGuestsWeekdayMonth = PoolSetting::get('max_guests_weekday', 4);

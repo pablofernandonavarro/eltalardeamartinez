@@ -102,8 +102,8 @@ class UsedGuests extends Component
             ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$startDate, $endDate])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
+            ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
+            ->value('total');
 
         // Contar invitados únicos usados en FINES DE SEMANA del mes
         $usedWeekendsMonth = DB::table('pool_entry_guests')
@@ -112,8 +112,8 @@ class UsedGuests extends Component
             ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$startDate, $endDate])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
+            ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
+            ->value('total');
 
         // Si es el mes actual, calcular disponibilidad hoy
         $todayInfo = null;
@@ -126,8 +126,8 @@ class UsedGuests extends Component
                 ->where('pool_entries.unit_id', $unitId)
                 ->where('pool_entries.pool_id', $pool->id)
                 ->whereDate('pool_entries.entered_at', $today->toDateString())
-                ->distinct('pool_entry_guests.pool_guest_id')
-                ->count('pool_entry_guests.pool_guest_id');
+                ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
+                ->value('total');
 
             $todayInfo = [
                 'is_weekend' => $isWeekend,
