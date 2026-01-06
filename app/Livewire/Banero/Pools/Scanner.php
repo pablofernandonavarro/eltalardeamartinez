@@ -152,9 +152,21 @@ class Scanner extends Component
         $this->showGuestList = false;
         $this->action = 'entry';
 
-        $token = trim($this->token);
+        // Limpieza agresiva del token: trim, minúsculas, remover espacios internos
+        $token = strtolower(trim($this->token));
+        $token = preg_replace('/\s+/', '', $token); // Remover todos los espacios
+        
+        \Log::info('🧹 Token limpiado', [
+            'original' => $this->token,
+            'limpio' => $token,
+            'original_length' => strlen($this->token),
+            'clean_length' => strlen($token),
+            'original_hex' => bin2hex($this->token),
+            'clean_hex' => bin2hex($token)
+        ]);
+        
         if ($token === '') {
-            \Log::warning('Token vacío');
+            \Log::warning('Token vacío después de limpieza');
             $this->addError('token', 'Debe ingresar o escanear un token.');
 
             return;
@@ -163,7 +175,7 @@ class Scanner extends Component
         // Intentar buscar primero como QR personal de residente
         $resident = Resident::query()
             ->with(['unit.building.complex', 'user', 'authUser'])
-            ->where('qr_token', $token)
+            ->whereRaw('LOWER(qr_token) = ?', [$token])
             ->active()
             ->first();
 
@@ -186,7 +198,7 @@ class Scanner extends Component
 
         // Si no es QR de residente, buscar como QR personal de usuario
         $user = User::query()
-            ->where('qr_token', $token)
+            ->whereRaw('LOWER(qr_token) = ?', [$token])
             ->whereNotNull('approved_at')
             ->first();
 
@@ -235,7 +247,7 @@ class Scanner extends Component
         // Si no es un QR de usuario ni residente, buscar como day-pass
         $pass = PoolDayPass::query()
             ->with(['unit.building.complex', 'user', 'resident', 'guests', 'poolEntry.pool', 'poolEntry.guests'])
-            ->where('token', $token)
+            ->whereRaw('LOWER(token) = ?', [$token])
             ->first();
 
         if (! $pass) {
