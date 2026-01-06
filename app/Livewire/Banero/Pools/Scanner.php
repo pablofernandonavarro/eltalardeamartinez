@@ -729,19 +729,22 @@ class Scanner extends Component
                 
                 // Combinar en una lista única
                 foreach ($users as $user) {
-                    $availableResidents[] = [
-                        'type' => 'user',
-                        'id' => null, // Los usuarios no tienen resident_id
-                        'user_id' => $user->id,
-                        'name' => $user->name,
-                        'role' => $user->pivot->role ?? 'Usuario',
-                    ];
+                    // Solo agregar usuarios que tengan nombre válido
+                    if (!empty(trim($user->name))) {
+                        $availableResidents[] = [
+                            'type' => 'user',
+                            'id' => null, // Los usuarios no tienen resident_id
+                            'user_id' => $user->id,
+                            'name' => $user->name,
+                            'role' => $user->pivot->role ?? 'Usuario',
+                        ];
+                    }
                 }
                 
                 // Agregar residentes que NO sean usuarios (para evitar duplicados)
                 foreach ($residents as $resident) {
-                    // Solo agregar si el residente no es un usuario de la unidad
-                    if (!in_array($resident->user_id, $userIds)) {
+                    // Solo agregar si el residente no es un usuario de la unidad Y tiene nombre válido
+                    if (!in_array($resident->user_id, $userIds) && !empty(trim($resident->name))) {
                         $availableResidents[] = [
                             'type' => 'resident',
                             'id' => $resident->id,

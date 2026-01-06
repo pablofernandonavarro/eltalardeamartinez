@@ -272,7 +272,7 @@
                                         <flux:select wire:model="selectedResidentId">
                                             <option value="">{{ $pass->resident ? $pass->resident->name : $pass->user->name }} (por defecto)</option>
                                             @foreach($availableResidents as $resident)
-                                                @if($resident['id'] || $pass->user_id !== $resident['user_id'])
+                                                @if(!empty(trim($resident['name'])) && ($resident['id'] || $pass->user_id !== $resident['user_id']))
                                                     <option value="{{ $resident['id'] ?? '' }}">
                                                         {{ $resident['name'] }} ({{ $resident['role'] }})
                                                     </option>
