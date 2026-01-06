@@ -33,8 +33,9 @@ class MyPoolQrUnified extends Component
             ->active()
             ->first();
 
-        // Si no es residente, usar QR del usuario directamente
-        if (!$this->resident) {
+        // Determinar qué tipo de QR usar
+        if (!$this->resident || !$this->resident->canHavePersonalQr()) {
+            // Si no hay residente O el residente no puede tener QR (menor de edad), usar QR del usuario
             $this->useUserQr = true;
             
             // Generar QR para el usuario si no lo tiene
@@ -43,8 +44,8 @@ class MyPoolQrUnified extends Component
                 $this->user->save();
             }
         } else {
-            // Si el residente existe y puede tener QR, generarlo si no lo tiene
-            if ($this->resident->canHavePersonalQr() && ! $this->resident->qr_token) {
+            // El residente existe y puede tener QR personal
+            if (! $this->resident->qr_token) {
                 $this->resident->generateQrToken();
                 $this->resident->refresh();
             }
