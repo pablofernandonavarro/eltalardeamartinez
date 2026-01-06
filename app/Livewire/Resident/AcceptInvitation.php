@@ -5,6 +5,7 @@ namespace App\Livewire\Resident;
 use App\Role;
 use App\Models\Resident;
 use App\Models\User;
+use App\Models\UnitUser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
@@ -75,6 +76,18 @@ class AcceptInvitation extends Component
         $this->resident->email = $this->email;
         $this->resident->invitation_token = null; // Invalidar token
         $this->resident->save();
+        
+        // Agregar usuario a la unidad en unit_users (si no existe ya)
+        UnitUser::firstOrCreate(
+            [
+                'unit_id' => $this->resident->unit_id,
+                'user_id' => $user->id,
+            ],
+            [
+                'is_responsible' => false, // No es responsable de pago
+                'started_at' => now(),
+            ]
+        );
 
         // Generar QR automáticamente
         $this->resident->generateQrToken();
