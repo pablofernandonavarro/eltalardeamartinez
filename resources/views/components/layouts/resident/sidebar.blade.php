@@ -25,9 +25,16 @@
                     <flux:navlist.item icon="ticket" :href="route('resident.pools.day-pass')" :current="request()->routeIs('resident.pools.day-pass')" wire:navigate>
                         {{ __('Mi QR de Pileta (hoy)') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="users" :href="route('resident.pools.guests.index')" :current="request()->routeIs('resident.pools.guests.*')" wire:navigate>
-                        {{ __('Mis invitados') }}
-                    </flux:navlist.item>
+                    
+                    {{-- Submenu for Mis invitados --}}
+                    <flux:navlist.group icon="users" expandable :heading="__('Mis invitados')" :expanded="request()->routeIs('resident.pools.guests.*')">
+                        <flux:navlist.item :href="route('resident.pools.guests.manage')" :current="request()->routeIs('resident.pools.guests.manage')" wire:navigate>
+                            {{ __('Gestionar') }}
+                        </flux:navlist.item>
+                        <flux:navlist.item :href="route('resident.pools.guests.used')" :current="request()->routeIs('resident.pools.guests.used')" wire:navigate>
+                            {{ __('Utilizados') }}
+                        </flux:navlist.item>
+                    </flux:navlist.group>
                     {{-- <flux:navlist.item icon="currency-dollar" :href="route('resident.expenses.index')" :current="request()->routeIs('resident.expenses.*')" wire:navigate>{{ __('Mis Expensas') }}</flux:navlist.item>
                     <flux:navlist.item icon="beaker" :href="route('resident.pools.index')" :current="request()->routeIs('resident.pools.*')" wire:navigate>{{ __('Piletas') }}</flux:navlist.item> --}}
                 </flux:navlist.group>

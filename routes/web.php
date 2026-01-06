@@ -72,7 +72,9 @@ Route::middleware(['auth', 'approved'])->group(function () {
             Route::get('/day-pass', \App\Livewire\Resident\Pools\DayPass::class)->name('day-pass');
 
             Route::prefix('guests')->name('guests.')->group(function () {
-                Route::get('/', \App\Livewire\Resident\Pools\Guests\Index::class)->name('index');
+                Route::get('/', \App\Livewire\Resident\Pools\Guests\Index::class)->name('index'); // Legacy redirect
+                Route::get('/manage', \App\Livewire\Resident\Pools\Guests\Index::class)->name('manage');
+                Route::get('/used', \App\Livewire\Resident\Pools\Guests\UsedGuests::class)->name('used');
                 Route::get('/create', \App\Livewire\Resident\Pools\Guests\Create::class)->name('create');
                 Route::get('/{guest}/edit', \App\Livewire\Resident\Pools\Guests\Edit::class)->name('edit');
             });
