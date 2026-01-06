@@ -60,7 +60,7 @@
 
                 {{-- Uso del mes seleccionado --}}
                 <div>
-                    <div class="font-semibold text-sm mb-2">📊 Uso en {{ \Carbon\Carbon::parse($filterMonth . '-01')->format('F Y') }}</div>
+                    <div class="font-semibold text-sm mb-2">📊 Uso en {{ \Carbon\Carbon::parse($filterMonth . '-01')->locale('es')->isoFormat('MMMM YYYY') }}</div>
                     <div class="space-y-1 pl-4">
                         <div class="text-sm">
                             Invitados únicos usados: <span class="font-bold">{{ $limitsInfo['used_unique_month'] }}</span> de {{ $limitsInfo['max_guests_month'] }}
