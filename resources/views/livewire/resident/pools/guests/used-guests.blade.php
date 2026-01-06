@@ -55,8 +55,8 @@
                         <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
                             <div class="flex items-start gap-4">
                                 {{-- Foto del invitado --}}
-                                @if($usage->photo)
-                                    <img src="{{ Storage::url($usage->photo) }}" alt="{{ $usage->guest_name }}" class="h-16 w-16 rounded-full object-cover flex-shrink-0" />
+                                @if($usage->profile_photo_path)
+                                    <img src="{{ asset('storage/' . $usage->profile_photo_path) }}" alt="{{ $usage->guest_name }}" class="h-16 w-16 rounded-full object-cover flex-shrink-0" />
                                 @else
                                     <div class="h-16 w-16 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
                                         {{ \Illuminate\Support\Str::of($usage->guest_name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}

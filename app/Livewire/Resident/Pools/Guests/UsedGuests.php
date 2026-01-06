@@ -52,7 +52,7 @@ class UsedGuests extends Component
                     'pool_guests.name as guest_name',
                     'pool_guests.document_type',
                     'pool_guests.document_number',
-                    'pool_guests.photo',
+                    'pool_guests.profile_photo_path',
                     'pool_entries.entered_at',
                     'pool_entries.exited_at',
                     'pools.name as pool_name',
