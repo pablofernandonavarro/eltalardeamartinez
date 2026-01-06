@@ -26,12 +26,26 @@ class MyPoolQrUnified extends Component
         $this->user = auth()->user();
         $units = $this->user->currentUnitUsers()->pluck('unit_id')->all();
         $this->unitId = $units[0] ?? null;
+        
+        \Log::info('MyPoolQrUnified mount', [
+            'user_id' => $this->user->id,
+            'user_email' => $this->user->email,
+            'units_count' => count($units),
+            'unitId' => $this->unitId,
+        ]);
 
         // Buscar el residente asociado a este usuario autenticado
         $this->resident = Resident::query()
             ->where('auth_user_id', $this->user->id)
             ->active()
             ->first();
+        
+        \Log::info('Residente encontrado', [
+            'resident_found' => $this->resident ? 'YES' : 'NO',
+            'resident_id' => $this->resident?->id,
+            'resident_name' => $this->resident?->name,
+            'can_have_qr' => $this->resident?->canHavePersonalQr(),
+        ]);
 
         // Determinar qué tipo de QR usar
         if (!$this->resident || !$this->resident->canHavePersonalQr()) {
