@@ -84,26 +84,26 @@ class UsedGuests extends Component
             return [];
         }
 
-        // Obtener configuración de límites
-        $maxGuestsWeekday = PoolSetting::get('max_guests_weekday', 4);
-        $maxGuestsWeekend = PoolSetting::get('max_guests_weekend', 2);
-        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
+        // Obtener configuración de límites MENSUALES por tipo de día
+        $maxGuestsWeekdayMonth = PoolSetting::get('max_guests_weekday', 4); // 4 invitados únicos para usar en días de semana del mes
+        $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend', 2); // 2 invitados únicos para usar en fines de semana del mes
 
         // Calcular período
         $startDate = \Carbon\Carbon::parse($filterMonth . '-01')->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
         $today = now();
 
-        // Contar invitados únicos usados en el mes seleccionado
-        $usedUniqueThisMonth = DB::table('pool_entry_guests')
+        // Contar invitados únicos usados en DÍAS DE SEMANA del mes
+        $usedWeekdaysMonth = DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unitId)
             ->whereBetween('pool_entries.entered_at', [$startDate, $endDate])
+            ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
             ->distinct('pool_entry_guests.pool_guest_id')
             ->count('pool_entry_guests.pool_guest_id');
 
-        // Contar invitados únicos usados en fines de semana del mes
-        $usedWeekendsThisMonth = DB::table('pool_entry_guests')
+        // Contar invitados únicos usados en FINES DE SEMANA del mes
+        $usedWeekendsMonth = DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unitId)
             ->whereBetween('pool_entries.entered_at', [$startDate, $endDate])
@@ -115,7 +115,7 @@ class UsedGuests extends Component
         $todayInfo = null;
         if ($filterMonth === $today->format('Y-m')) {
             $isWeekend = $today->isWeekend();
-            $maxToday = $isWeekend ? $maxGuestsWeekend : $maxGuestsWeekday;
+            $maxToday = $isWeekend ? $maxGuestsWeekendMonth : $maxGuestsWeekdayMonth;
             
             $usedToday = DB::table('pool_entry_guests')
                 ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
@@ -133,12 +133,12 @@ class UsedGuests extends Component
         }
 
         return [
-            'max_guests_weekday' => $maxGuestsWeekday,
-            'max_guests_weekend' => $maxGuestsWeekend,
-            'max_guests_month' => $maxGuestsMonth,
-            'used_unique_month' => $usedUniqueThisMonth,
-            'used_weekends_month' => $usedWeekendsThisMonth,
-            'available_month' => max(0, $maxGuestsMonth - $usedUniqueThisMonth),
+            'max_guests_weekday_month' => $maxGuestsWeekdayMonth,
+            'max_guests_weekend_month' => $maxGuestsWeekendMonth,
+            'used_weekdays_month' => $usedWeekdaysMonth,
+            'used_weekends_month' => $usedWeekendsMonth,
+            'available_weekdays_month' => max(0, $maxGuestsWeekdayMonth - $usedWeekdaysMonth),
+            'available_weekends_month' => max(0, $maxGuestsWeekendMonth - $usedWeekendsMonth),
             'today' => $todayInfo,
         ];
     }
