@@ -36,13 +36,9 @@ class UsedGuests extends Component
         if ($this->unitId && $this->filterMonth) {
             // Calcular límites e información
             $limitsInfo = $this->calculateLimitsInfo($this->unitId, $this->filterMonth);
-            // Obtener todos los invitados del usuario en esta unidad
-            $guestIds = PoolGuest::query()
-                ->where('created_by_user_id', $user->id)
-                ->where('unit_id', $this->unitId)
-                ->pluck('id');
-
-            // Obtener historial de uso de estos invitados
+            
+            // Obtener historial de uso de TODOS los invitados que ingresaron con esta unidad
+            // (sin importar quién los creó, porque el límite es por unidad funcional)
             $startDate = \Carbon\Carbon::parse($this->filterMonth . '-01')->startOfMonth();
             $endDate = $startDate->copy()->endOfMonth();
 
@@ -52,7 +48,7 @@ class UsedGuests extends Component
                 ->join('pools', 'pools.id', '=', 'pool_entries.pool_id')
                 ->leftJoin('users', 'users.id', '=', 'pool_entries.user_id')
                 ->leftJoin('residents', 'residents.id', '=', 'pool_entries.resident_id')
-                ->whereIn('pool_entry_guests.pool_guest_id', $guestIds)
+                ->where('pool_entries.unit_id', $this->unitId)
                 ->whereBetween('pool_entries.entered_at', [$startDate, $endDate])
                 ->select([
                     'pool_guests.id as guest_id',
