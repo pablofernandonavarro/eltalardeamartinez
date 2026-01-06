@@ -325,21 +325,22 @@ class DayPass extends Component
             return ['has_limits' => false];
         }
 
-        // Contar invitados únicos usados este mes (no suma reingresos)
+        // Contar invitados únicos por tipo de día este mes
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
         
-        // Contar invitados únicos: obtener IDs distintos de pool_guests que ingresaron este mes
-        $usedThisMonth = \DB::table('pool_entry_guests')
+        // Contar invitados únicos usados en DÍAS DE SEMANA este mes
+        $usedWeekdaysMonth = \DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unit->id)
             ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+            ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
             ->distinct('pool_entry_guests.pool_guest_id')
             ->count('pool_entry_guests.pool_guest_id');
         
         // Contar invitados únicos usados en FINES DE SEMANA este mes
-        $usedWeekendsThisMonth = \DB::table('pool_entry_guests')
+        $usedWeekendsMonth = \DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unit->id)
             ->where('pool_entries.pool_id', $pool->id)
@@ -348,62 +349,39 @@ class DayPass extends Component
             ->distinct('pool_entry_guests.pool_guest_id')
             ->count('pool_entry_guests.pool_guest_id');
 
-        // ⚠️ LÍMITES CONFIGURABLES DINÁMICAMENTE
-        $allowExtraPayment = PoolSetting::get('allow_extra_payment', false);
-        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
-        $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
-        
-        // Contar cuántos fines de semana quedan este mes (desde hoy)
-        $remainingWeekends = 0;
-        $current = $today->copy();
-        $monthEnd = $today->copy()->endOfMonth();
-        
-        while ($current <= $monthEnd) {
-            if ($current->isWeekend()) {
-                $remainingWeekends++;
-            }
-            $current->addDay();
-        }
-        
         if ($isWeekend) {
-            // FINES DE SEMANA Y FERIADOS: Leer de configuración
-            $maxGuestsToday = PoolSetting::get('max_guests_weekend', 2);
-
-            $paymentMessage = $allowExtraPayment 
-                ? 'Pods pagar por invitados extra si exceds el límite.' 
-                : 'No se aceptan pagos por invitados extra.';
+            // FINES DE SEMANA: Límite mensual de invitados únicos para fines de semana
+            $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend', 2);
+            $availableWeekendMonth = max(0, $maxGuestsWeekendMonth - $usedWeekendsMonth);
+            $hasQuota = $availableWeekendMonth > 0;
 
             return [
                 'has_limits' => true,
                 'is_weekend' => true,
-                'max_guests_today' => $maxGuestsToday,
-                'max_guests_month' => $maxGuestsMonth,
-                'used_this_month' => $usedThisMonth,
-                'used_weekends_month' => $usedWeekendsThisMonth,
-                'available_month' => $availableMonth,
-                'remaining_weekends' => $remainingWeekends,
-                'allow_extra_payment' => $allowExtraPayment,
-                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
+                'max_guests_weekend_month' => $maxGuestsWeekendMonth,
+                'used_weekends_month' => $usedWeekendsMonth,
+                'available_weekend_month' => $availableWeekendMonth,
+                'has_quota' => $hasQuota,
+                'message' => $hasQuota 
+                    ? "Fin de semana: {$availableWeekendMonth} de {$maxGuestsWeekendMonth} invitados únicos disponibles para usar en fines de semana este mes. Los invitados pueden reingresar el mismo día." 
+                    : "Límite de fin de semana agotado: Has usado {$usedWeekendsMonth} de {$maxGuestsWeekendMonth} invitados únicos en fines de semana este mes. No puedes agregar invitados nuevos.",
             ];
         } else {
-            // LUNES A VIERNES: Leer de configuración
-            $maxGuestsToday = PoolSetting::get('max_guests_weekday', 4);
-
-            $paymentMessage = $allowExtraPayment 
-                ? 'Pods pagar por invitados extra si exceds el límite.' 
-                : 'No se aceptan pagos por invitados extra.';
+            // DÍAS DE SEMANA: Límite mensual de invitados únicos para días de semana
+            $maxGuestsWeekdayMonth = PoolSetting::get('max_guests_weekday', 4);
+            $availableWeekdayMonth = max(0, $maxGuestsWeekdayMonth - $usedWeekdaysMonth);
+            $hasQuota = $availableWeekdayMonth > 0;
 
             return [
                 'has_limits' => true,
                 'is_weekend' => false,
-                'max_guests_today' => $maxGuestsToday,
-                'max_guests_month' => $maxGuestsMonth,
-                'used_this_month' => $usedThisMonth,
-                'used_weekends_month' => $usedWeekendsThisMonth,
-                'available_month' => $availableMonth,
-                'remaining_weekends' => $remainingWeekends,
-                'allow_extra_payment' => $allowExtraPayment,
-                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
+                'max_guests_weekday_month' => $maxGuestsWeekdayMonth,
+                'used_weekdays_month' => $usedWeekdaysMonth,
+                'available_weekday_month' => $availableWeekdayMonth,
+                'has_quota' => $hasQuota,
+                'message' => $hasQuota 
+                    ? "Día de semana: {$availableWeekdayMonth} de {$maxGuestsWeekdayMonth} invitados únicos disponibles para usar en días de semana este mes. Los invitados pueden reingresar el mismo día." 
+                    : "Límite de día de semana agotado: Has usado {$usedWeekdaysMonth} de {$maxGuestsWeekdayMonth} invitados únicos en días de semana este mes. No puedes agregar invitados nuevos.",
             ];
         }
     }
