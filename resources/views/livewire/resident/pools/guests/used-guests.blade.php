@@ -86,22 +86,6 @@
                     </div>
                 </div>
 
-                {{-- Info de hoy si es el mes actual --}}
-                @if($limitsInfo['today'])
-                    <flux:separator />
-                    <div>
-                        <div class="font-semibold text-sm mb-2">⏰ Hoy ({{ $limitsInfo['today']['is_weekend'] ? 'Fin de semana' : 'Día de semana' }})</div>
-                        <div class="space-y-1 pl-4">
-                            <div class="text-sm">
-                                Invitados únicos usados: <span class="font-bold">{{ $limitsInfo['today']['used_today'] }}</span> de {{ $limitsInfo['today']['max_today'] }}
-                            </div>
-                            <div class="text-sm">
-                                Disponible hoy: <span class="font-bold {{ $limitsInfo['today']['available_today'] <= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">{{ $limitsInfo['today']['available_today'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
                 @if($hasWeekdayLimit && $hasWeekendLimit)
                     <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
                         <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITES MENSUALES AGOTADOS - No se pueden agregar más invitados nuevos este mes (ni semana ni fin de semana)</span>

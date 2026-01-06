@@ -23,19 +23,6 @@
 
                 <flux:separator />
 
-                {{-- Hoy --}}
-                <div>
-                    <div class="font-semibold text-sm mb-2">⏰ Hoy ({{ $limitsInfo['is_weekend'] ? 'Fin de semana' : 'Día de semana' }})</div>
-                    <div class="text-sm">
-                        {{ now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
-                    </div>
-                    <div class="mt-2 text-sm">
-                        Máximo de invitados hoy: <span class="font-bold {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">{{ $limitsInfo['max_guests_today'] }}</span>
-                    </div>
-                </div>
-
-                <flux:separator />
-
                 {{-- Uso del mes actual --}}
                 <div>
                     <div class="font-semibold text-sm mb-3">📅 Uso en {{ now()->locale('es')->isoFormat('MMMM YYYY') }}</div>
