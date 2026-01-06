@@ -1,0 +1,469 @@
+<div>
+    <div class="mb-6">
+        <flux:heading size="xl">Mi QR de Pileta</flux:heading>
+        <p class="text-sm text-gray-500 mt-1">
+            Generá tu QR personal para entrar solo, o precargá invitados para el día.
+        </p>
+    </div>
+
+    {{-- Panel de Estado del Reglamento --}}
+    @if($limitsInfo['has_limits'])
+        @php
+            $hasWeekdayLimit = ($limitsInfo['available_weekday_month'] ?? 0) <= 0;
+            $hasWeekendLimit = ($limitsInfo['available_weekend_month'] ?? 0) <= 0;
+            $alertColor = ($hasWeekdayLimit && $hasWeekendLimit) ? 'red' : (($hasWeekdayLimit || $hasWeekendLimit) ? 'yellow' : 'blue');
+        @endphp
+        <flux:callout color="{{ $alertColor }}" class="mb-6">
+            <div class="space-y-3">
+                <div class="font-bold text-base">🏊 Límites mensuales de invitados</div>
+                
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    Los invitados pueden reingresar el mismo día cuantas veces quieran. Los límites son por tipo de día durante todo el mes.
+                </div>
+
+                <flux:separator />
+
+                {{-- Uso del mes actual --}}
+                <div>
+                    <div class="font-semibold text-sm mb-3">📅 Uso en {{ now()->locale('es')->isoFormat('MMMM YYYY') }}</div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{-- Días de semana --}}
+                        <div class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                            <div class="font-semibold text-sm">📅 Días de semana</div>
+                            <div class="text-sm">
+                                Límite mensual: <span class="font-bold">{{ $limitsInfo['max_guests_weekday_month'] ?? 4 }}</span> invitados únicos
+                            </div>
+                            <div class="text-sm">
+                                Usados: <span class="font-bold">{{ $limitsInfo['used_weekdays_month'] ?? 0 }}</span>
+                            </div>
+                            <div class="text-sm">
+                                Disponible: <span class="font-bold {{ ($limitsInfo['available_weekday_month'] ?? 0) <= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">{{ $limitsInfo['available_weekday_month'] ?? 0 }}</span>
+                            </div>
+                        </div>
+                        
+                        {{-- Fines de semana --}}
+                        <div class="space-y-2 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                            <div class="font-semibold text-sm">🌞 Fines de semana</div>
+                            <div class="text-sm">
+                                Límite mensual: <span class="font-bold">{{ $limitsInfo['max_guests_weekend_month'] ?? 2 }}</span> invitados únicos
+                            </div>
+                            <div class="text-sm">
+                                Usados: <span class="font-bold">{{ $limitsInfo['used_weekends_month'] ?? 0 }}</span>
+                            </div>
+                            <div class="text-sm">
+                                Disponible: <span class="font-bold {{ ($limitsInfo['available_weekend_month'] ?? 0) <= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">{{ $limitsInfo['available_weekend_month'] ?? 0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if($hasWeekdayLimit && $hasWeekendLimit)
+                    <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                        <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITES MENSUALES AGOTADOS - No se pueden agregar más invitados nuevos este mes</span>
+                    </div>
+                @elseif($limitsInfo['is_weekend'] && $hasWeekendLimit)
+                    <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                        <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITE DE FINES DE SEMANA AGOTADO - No se pueden agregar más invitados nuevos en fines de semana este mes</span>
+                    </div>
+                @elseif(!$limitsInfo['is_weekend'] && $hasWeekdayLimit)
+                    <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                        <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITE DE DÍAS DE SEMANA AGOTADO - No se pueden agregar más invitados nuevos en días de semana este mes</span>
+                    </div>
+                @endif
+
+                <div class="text-xs text-gray-600 dark:text-gray-400 pt-3 border-t border-gray-300 dark:border-gray-700">
+                    <strong>⚠️ Importante:</strong> Como anfitrión, debés estar presente obligatoriamente durante toda la permanencia de tus invitados. <strong class="text-red-600 dark:text-red-400">No existe la posibilidad de pagar por invitados extra.</strong>
+                </div>
+            </div>
+        </flux:callout>
+    @endif
+
+    @if($errors->has('error'))
+        <flux:callout color="red" class="mb-4">
+            {{ $errors->first('error') }}
+        </flux:callout>
+    @endif
+
+    @if(session('message'))
+        <flux:callout color="green" class="mb-4">
+            {{ session('message') }}
+        </flux:callout>
+    @endif
+
+    @if($units->isEmpty())
+        <flux:callout color="blue">
+            No tenés unidades asignadas. Contactá al administrador.
+        </flux:callout>
+    @else
+        <div class="grid gap-6 lg:grid-cols-2">
+            <style>
+                input[type="checkbox"] { width: 18px; height: 18px; }
+            </style>
+            
+            {{-- Columna izquierda: Configuración --}}
+            <div class="space-y-6">
+                {{-- QR Personal --}}
+                <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <flux:heading size="lg">Mi QR Personal</flux:heading>
+                        <flux:badge color="green">Permanente</flux:badge>
+                    </div>
+
+                    @if(!$resident && !$useUserQr)
+                        <flux:callout color="yellow">
+                            No se encontró tu perfil. Contactá al administrador.
+                        </flux:callout>
+                    @elseif($resident && $resident->isMinor())
+                        <flux:callout color="yellow">
+                            Solo los residentes mayores de 18 años pueden tener un QR personal.
+                        </flux:callout>
+                    @elseif($qrToken)
+                        <div class="flex flex-col items-center gap-4">
+                            <p class="text-sm text-gray-600 dark:text-gray-400 text-center">
+                                Este QR es tuyo y permanente. Usalo para entrar solo a la pileta.
+                            </p>
+
+                            <div class="bg-white p-4 rounded-lg">
+                                <div id="resident-personal-qr" class="w-[220px] h-[220px]" wire:ignore></div>
+                            </div>
+
+                            <div class="w-full">
+                                <flux:field>
+                                    <flux:label>Código personal</flux:label>
+
+                                    <div class="flex gap-2 items-stretch">
+                                        <flux:input id="resident-personal-token" value="{{ $qrToken }}" readonly class="flex-1 font-mono text-sm" />
+
+                                        <button
+                                            id="resident-personal-copy-btn"
+                                            type="button"
+                                            class="px-3 border rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                            title="Copiar al portapapeles"
+                                        >
+                                            <flux:icon.document-duplicate variant="outline" class="size-5" />
+                                        </button>
+                                    </div>
+
+                                    <div id="resident-personal-copy-hint" class="text-xs text-gray-500 mt-1" style="display:none;">
+                                        Copiado.
+                                    </div>
+                                </flux:field>
+                            </div>
+
+                            <button
+                                type="button"
+                                wire:click="regenerateQr"
+                                wire:loading.attr="disabled"
+                                class="text-sm px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Regenerar QR personal
+                            </button>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- Configuración invitados --}}
+                <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                    <flux:heading size="lg" class="mb-4">Invitados para hoy</flux:heading>
+
+                    <form wire:submit="save" class="space-y-6">
+                        <flux:field>
+                            <flux:label>Unidad</flux:label>
+                            <flux:select wire:model.live="unitId">
+                                @foreach($units as $unitUser)
+                                    <option value="{{ $unitUser->unit_id }}">
+                                        {{ $unitUser->unit->full_identifier }}
+                                        ({{ $unitUser->unit->building->complex->name }})
+                                    </option>
+                                @endforeach
+                            </flux:select>
+                            <flux:error name="unitId" />
+                        </flux:field>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <flux:label>Invitados precargados</flux:label>
+                                <flux:button href="{{ route('resident.pools.guests.index') }}" size="sm" variant="ghost" wire:navigate>
+                                    Administrar
+                                </flux:button>
+                            </div>
+
+                            @if($guests->isEmpty())
+                                <flux:callout color="blue">
+                                    No tenés invitados cargados. Crealos en "Mis invitados".
+                                </flux:callout>
+                            @else
+                                <div class="space-y-2 max-h-[320px] overflow-auto">
+                                    @foreach($guests as $guest)
+                                        @php
+                                            $isSelected = in_array($guest->id, $selectedGuestIds);
+                                            $currentCount = count($selectedGuestIds);
+                                            $isWeekend = $limitsInfo['is_weekend'] ?? false;
+                                            $maxAllowed = $isWeekend 
+                                                ? ($limitsInfo['available_weekend_month'] ?? 999)
+                                                : ($limitsInfo['available_weekday_month'] ?? 999);
+                                            $isDisabled = !$isSelected && $currentCount >= $maxAllowed;
+                                        @endphp
+                                        <label class="flex items-center gap-3 p-3 border {{ $isDisabled ? 'border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 opacity-50 cursor-not-allowed' : 'border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800' }} rounded">
+                                            <input
+                                                type="checkbox"
+                                                value="{{ $guest->id }}"
+                                                wire:model="selectedGuestIds"
+                                                @disabled($isDisabled)
+                                            />
+
+                                            @if($guest->profilePhotoUrl())
+                                                <img src="{{ $guest->profilePhotoUrl() }}" alt="{{ $guest->name }}" class="h-10 w-10 rounded-full object-cover" />
+                                            @else
+                                                <div class="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold">
+                                                    {{ \Illuminate\Support\Str::of($guest->name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
+                                                </div>
+                                            @endif
+
+                                            <div class="flex-1">
+                                                <div class="font-medium">{{ $guest->name }}</div>
+                                                <div class="text-xs text-gray-500">
+                                                    {{ $guest->document_type }} {{ $guest->document_number }}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <div class="text-sm text-gray-500">
+                                Seleccionados: {{ $selectedGuestsCount ?? 0 }}
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 items-center">
+                            <flux:button type="submit" variant="primary">Guardar invitados</flux:button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Columna derecha: QR Diario --}}
+            <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <flux:heading size="lg">QR Diario (con invitados)</flux:heading>
+                    <div class="text-sm text-gray-500">Invitados: {{ $pass?->guests_allowed ?? 0 }}</div>
+                </div>
+
+                @if(!$pass)
+                    <flux:callout color="blue">Seleccioná una unidad para generar tu QR del día.</flux:callout>
+                @else
+                    <div class="flex flex-col items-center gap-4">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center">
+                            Mostrá este QR al bañero. El bañero elegirá cuántos invitados ingresan.
+                        </p>
+
+                        <div class="bg-white p-4 rounded-lg">
+                            <div id="resident-daypass-qr" class="w-[220px] h-[220px]" wire:ignore></div>
+                        </div>
+
+                        <div class="w-full">
+                            <flux:field>
+                                <flux:label>Código (por si no se puede escanear)</flux:label>
+
+                                <div class="flex gap-2 items-stretch">
+                                    <flux:input id="resident-daypass-token" value="{{ $pass->token }}" readonly class="flex-1 font-mono text-sm" />
+
+                                    <button
+                                        id="resident-daypass-copy-btn"
+                                        type="button"
+                                        class="px-3 border rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                        title="Copiar al portapapeles"
+                                    >
+                                        <flux:icon.document-duplicate variant="outline" class="size-5" />
+                                    </button>
+                                </div>
+
+                                <div id="resident-daypass-copy-hint" class="text-xs text-gray-500 mt-1" style="display:none;">
+                                    Copiado.
+                                </div>
+                            </flux:field>
+                        </div>
+
+                        <button
+                            type="button"
+                            wire:click="regenerateToken"
+                            wire:loading.attr="disabled"
+                            @disabled($pass->used_at)
+                            class="text-sm px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Regenera el QR (solo si aún no fue usado)"
+                        >
+                            Regenerar QR diario
+                        </button>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    <script>
+        (function () {
+            let currentPersonalToken = @json($qrToken);
+            let currentDaypassToken = @json($pass?->token);
+
+            // Personal QR functions
+            async function copyPersonalToken(token) {
+                if (!token) return;
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(token);
+                        return;
+                    }
+                } catch (e) {}
+                const input = document.getElementById('resident-personal-token');
+                if (input) {
+                    input.focus();
+                    input.select();
+                    document.execCommand('copy');
+                }
+            }
+
+            function showPersonalCopiedHint() {
+                const hint = document.getElementById('resident-personal-copy-hint');
+                if (!hint) return;
+                hint.style.display = 'block';
+                setTimeout(() => { hint.style.display = 'none'; }, 1200);
+            }
+
+            function bindPersonalCopyButton() {
+                const btn = document.getElementById('resident-personal-copy-btn');
+                if (!btn || btn.__bound) return;
+                btn.__bound = true;
+                btn.addEventListener('click', async () => {
+                    await copyPersonalToken(currentPersonalToken);
+                    showPersonalCopiedHint();
+                });
+            }
+
+            function renderPersonalQR(token) {
+                const el = document.getElementById('resident-personal-qr');
+                if (!el) return;
+                currentPersonalToken = token;
+                if (!token) {
+                    el.innerHTML = '';
+                    return;
+                }
+                const tryRender = () => {
+                    if (typeof window.QRCode === 'undefined') {
+                        setTimeout(tryRender, 100);
+                        return;
+                    }
+                    el.innerHTML = '';
+                    new window.QRCode(el, {
+                        text: token,
+                        width: 220,
+                        height: 220,
+                        correctLevel: window.QRCode.CorrectLevel.M,
+                    });
+                };
+                tryRender();
+            }
+
+            // Daypass QR functions
+            async function copyDaypassToken(token) {
+                if (!token) return;
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(token);
+                        return;
+                    }
+                } catch (e) {}
+                const input = document.getElementById('resident-daypass-token');
+                if (input) {
+                    input.focus();
+                    input.select();
+                    document.execCommand('copy');
+                }
+            }
+
+            function showDaypassCopiedHint() {
+                const hint = document.getElementById('resident-daypass-copy-hint');
+                if (!hint) return;
+                hint.style.display = 'block';
+                setTimeout(() => { hint.style.display = 'none'; }, 1200);
+            }
+
+            function bindDaypassCopyButton() {
+                const btn = document.getElementById('resident-daypass-copy-btn');
+                if (!btn || btn.__bound) return;
+                btn.__bound = true;
+                btn.addEventListener('click', async () => {
+                    await copyDaypassToken(currentDaypassToken);
+                    showDaypassCopiedHint();
+                });
+            }
+
+            function renderDaypassQR(token) {
+                const el = document.getElementById('resident-daypass-qr');
+                if (!el) return;
+                currentDaypassToken = token;
+                if (!token) {
+                    el.innerHTML = '';
+                    return;
+                }
+                const tryRender = () => {
+                    if (typeof window.QRCode === 'undefined') {
+                        setTimeout(tryRender, 100);
+                        return;
+                    }
+                    el.innerHTML = '';
+                    new window.QRCode(el, {
+                        text: token,
+                        width: 220,
+                        height: 220,
+                        correctLevel: window.QRCode.CorrectLevel.M,
+                    });
+                };
+                tryRender();
+            }
+
+            // Initial render
+            window.addEventListener('load', () => {
+                bindPersonalCopyButton();
+                bindDaypassCopyButton();
+                renderPersonalQR(@json($qrToken));
+                renderDaypassQR(@json($pass?->token));
+            });
+
+            document.addEventListener('livewire:navigated', () => {
+                bindPersonalCopyButton();
+                bindDaypassCopyButton();
+                renderPersonalQR(@json($qrToken));
+                renderDaypassQR(@json($pass?->token));
+            });
+
+            // Handle QR regeneration events
+            function onPersonalQrUpdated(event) {
+                bindPersonalCopyButton();
+                const token = event?.detail?.token || null;
+                const input = document.getElementById('resident-personal-token');
+                if (input && token) {
+                    input.value = token;
+                }
+                renderPersonalQR(token);
+            }
+
+            function onDaypassQrUpdated(event) {
+                bindDaypassCopyButton();
+                const token = event?.detail?.token || null;
+                const input = document.getElementById('resident-daypass-token');
+                if (input && token) {
+                    input.value = token;
+                }
+                renderDaypassQR(token);
+            }
+
+            window.addEventListener('resident-qr-updated', onPersonalQrUpdated);
+            document.addEventListener('resident-qr-updated', onPersonalQrUpdated);
+            window.addEventListener('resident-daypass-qr-updated', onDaypassQrUpdated);
+            document.addEventListener('resident-daypass-qr-updated', onDaypassQrUpdated);
+        })();
+    </script>
+</div>

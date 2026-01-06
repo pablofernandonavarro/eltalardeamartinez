@@ -68,8 +68,13 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/household', \App\Livewire\Resident\Unit\Household::class)->name('household');
 
         Route::prefix('pools')->name('pools.')->group(function () {
-            Route::get('/my-qr', \App\Livewire\Resident\MyPoolQr::class)->name('my-qr');
-            Route::get('/day-pass', \App\Livewire\Resident\Pools\DayPass::class)->name('day-pass');
+            // Ruta unificada para QR personal y day-pass
+            Route::get('/my-qr', \App\Livewire\Resident\MyPoolQrUnified::class)->name('my-qr');
+            
+            // Redirects de las rutas antiguas a la unificada
+            Route::get('/day-pass', function () {
+                return redirect()->route('resident.pools.my-qr');
+            })->name('day-pass');
 
             Route::prefix('guests')->name('guests.')->group(function () {
                 Route::get('/', \App\Livewire\Resident\Pools\Guests\Index::class)->name('index'); // Legacy redirect
