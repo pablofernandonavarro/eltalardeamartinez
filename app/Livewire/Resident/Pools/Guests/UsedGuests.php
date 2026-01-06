@@ -44,7 +44,8 @@ class UsedGuests extends Component
                 ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
                 ->join('pool_guests', 'pool_guests.id', '=', 'pool_entry_guests.pool_guest_id')
                 ->join('pools', 'pools.id', '=', 'pool_entries.pool_id')
-                ->leftJoin('users as entered_by', 'entered_by.id', '=', 'pool_entries.entered_by_user_id')
+                ->leftJoin('users', 'users.id', '=', 'pool_entries.user_id')
+                ->leftJoin('residents', 'residents.id', '=', 'pool_entries.resident_id')
                 ->whereIn('pool_entry_guests.pool_guest_id', $guestIds)
                 ->whereBetween('pool_entries.entered_at', [$startDate, $endDate])
                 ->select([
@@ -56,7 +57,7 @@ class UsedGuests extends Component
                     'pool_entries.entered_at',
                     'pool_entries.exited_at',
                     'pools.name as pool_name',
-                    'entered_by.name as entered_by_name',
+                    DB::raw('COALESCE(users.name, residents.name) as entered_by_name'),
                 ])
                 ->orderBy('pool_entries.entered_at', 'desc')
                 ->get();
