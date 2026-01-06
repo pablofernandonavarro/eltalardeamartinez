@@ -8,129 +8,88 @@
 
     {{-- Panel de Estado del Reglamento --}}
     @if($limitsInfo['has_limits'])
-        <div class="mb-6 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+        @php
+            $hasWeekdayLimit = ($limitsInfo['available_weekday_month'] ?? 0) <= 0;
+            $hasWeekendLimit = ($limitsInfo['available_weekend_month'] ?? 0) <= 0;
+            $alertColor = ($hasWeekdayLimit && $hasWeekendLimit) ? 'red' : (($hasWeekdayLimit || $hasWeekendLimit) ? 'yellow' : 'blue');
+        @endphp
+        <flux:callout color="{{ $alertColor }}" class="mb-6">
             <div class="space-y-3">
-                {{-- Tipo de Día --}}
-                <div class="flex items-center gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-700">
-                    <div class="h-10 w-10 rounded-full {{ $limitsInfo['is_weekend'] ? 'bg-orange-500' : 'bg-blue-500' }} flex items-center justify-center text-white text-lg">
-                        {{ $limitsInfo['is_weekend'] ? '🌞' : '💼' }}
+                <div class="font-bold text-base">🏊 Límites mensuales de invitados</div>
+                
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    Los invitados pueden reingresar el mismo día cuantas veces quieran. Los límites son por tipo de día durante todo el mes.
+                </div>
+
+                <flux:separator />
+
+                {{-- Hoy --}}
+                <div>
+                    <div class="font-semibold text-sm mb-2">⏰ Hoy ({{ $limitsInfo['is_weekend'] ? 'Fin de semana' : 'Día de semana' }})</div>
+                    <div class="text-sm">
+                        {{ now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
                     </div>
-                    <div class="flex-1">
-                        <div class="text-xs uppercase tracking-wider {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }} font-semibold">
-                            {{ $limitsInfo['is_weekend'] ? 'FIN DE SEMANA / FERIADO' : 'DÍA LABORAL' }}
+                    <div class="mt-2 text-sm">
+                        Máximo de invitados hoy: <span class="font-bold {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">{{ $limitsInfo['max_guests_today'] }}</span>
+                    </div>
+                </div>
+
+                <flux:separator />
+
+                {{-- Uso del mes actual --}}
+                <div>
+                    <div class="font-semibold text-sm mb-3">📅 Uso en {{ now()->locale('es')->isoFormat('MMMM YYYY') }}</div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{-- Días de semana --}}
+                        <div class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                            <div class="font-semibold text-sm">📅 Días de semana</div>
+                            <div class="text-sm">
+                                Límite mensual: <span class="font-bold">{{ $limitsInfo['max_guests_weekday_month'] ?? 4 }}</span> invitados únicos
+                            </div>
+                            <div class="text-sm">
+                                Usados: <span class="font-bold">{{ $limitsInfo['used_weekdays_month'] ?? 0 }}</span>
+                            </div>
+                            <div class="text-sm">
+                                Disponible: <span class="font-bold {{ ($limitsInfo['available_weekday_month'] ?? 0) <= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">{{ $limitsInfo['available_weekday_month'] ?? 0 }}</span>
+                            </div>
                         </div>
-                        <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
-                            {{ now()->translatedFormat('l, d \\d\\e F') }}
+                        
+                        {{-- Fines de semana --}}
+                        <div class="space-y-2 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                            <div class="font-semibold text-sm">🌞 Fines de semana</div>
+                            <div class="text-sm">
+                                Límite mensual: <span class="font-bold">{{ $limitsInfo['max_guests_weekend_month'] ?? 2 }}</span> invitados únicos
+                            </div>
+                            <div class="text-sm">
+                                Usados: <span class="font-bold">{{ $limitsInfo['used_weekends_month'] ?? 0 }}</span>
+                            </div>
+                            <div class="text-sm">
+                                Disponible: <span class="font-bold {{ ($limitsInfo['available_weekend_month'] ?? 0) <= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">{{ $limitsInfo['available_weekend_month'] ?? 0 }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- Grid de Cupos --}}
-                <div class="grid grid-cols-2 gap-3">
-                    {{-- Cupo Diario --}}
-                    <div class="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                        <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">📋 Hoy</div>
-                        <div class="text-2xl font-black {{ $limitsInfo['is_weekend'] ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
-                            {{ $limitsInfo['max_guests_today'] }}
-                        </div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">máx. invitados</div>
+                @if($hasWeekdayLimit && $hasWeekendLimit)
+                    <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                        <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITES MENSUALES AGOTADOS - No se pueden agregar más invitados nuevos este mes (ni semana ni fin de semana)</span>
                     </div>
-
-                    {{-- Uso Mensual por Tipo de Día --}}
-                    <div class="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                        @if($limitsInfo['is_weekend'])
-                            <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">📅 Fines de semana</div>
-                            <div class="text-2xl font-black {{ ($limitsInfo['available_weekend_month'] ?? 0) <= 0 ? 'text-red-600 dark:text-red-400' : (($limitsInfo['available_weekend_month'] ?? 0) <= 1 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400') }}">
-                                {{ $limitsInfo['available_weekend_month'] ?? 0 }}
-                            </div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ $limitsInfo['used_weekends_month'] ?? 0 }}/{{ $limitsInfo['max_guests_weekend_month'] ?? 2 }} usados
-                            </div>
-                        @else
-                            <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">📅 Días de semana</div>
-                            <div class="text-2xl font-black {{ ($limitsInfo['available_weekday_month'] ?? 0) <= 0 ? 'text-red-600 dark:text-red-400' : (($limitsInfo['available_weekday_month'] ?? 0) <= 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400') }}">
-                                {{ $limitsInfo['available_weekday_month'] ?? 0 }}
-                            </div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ $limitsInfo['used_weekdays_month'] ?? 0 }}/{{ $limitsInfo['max_guests_weekday_month'] ?? 4 }} usados
-                            </div>
-                        @endif
+                @elseif($limitsInfo['is_weekend'] && $hasWeekendLimit)
+                    <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                        <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITE DE FINES DE SEMANA AGOTADO - No se pueden agregar más invitados nuevos en fines de semana este mes</span>
                     </div>
-                </div>
-
-                {{-- Alertas por Tipo de Día --}}
-                @if(!($limitsInfo['has_quota'] ?? true))
-                    <div class="p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-500 rounded-lg text-red-700 dark:text-red-400">
-                        <div class="flex items-center gap-2 font-bold mb-2">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                            </svg>
-                            ⛔ CUPO MENSUAL AGOTADO
-                        </div>
-                        <div class="text-xs">
-                            @if($limitsInfo['is_weekend'])
-                                Has alcanzado el límite mensual de <strong>{{ $limitsInfo['max_guests_weekend_month'] ?? 2 }} invitados únicos</strong> para fines de semana. Los invitados ya usados este mes pueden reingresar el mismo día cuantas veces quieran.
-                            @else
-                                Has alcanzado el límite mensual de <strong>{{ $limitsInfo['max_guests_weekday_month'] ?? 4 }} invitados únicos</strong> para días de semana. Los invitados ya usados este mes pueden reingresar el mismo día cuantas veces quieran.
-                            @endif
-                        </div>
-                    </div>
-                @else
-                    @php
-                        $available = $limitsInfo['is_weekend'] 
-                            ? ($limitsInfo['available_weekend_month'] ?? 0)
-                            : ($limitsInfo['available_weekday_month'] ?? 0);
-                    @endphp
-                    @if($available <= 0)
-                        <div class="p-2 bg-red-50 dark:bg-red-950/30 border border-red-500 rounded text-xs text-red-700 dark:text-red-400 font-semibold">
-                            ⚠️ LÍMITE MENSUAL AGOTADO - Solo podés reingresar invitados ya usados este mes
-                        </div>
-                    @elseif($available <= 2)
-                        <div class="p-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-500 rounded text-xs text-yellow-700 dark:text-yellow-400 font-semibold">
-                            ⚠️ Quedan solo {{ $available }} invitado(s) nuevo(s) disponible(s) este mes para {{ $limitsInfo['is_weekend'] ? 'fines de semana' : 'días de semana' }}
-                        </div>
-                    @endif
-                @endif
-
-                {{-- Estado de Cumplimiento --}}
-                @if($selectedGuestsCount <= $limitsInfo['max_guests_today'])
-                    <div class="p-3 bg-green-50 dark:bg-green-950/30 border-2 border-green-500 rounded-lg">
-                        <div class="flex items-center gap-2 text-green-700 dark:text-green-400 font-semibold">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>✅ REGLAMENTO RESPETADO: Acceso Concedido</span>
-                        </div>
-                    </div>
-                @else
-                    <div class="p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-500 rounded-lg">
-                        <div class="flex items-center gap-2 text-red-700 dark:text-red-400 font-semibold">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>⛔ LÍMITE EXCEDIDO: Ajustado automáticamente</span>
-                        </div>
+                @elseif(!$limitsInfo['is_weekend'] && $hasWeekdayLimit)
+                    <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                        <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITE DE DÍAS DE SEMANA AGOTADO - No se pueden agregar más invitados nuevos en días de semana este mes</span>
                     </div>
                 @endif
-
-                {{-- Nota sobre límites separados --}}
-                <div class="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-700 rounded-lg">
-                    <div class="text-xs text-blue-800 dark:text-blue-200">
-                        <strong>ℹ️ Límites independientes:</strong> Los cupos de semana y fin de semana son independientes.
-                        @if($limitsInfo['is_weekend'])
-                            Hoy es fin de semana ({{ $limitsInfo['max_guests_weekend_month'] ?? 2 }} invitados únicos/mes).
-                        @else
-                            Hoy es día de semana ({{ $limitsInfo['max_guests_weekday_month'] ?? 4 }} invitados únicos/mes).
-                        @endif
-                        Los invitados pueden reingresar el mismo día cuantas veces quieran.
-                    </div>
-                </div>
 
                 <div class="text-xs text-gray-600 dark:text-gray-400 pt-3 border-t border-gray-300 dark:border-gray-700">
                     <strong>⚠️ Importante:</strong> Como anfitrión, debés estar presente obligatoriamente durante toda la permanencia de tus invitados. Los préstamos transitorios de unidad no dan derecho al uso de la pileta. <strong class="text-red-600 dark:text-red-400">No existe la posibilidad de pagar por invitados extra.</strong>
                 </div>
             </div>
-        </div>
+        </flux:callout>
     @endif
 
     @if($errors->has('error'))
