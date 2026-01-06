@@ -140,24 +140,10 @@ class PoolAccessService
             throw new \Exception("El máximo de invitados permitidos es {$rule->max_guests_per_unit}.");
         }
 
-        // Validar máximo de ingresos diarios SOLO si hay invitados
-        // Los propietarios/inquilinos/residentes pueden ingresar solos sin límite
-        \Log::info('🔍 Validación max_entries_per_day', [
-            'guestsCount' => $guestsCount,
-            'max_entries_per_day' => $rule->max_entries_per_day,
-            'will_validate' => ($guestsCount > 0 && $rule->max_entries_per_day > 0)
-        ]);
-        
-        if ($guestsCount > 0 && $rule->max_entries_per_day > 0) {
-            $todayEntries = PoolEntry::forUnit($unit->id)
-                ->where('pool_id', $pool->id)
-                ->forDate($enteredAtDate->toDateString())
-                ->count();
-
-            if ($todayEntries >= $rule->max_entries_per_day) {
-                throw new \Exception("Se ha alcanzado el máximo de ingresos diarios ({$rule->max_entries_per_day}).");
-            }
-        }
+        // NOTA: No validamos max_entries_per_day porque los residentes pueden
+        // salir y entrar múltiples veces con los mismos invitados.
+        // Solo se validan invitados únicos (en validateAccess y en el Scanner).
+        // Un invitado que ingresa múltiples veces el mismo día cuenta como 1 solo.
 
         // Validar reglas dinámicas del sistema SOLO si hay invitados
         // Los propietarios/inquilinos pueden ingresar solos sin límites
