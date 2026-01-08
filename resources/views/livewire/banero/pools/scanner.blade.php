@@ -430,7 +430,7 @@
                 window.__qrInstance = null;
             };
 
-            const startQrScanner = () => {
+            const startQrScanner = async () => {
                 console.log('🚀 startQrScanner() llamado');
                 const el = document.getElementById('qr-reader');
                 if (!el) {
@@ -445,7 +445,7 @@
                 }
 
                 console.log('🛑 Deteniendo scanner anterior si existe...');
-                stopQrScanner();
+                await stopQrScanner();
 
                 console.log('🎥 Iniciando nueva instancia de scanner...');
                 const qr = new Html5Qrcode('qr-reader');
