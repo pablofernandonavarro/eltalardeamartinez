@@ -9,7 +9,20 @@
             <button 
                 type="button" 
                 wire:click="resetScanner"
-                @click.debounce.500ms="console.log('Reiniciando...'); document.dispatchEvent(new CustomEvent('restart-qr-scanner'));"
+                @click="
+                    console.log('🔄 Botón Nuevo clickeado');
+                    $wire.resetScanner().then(() => {
+                        console.log('✅ Scanner reseteado, reiniciando cámara...');
+                        setTimeout(() => {
+                            if (window.__baneroStartQrScanner) {
+                                console.log('🎥 Llamando a startQrScanner...');
+                                window.__baneroStartQrScanner();
+                            } else {
+                                console.error('❌ window.__baneroStartQrScanner no disponible');
+                            }
+                        }, 300);
+                    });
+                "
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
                 Nuevo
@@ -442,9 +455,27 @@
             const stopQrScanner = async () => {
                 if (!window.__qrInstance) return;
 
-                try { await window.__qrInstance.stop(); } catch (e) {}
-                try { await window.__qrInstance.clear(); } catch (e) {}
+                console.log('🛑 Deteniendo scanner...');
+                try { 
+                    await window.__qrInstance.stop(); 
+                    console.log('✅ Scanner detenido');
+                } catch (e) { 
+                    console.log('⚠️ Error al detener:', e.message);
+                }
+                try { 
+                    await window.__qrInstance.clear(); 
+                    console.log('✅ Scanner limpiado');
+                } catch (e) { 
+                    console.log('⚠️ Error al limpiar:', e.message);
+                }
                 window.__qrInstance = null;
+                
+                // Limpiar el elemento del DOM
+                const el = document.getElementById('qr-reader');
+                if (el) {
+                    el.innerHTML = '';
+                    console.log('✅ Elemento DOM limpiado');
+                }
             };
 
             const startQrScanner = async () => {
