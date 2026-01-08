@@ -431,16 +431,23 @@
             };
 
             const startQrScanner = () => {
+                console.log('🚀 startQrScanner() llamado');
                 const el = document.getElementById('qr-reader');
-                if (!el) return; // si no estamos en la página o aún no está montado
+                if (!el) {
+                    console.log('❌ Elemento qr-reader no encontrado');
+                    return;
+                }
 
                 if (typeof Html5Qrcode === 'undefined') {
+                    console.log('⏳ Html5Qrcode no cargado, reintentando...');
                     setTimeout(startQrScanner, 200);
                     return;
                 }
 
+                console.log('🛑 Deteniendo scanner anterior si existe...');
                 stopQrScanner();
 
+                console.log('🎥 Iniciando nueva instancia de scanner...');
                 const qr = new Html5Qrcode('qr-reader');
                 window.__qrInstance = qr;
 
@@ -458,9 +465,23 @@
                         @this.call('loadPassFromScan', decodedText)
                             .then(() => {
                                 console.log('✅ Token procesado correctamente');
+                                // Reiniciar cámara después de 2 segundos para permitir nuevo escaneo
+                                setTimeout(() => {
+                                    console.log('🔄 Reiniciando cámara automáticamente...');
+                                    if (window.__baneroStartQrScanner) {
+                                        window.__baneroStartQrScanner();
+                                    }
+                                }, 2000);
                             })
                             .catch((err) => {
                                 console.error('❌ Error procesando token:', err);
+                                // Reiniciar cámara incluso si hay error
+                                setTimeout(() => {
+                                    console.log('🔄 Reiniciando cámara después de error...');
+                                    if (window.__baneroStartQrScanner) {
+                                        window.__baneroStartQrScanner();
+                                    }
+                                }, 2000);
                             });
                     },
                     (errorMessage) => {
@@ -484,6 +505,7 @@
             });
 
             document.addEventListener('banero-scanner-reset', () => {
+                console.log('🔄 Evento banero-scanner-reset recibido, reiniciando scanner...');
                 startQrScanner();
             });
         })();
