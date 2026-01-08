@@ -165,9 +165,14 @@
                             </flux:field>
 
                             <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
-                                <flux:button class="w-full" type="button" variant="primary" wire:click="checkout">
+                                <button 
+                                    type="button" 
+                                    x-data
+                                    @click="$wire.checkout().then(() => { setTimeout(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); }, 300); })"
+                                    class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                                >
                                     Registrar salida
-                                </flux:button>
+                                </button>
                             </div>
                         </div>
                     @endif
@@ -410,9 +415,14 @@
                             </flux:field>
 
                             <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
-                                <flux:button class="w-full" type="button" variant="primary" wire:click="checkout">
+                                <button 
+                                    type="button" 
+                                    x-data
+                                    @click="$wire.checkout().then(() => { setTimeout(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); }, 300); })"
+                                    class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                                >
                                     Registrar salida
-                                </flux:button>
+                                </button>
                             </div>
                         </div>
                     @endif
