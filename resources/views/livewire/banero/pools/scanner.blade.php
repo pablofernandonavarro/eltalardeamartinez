@@ -8,8 +8,8 @@
         <div class="flex items-center gap-2">
             <button 
                 type="button" 
-                x-data
-                @click="$wire.resetScanner().then(() => { console.log('🔄 Scanner reseteado, reiniciando cámara...'); setTimeout(() => { if(window.__baneroStartQrScanner) { console.log('🎥 Ejecutando startQrScanner...'); window.__baneroStartQrScanner(); } else { console.error('❌ window.__baneroStartQrScanner no disponible'); } }, 500); })"
+                wire:click="resetScanner"
+                @click.debounce.500ms="console.log('Reiniciando...'); document.dispatchEvent(new CustomEvent('restart-qr-scanner'));"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
                 Nuevo
@@ -40,7 +40,7 @@
 
             <div class="p-4">
                 <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-black/5 dark:bg-white/5">
-                    <div wire:ignore id="qr-reader" class="w-full"></div>
+                    <div wire:ignore id="qr-reader" class="w-full" x-data x-init="$nextTick(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); })"></div>
                 </div>
 
                 <details class="mt-4">
@@ -509,6 +509,11 @@
 
             document.addEventListener('banero-scanner-reset', () => {
                 console.log('🔄 Evento banero-scanner-reset recibido, reiniciando scanner...');
+                startQrScanner();
+            });
+            
+            document.addEventListener('restart-qr-scanner', () => {
+                console.log('📷 Evento restart-qr-scanner recibido, reiniciando...');
                 startQrScanner();
             });
             
