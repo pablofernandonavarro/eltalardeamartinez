@@ -548,6 +548,14 @@
                 startQrScanner();
             });
             
+            // Escuchar evento de Livewire para reiniciar cámara
+            window.addEventListener('restart-camera', () => {
+                console.log('📷 Evento restart-camera recibido, reiniciando...');
+                setTimeout(() => {
+                    startQrScanner();
+                }, 300);
+            });
+            
             // Escuchar cuando Livewire termina cualquier request
             window.addEventListener('livewire:commit', ({ detail }) => {
                 console.log('🔍 Livewire commit detectado');

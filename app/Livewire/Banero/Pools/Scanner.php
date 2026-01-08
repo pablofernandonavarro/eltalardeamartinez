@@ -469,13 +469,12 @@ class Scanner extends Component
                 'pool_entry_id' => $entry->id,
             ]);
 
-            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
+            session()->flash('message', 'Ingreso registrado correctamente.');
 
-            // Actualizar estado a 'exit' porque ahora está adentro
-            $this->action = 'exit';
-            // NO resetear poolId - debe mantenerse con la pileta del turno activo
-            $this->selectedGuestIds = [];
-            // Mantenemos pass y token para facilitar la salida
+            // Resetear completamente para permitir nuevo escaneo
+            $this->dispatch('entry-registered')->to(Inside::class);
+            $this->resetScanner();
+            $this->dispatch('restart-camera');
         } catch (\Exception $e) {
             $this->addError('error', $e->getMessage());
         }
@@ -616,6 +615,7 @@ class Scanner extends Component
             
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
+            $this->dispatch('restart-camera');
             
             session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
 
@@ -695,6 +695,7 @@ class Scanner extends Component
             
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
+            $this->dispatch('restart-camera');
             
             session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
         } catch (\Exception $e) {
@@ -748,6 +749,7 @@ class Scanner extends Component
 
         // Resetear completamente para forzar nuevo escaneo
         $this->resetScanner();
+        $this->dispatch('restart-camera');
         
         session()->flash('message', '✅ Salida registrada correctamente. Escanee nuevamente para registrar nuevo ingreso.');
     }
