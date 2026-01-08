@@ -474,7 +474,7 @@ class Scanner extends Component
             // Resetear completamente para permitir nuevo escaneo
             $this->dispatch('entry-registered')->to(Inside::class);
             $this->resetScanner();
-            $this->dispatch('restart-camera');
+            $this->dispatch('restart-camera')->self();
         } catch (\Exception $e) {
             $this->addError('error', $e->getMessage());
         }
@@ -615,7 +615,7 @@ class Scanner extends Component
             
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
-            $this->dispatch('restart-camera');
+            $this->dispatch('restart-camera')->self();
             
             session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
 
@@ -695,7 +695,7 @@ class Scanner extends Component
             
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
-            $this->dispatch('restart-camera');
+            $this->dispatch('restart-camera')->self();
             
             session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
         } catch (\Exception $e) {
@@ -749,7 +749,7 @@ class Scanner extends Component
 
         // Resetear completamente para forzar nuevo escaneo
         $this->resetScanner();
-        $this->dispatch('restart-camera');
+        $this->dispatch('restart-camera')->self();
         
         session()->flash('message', '✅ Salida registrada correctamente. Escanee nuevamente para registrar nuevo ingreso.');
     }

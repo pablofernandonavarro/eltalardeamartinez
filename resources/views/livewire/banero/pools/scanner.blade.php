@@ -549,8 +549,16 @@
             });
             
             // Escuchar evento de Livewire para reiniciar cámara
+            Livewire.on('restart-camera', () => {
+                console.log('📷 Evento restart-camera recibido desde Livewire, reiniciando...');
+                setTimeout(() => {
+                    startQrScanner();
+                }, 300);
+            });
+            
+            // También escuchar como evento de window para compatibilidad
             window.addEventListener('restart-camera', () => {
-                console.log('📷 Evento restart-camera recibido, reiniciando...');
+                console.log('📷 Evento restart-camera recibido desde window, reiniciando...');
                 setTimeout(() => {
                     startQrScanner();
                 }, 300);
@@ -563,13 +571,27 @@
                 setTimeout(() => {
                     const hasData = document.querySelector('[wire\\:submit="confirm"]') || 
                                    document.querySelector('[wire\\:click="checkout"]');
-                    if (!hasData && !window.__qrInstance) {
-                        console.log('📷 No hay datos ni cámara activa, reiniciando...');
+                    const hasError = document.querySelector('.text-red-600, .text-red-400');
+                    const hasMessage = document.querySelector('[x-data*="message"]');
+                    
+                    // Si no hay datos cargados, no hay errores visibles, y la cámara está detenida, reiniciar
+                    if (!hasData && !hasError && !window.__qrInstance) {
+                        console.log('📷 No hay datos ni cámara activa, reiniciando automáticamente...');
                         startQrScanner();
                     } else {
-                        console.log('ℹ️ Estado: hasData=', !!hasData, ', cameraActive=', !!window.__qrInstance);
+                        console.log('ℹ️ Estado: hasData=', !!hasData, ', hasError=', !!hasError, ', cameraActive=', !!window.__qrInstance);
                     }
-                }, 600);
+                }, 800);
+            });
+            
+            // Escuchar eventos específicos de Livewire usando el hook
+            document.addEventListener('livewire:init', () => {
+                Livewire.on('restart-camera', () => {
+                    console.log('📷 Evento restart-camera recibido desde Livewire hook, reiniciando...');
+                    setTimeout(() => {
+                        startQrScanner();
+                    }, 300);
+                });
             });
         })();
     </script>
