@@ -6,7 +6,12 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <button type="button" wire:click="resetScanner" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+            <button 
+                type="button" 
+                x-data
+                @click="$wire.resetScanner().then(() => { setTimeout(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); }, 300); })"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
                 Nuevo
             </button>
             <flux:button href="{{ route('banero.pools.inside') }}" variant="ghost" wire:navigate>En pileta</flux:button>
@@ -495,19 +500,6 @@
             document.addEventListener('banero-scanner-reset', () => {
                 console.log('🔄 Evento banero-scanner-reset recibido, reiniciando scanner...');
                 startQrScanner();
-            });
-            
-            // Listener global para Livewire 3
-            document.addEventListener('livewire:updated', (event) => {
-                // Verificar si el componente es este scanner
-                if (event.detail?.component?.name === 'banero.pools.scanner') {
-                    const el = document.getElementById('qr-reader');
-                    // Si el elemento existe y está vacío (fue reseteado), reiniciar
-                    if (el && !window.__qrInstance) {
-                        console.log('📷 Componente actualizado, reiniciando cámara...');
-                        setTimeout(startQrScanner, 100);
-                    }
-                }
             });
         })();
     </script>
