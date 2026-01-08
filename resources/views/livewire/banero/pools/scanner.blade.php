@@ -511,6 +511,22 @@
                 console.log('🔄 Evento banero-scanner-reset recibido, reiniciando scanner...');
                 startQrScanner();
             });
+            
+            // Escuchar cuando Livewire termina cualquier request
+            window.addEventListener('livewire:commit', ({ detail }) => {
+                console.log('🔍 Livewire commit detectado');
+                // Esperar un poco y verificar si no hay QR cargado pero la cámara está detenida
+                setTimeout(() => {
+                    const hasData = document.querySelector('[wire\\:submit="confirm"]') || 
+                                   document.querySelector('[wire\\:click="checkout"]');
+                    if (!hasData && !window.__qrInstance) {
+                        console.log('📷 No hay datos ni cámara activa, reiniciando...');
+                        startQrScanner();
+                    } else {
+                        console.log('ℹ️ Estado: hasData=', !!hasData, ', cameraActive=', !!window.__qrInstance);
+                    }
+                }, 600);
+            });
         })();
     </script>
 </div>
