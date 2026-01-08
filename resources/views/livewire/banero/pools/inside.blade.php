@@ -118,12 +118,12 @@
                         <td class="p-3 text-right">
                             <flux:button
                                 size="sm"
-                                variant="primary"
+                                variant="ghost"
                                 type="button"
                                 wire:click="checkoutEntry({{ $entry->id }})"
-                                wire:confirm="¿Registrar salida?"
+                                wire:confirm="⚠️ IMPORTANTE: Solo usar si la persona salió SIN ESCANEAR su QR.\n\nSi tiene QR personal, pedile que lo escanee en el Scanner.\n\n¿Confirmar salida manual de {{ $name }}?"
                             >
-                                Salida
+                                Salida manual
                             </flux:button>
                         </td>
                     </tr>

@@ -508,6 +508,12 @@
                 console.log('🔄 Evento banero-scanner-reset recibido, reiniciando scanner...');
                 startQrScanner();
             });
+            
+            // Listener para evento Livewire desde resetScanner()
+            Livewire.on('restart-camera', () => {
+                console.log('📷 Evento restart-camera recibido, reiniciando scanner...');
+                startQrScanner();
+            });
         })();
     </script>
 </div>

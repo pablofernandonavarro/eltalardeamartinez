@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\PoolEntryRegistered;
+use App\Models\PoolSetting;
 use Illuminate\Support\Facades\Log;
 
 class NotifyAdminPoolViolation
@@ -35,14 +36,17 @@ class NotifyAdminPoolViolation
             $violations[] = 'Exceso de invitados';
         }
 
-        if ($rule->max_entries_per_day > 0) {
-            $todayEntries = $entry->unit->poolEntries()
+        // Validar máximo de personas simultáneas (configuración global)
+        $maxEntriesPerDay = PoolSetting::get('max_entries_per_day', 0);
+        if ($maxEntriesPerDay > 0) {
+            $activeEntries = $entry->unit->poolEntries()
                 ->where('pool_id', $pool->id)
                 ->forDate($entry->entered_at->toDateString())
+                ->whereNull('exited_at') // Solo contar entradas activas
                 ->count();
 
-            if ($todayEntries > $rule->max_entries_per_day) {
-                $violations[] = 'Exceso de ingresos diarios';
+            if ($activeEntries > $maxEntriesPerDay) {
+                $violations[] = "Exceso de personas simultáneas ({$activeEntries}/{$maxEntriesPerDay})";
             }
         }
 

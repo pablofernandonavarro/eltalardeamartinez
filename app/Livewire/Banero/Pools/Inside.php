@@ -16,6 +16,8 @@ class Inside extends Component
 
     public ?\App\Models\PoolShift $activeShift = null;
 
+    protected $listeners = ['entry-registered' => '$refresh'];
+
     public function mount(): void
     {
         $this->activeShift = \App\Models\PoolShift::getActiveShiftForUser(auth()->id());
@@ -56,9 +58,22 @@ class Inside extends Component
             ->whereDate('entered_at', now()->toDateString())
             ->whereNull('exited_at')
             ->where('pool_id', $this->poolId);
+        
+        \Log::info('📊 Inside - Consulta base', [
+            'pool_id' => $this->poolId,
+            'date' => now()->toDateString(),
+            'timezone' => config('app.timezone'),
+            'now' => now()->toDateTimeString(),
+        ]);
 
         // Metrics (global, not paginated)
         $openEntriesCount = (int) (clone $baseQuery)->count();
+        
+        \Log::info('📊 Inside - Resultado', [
+            'open_entries_count' => $openEntriesCount,
+            'all_today_entries' => PoolEntry::whereDate('entered_at', now()->toDateString())->where('pool_id', $this->poolId)->count(),
+            'all_today_with_exit' => PoolEntry::whereDate('entered_at', now()->toDateString())->where('pool_id', $this->poolId)->whereNotNull('exited_at')->count(),
+        ]);
         $openGuestsCount = (int) (clone $baseQuery)->sum('guests_count');
         $totalPeopleCount = $openEntriesCount + $openGuestsCount;
 

@@ -11,6 +11,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PoolEntry extends Model
 {
     use HasFactory, SoftDeletes;
+    
+    protected static function booted()
+    {
+        static::updating(function ($entry) {
+            if ($entry->isDirty('exited_at') && $entry->exited_at !== null) {
+                \Log::warning('⚠️ PoolEntry cerrando', [
+                    'entry_id' => $entry->id,
+                    'exited_at' => $entry->exited_at,
+                    'stacktrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10)
+                ]);
+            }
+        });
+    }
 
     protected $fillable = [
         'pool_id',

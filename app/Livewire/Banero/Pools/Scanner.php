@@ -82,21 +82,21 @@ class Scanner extends Component
 
     public function resetScanner(): void
     {
+        \Log::info('🔄 resetScanner() - Limpiando estado');
+        
         $this->resetErrorBag();
-
         $this->token = '';
         $this->pass = null;
         $this->scannedResident = null;
         $this->scannedUserId = null;
         $this->selectedResidentId = null;
-        // NO resetear poolId - debe mantenerse con la pileta del turno activo
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
         $this->showGuestList = false;
         $this->action = 'entry';
-
-        // Re-habilitar cámara en el frontend
-        $this->dispatch('banero-scanner-reset');
+        
+        // Disparar evento para reiniciar cámara
+        $this->dispatch('restart-camera');
     }
 
     public function toggleGuestList(): void
@@ -196,6 +196,11 @@ class Scanner extends Component
             // Acción automática según estado actual
             $openEntry = $this->findOpenEntryForResident($resident);
             $this->action = $openEntry ? 'exit' : 'entry';
+            
+            \Log::info('🎯 Acción determinada para residente', [
+                'action' => $this->action,
+                'openEntry_exists' => (bool)$openEntry
+            ]);
 
             return;
         }
@@ -554,8 +559,27 @@ class Scanner extends Component
             return;
         }
 
-        // Evitar doble entrada
-        $openEntry = $this->findOpenEntryForResident($this->scannedResident);
+        // Evitar doble entrada - forzar recarga desde BD
+        \Log::info('🔍 Verificando entrada abierta...', [
+            'unit_id' => $this->scannedResident->unit_id,
+            'resident_id' => $this->scannedResident->id,
+            'date' => now()->toDateString()
+        ]);
+        
+        $openEntry = \App\Models\PoolEntry::query()
+            ->where('unit_id', $this->scannedResident->unit_id)
+            ->where('resident_id', $this->scannedResident->id)
+            ->whereDate('entered_at', now()->toDateString())
+            ->whereNull('exited_at')
+            ->latest('entered_at')
+            ->first();
+        
+        \Log::info('📊 Resultado búsqueda entrada abierta', [
+            'found' => $openEntry !== null,
+            'entry_id' => $openEntry?->id,
+            'exited_at' => $openEntry?->exited_at
+        ]);
+            
         if ($openEntry) {
             \Log::warning('⚠️ Residente ya tiene entrada abierta', ['entry_id' => $openEntry->id]);
             $this->addError('error', 'Este residente ya está en la pileta. Registre la salida antes de volver a ingresar.');
@@ -579,16 +603,25 @@ class Scanner extends Component
             \Log::info('🏠 Unit encontrado', ['unit' => $unit->full_identifier]);
 
             // Registrar entrada del residente sin invitados
-            \Log::info('🟢 Llamando a registerResidentEntry...');
+            \Log::info('🟢 Llamando a registerResidentEntry...', [
+                'pool_id' => $pool->id,
+                'unit_id' => $unit->id,
+                'resident_id' => $this->scannedResident->id,
+                'guests_count' => 0
+            ]);
+            
             $entry = $poolAccessService->registerResidentEntry($pool, $unit, $this->scannedResident, 0, now()->toDateTimeString());
+            
             \Log::info('✅ Entrada registrada exitosamente', ['entry_id' => $entry->id]);
+            
+            // Notificar a otros componentes
+            $this->dispatch('entry-registered')->to(Inside::class);
+            
+            // Resetear scanner para permitir nuevo escaneo inmediato
+            $this->resetScanner();
+            
+            session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
 
-            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
-
-            // Actualizar estado a 'exit' porque ahora está adentro
-            $this->action = 'exit';
-            // NO resetear poolId - debe mantenerse con la pileta del turno activo
-            // Mantenemos scannedResident y token para facilitar la salida
         } catch (\Exception $e) {
             \Log::error('🔴 ERROR al registrar entrada', [
                 'error' => $e->getMessage(),
@@ -612,9 +645,23 @@ class Scanner extends Component
         }
 
         $user = User::findOrFail($this->scannedUserId);
+        
+        $unitId = $user->currentUnitUsers()->first()?->unit_id;
+        if (!$unitId) {
+            $this->addError('error', 'El usuario no tiene una unidad activa.');
+            return;
+        }
 
-        // Evitar doble entrada
-        $openEntry = $this->findOpenEntryForUser($user);
+        // Evitar doble entrada - forzar recarga desde BD
+        $openEntry = \App\Models\PoolEntry::query()
+            ->where('unit_id', $unitId)
+            ->where('user_id', $user->id)
+            ->whereNull('resident_id')
+            ->whereDate('entered_at', now()->toDateString())
+            ->whereNull('exited_at')
+            ->latest('entered_at')
+            ->first();
+            
         if ($openEntry) {
             \Log::warning('⚠️ Usuario ya tiene entrada abierta', ['entry_id' => $openEntry->id]);
             $this->addError('error', 'Este usuario ya está en la pileta. Registre la salida antes de volver a ingresar.');
@@ -645,10 +692,14 @@ class Scanner extends Component
             \Log::info('🟢 Llamando a registerEntry (usuario)...');
             $entry = $poolAccessService->registerEntry($pool, $unit, $user, 0, now()->toDateTimeString());
             \Log::info('✅ Entrada registrada exitosamente', ['entry_id' => $entry->id]);
-
-            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
-
-            $this->action = 'exit';
+            
+            // Notificar a otros componentes
+            $this->dispatch('entry-registered')->to(Inside::class);
+            
+            // Resetear scanner para permitir nuevo escaneo inmediato
+            $this->resetScanner();
+            
+            session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
         } catch (\Exception $e) {
             \Log::error('🔴 ERROR al registrar entrada de usuario', [
                 'error' => $e->getMessage(),
@@ -694,14 +745,14 @@ class Scanner extends Component
             'exited_by_user_id' => auth()->id(),
             'exit_notes' => $this->exitNotes,
         ]);
+        
+        // Notificar a otros componentes
+        $this->dispatch('entry-registered')->to(Inside::class);
 
-        session()->flash('message', 'Salida registrada correctamente. Puede registrar un nuevo ingreso sin volver a escanear.');
-
-        // Mantener el QR cargado pero limpiar notas y resetear acción a 'entry'
-        $this->exitNotes = null;
-        $this->action = 'entry';
-        // NO resetear poolId - debe mantenerse con la pileta del turno activo
-        // NO limpiamos token, pass ni scannedResident para permitir reingreso inmediato
+        // Resetear completamente para forzar nuevo escaneo
+        $this->resetScanner();
+        
+        session()->flash('message', '✅ Salida registrada correctamente. Escanee nuevamente para registrar nuevo ingreso.');
     }
 
     /**

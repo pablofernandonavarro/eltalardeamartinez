@@ -27,6 +27,12 @@ class CloseOpenPoolEntries extends Command
         $cutoff = $before
             ? now()->parse($before)->startOfDay()
             : now()->startOfDay();
+        
+        // NUNCA cerrar entradas de hoy - solo de días anteriores
+        if ($cutoff->isToday()) {
+            $this->info('No se cierran entradas del día actual. Solo de días anteriores.');
+            return Command::SUCCESS;
+        }
 
         $query = PoolEntry::query()
             ->whereNull('exited_at')
