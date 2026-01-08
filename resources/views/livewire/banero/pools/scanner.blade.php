@@ -9,7 +9,7 @@
             <button 
                 type="button" 
                 x-data
-                @click="$wire.resetScanner().then(() => { setTimeout(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); }, 300); })"
+                @click="$wire.resetScanner().then(() => { console.log('🔄 Scanner reseteado, reiniciando cámara...'); setTimeout(() => { if(window.__baneroStartQrScanner) { console.log('🎥 Ejecutando startQrScanner...'); window.__baneroStartQrScanner(); } else { console.error('❌ window.__baneroStartQrScanner no disponible'); } }, 500); })"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
                 Nuevo
@@ -168,7 +168,7 @@
                                 <button 
                                     type="button" 
                                     x-data
-                                    @click="$wire.checkout().then(() => { setTimeout(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); }, 300); })"
+                                    @click="$wire.checkout().then(() => { console.log('✅ Salida registrada, reiniciando cámara...'); setTimeout(() => { if(window.__baneroStartQrScanner) { console.log('🎥 Ejecutando startQrScanner...'); window.__baneroStartQrScanner(); } else { console.error('❌ window.__baneroStartQrScanner no disponible'); } }, 500); })"
                                     class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                                 >
                                     Registrar salida
@@ -418,7 +418,7 @@
                                 <button 
                                     type="button" 
                                     x-data
-                                    @click="$wire.checkout().then(() => { setTimeout(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); }, 300); })"
+                                    @click="$wire.checkout().then(() => { console.log('✅ Salida registrada, reiniciando cámara...'); setTimeout(() => { if(window.__baneroStartQrScanner) { console.log('🎥 Ejecutando startQrScanner...'); window.__baneroStartQrScanner(); } else { console.error('❌ window.__baneroStartQrScanner no disponible'); } }, 500); })"
                                     class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                                 >
                                     Registrar salida
