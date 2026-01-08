@@ -94,9 +94,6 @@ class Scanner extends Component
         $this->selectedGuestIds = [];
         $this->showGuestList = false;
         $this->action = 'entry';
-        
-        // Disparar evento para reiniciar cámara
-        $this->dispatch('restart-camera');
     }
 
     public function toggleGuestList(): void

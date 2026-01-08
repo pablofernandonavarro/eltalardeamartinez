@@ -6,7 +6,7 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <flux:button type="button" variant="ghost" wire:click="resetScanner">Nuevo</flux:button>
+            <flux:button type="button" variant="ghost" wire:click="resetScanner" x-on:click="setTimeout(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); }, 100)">Nuevo</flux:button>
             <flux:button href="{{ route('banero.pools.inside') }}" variant="ghost" wire:navigate>En pileta</flux:button>
         </div>
     </div>
@@ -465,23 +465,9 @@
                         @this.call('loadPassFromScan', decodedText)
                             .then(() => {
                                 console.log('✅ Token procesado correctamente');
-                                // Reiniciar cámara después de 2 segundos para permitir nuevo escaneo
-                                setTimeout(() => {
-                                    console.log('🔄 Reiniciando cámara automáticamente...');
-                                    if (window.__baneroStartQrScanner) {
-                                        window.__baneroStartQrScanner();
-                                    }
-                                }, 2000);
                             })
                             .catch((err) => {
                                 console.error('❌ Error procesando token:', err);
-                                // Reiniciar cámara incluso si hay error
-                                setTimeout(() => {
-                                    console.log('🔄 Reiniciando cámara después de error...');
-                                    if (window.__baneroStartQrScanner) {
-                                        window.__baneroStartQrScanner();
-                                    }
-                                }, 2000);
                             });
                     },
                     (errorMessage) => {
@@ -506,12 +492,6 @@
 
             document.addEventListener('banero-scanner-reset', () => {
                 console.log('🔄 Evento banero-scanner-reset recibido, reiniciando scanner...');
-                startQrScanner();
-            });
-            
-            // Listener para evento Livewire desde resetScanner()
-            Livewire.on('restart-camera', () => {
-                console.log('📷 Evento restart-camera recibido, reiniciando scanner...');
                 startQrScanner();
             });
         })();
