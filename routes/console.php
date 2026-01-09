@@ -14,5 +14,6 @@ app()->booted(function () {
     $schedule = app(Schedule::class);
 
     // A las 23:59 se cierran ingresos abiertos de días anteriores
+    // NOTA: El comando tiene protección para NUNCA cerrar entradas del día actual
     $schedule->command('pools:close-open-entries')->dailyAt('23:59');
 });

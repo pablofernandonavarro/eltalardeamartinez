@@ -6,7 +6,27 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <flux:button type="button" variant="ghost" wire:click="resetScanner">Nuevo</flux:button>
+            <button 
+                type="button" 
+                wire:click="resetScanner"
+                @click="
+                    console.log('🔄 Botón Nuevo clickeado');
+                    $wire.resetScanner().then(() => {
+                        console.log('✅ Scanner reseteado, reiniciando cámara...');
+                        setTimeout(() => {
+                            if (window.__baneroStartQrScanner) {
+                                console.log('🎥 Llamando a startQrScanner...');
+                                window.__baneroStartQrScanner();
+                            } else {
+                                console.error('❌ window.__baneroStartQrScanner no disponible');
+                            }
+                        }, 300);
+                    });
+                "
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
+                Nuevo
+            </button>
             <flux:button href="{{ route('banero.pools.inside') }}" variant="ghost" wire:navigate>En pileta</flux:button>
         </div>
     </div>
@@ -33,7 +53,7 @@
 
             <div class="p-4">
                 <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-black/5 dark:bg-white/5">
-                    <div wire:ignore id="qr-reader" class="w-full"></div>
+                    <div wire:ignore id="qr-reader" class="w-full" x-data x-init="$nextTick(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); })"></div>
                 </div>
 
                 <details class="mt-4">
@@ -158,9 +178,14 @@
                             </flux:field>
 
                             <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
-                                <flux:button class="w-full" type="button" variant="primary" wire:click="checkout">
+                                <button 
+                                    type="button" 
+                                    x-data
+                                    @click="$wire.checkout().then(() => { console.log('✅ Salida registrada, reiniciando cámara...'); setTimeout(() => { if(window.__baneroStartQrScanner) { console.log('🎥 Ejecutando startQrScanner...'); window.__baneroStartQrScanner(); } else { console.error('❌ window.__baneroStartQrScanner no disponible'); } }, 500); })"
+                                    class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                                >
                                     Registrar salida
-                                </flux:button>
+                                </button>
                             </div>
                         </div>
                     @endif
@@ -264,6 +289,26 @@
                                 </flux:callout>
                             @endif
 
+                            {{-- Selector de quién ingresa --}}
+                            @if(!empty($availableResidents))
+                                <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 mb-4">
+                                    <flux:field>
+                                        <flux:label>¿Quién ingresa? (opcional)</flux:label>
+                                        <flux:select wire:model="selectedResidentId">
+                                            <option value="">{{ $pass->resident ? $pass->resident->name : $pass->user->name }} (por defecto)</option>
+                                            @foreach($availableResidents as $resident)
+                                                @if(!empty(trim($resident['name'])) && ($resident['id'] || $pass->user_id !== $resident['user_id']))
+                                                    <option value="{{ $resident['id'] ?? '' }}">
+                                                        {{ $resident['name'] }} ({{ $resident['role'] }})
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        </flux:select>
+                                        <flux:description>Seleccioná quién ingresa físicamente con los invitados</flux:description>
+                                    </flux:field>
+                                </div>
+                            @endif
+
                             <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="font-semibold">Invitados</div>
@@ -332,6 +377,38 @@
                                 @endif
                             </div>
 
+                            {{-- Resumen compacto de invitados seleccionados --}}
+                            @if(count($selectedGuestIds ?? []) > 0)
+                                <div class="rounded-lg border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 p-4">
+                                    <div class="font-semibold text-sm text-green-800 dark:text-green-200 mb-2">
+                                        👥 Invitados que ingresarán ({{ count($selectedGuestIds) }})
+                                    </div>
+                                    <div class="space-y-2">
+                                        @foreach($pass->guests->whereIn('id', $selectedGuestIds) as $guest)
+                                            <div class="flex items-center gap-2 text-sm">
+                                                @php $gPhoto = $guest->profilePhotoUrl(); @endphp
+                                                @if($gPhoto)
+                                                    <img src="{{ $gPhoto }}" alt="{{ $guest->name }}" class="h-8 w-8 rounded-full object-cover" />
+                                                @else
+                                                    <div class="h-8 w-8 rounded-full bg-green-200 dark:bg-green-700 flex items-center justify-center text-xs font-semibold">
+                                                        {{ \Illuminate\Support\Str::of($guest->name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
+                                                    </div>
+                                                @endif
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-green-900 dark:text-green-100">{{ $guest->name }}</div>
+                                                    <div class="text-xs text-green-700 dark:text-green-300">
+                                                        {{ $guest->document_type }} {{ $guest->document_number }}
+                                                        @if($guest->birth_date)
+                                                            • {{ $guest->birth_date->age }} años
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
                                 <flux:button class="w-full" type="submit" variant="primary" wire:loading.attr="disabled">
                                     Registrar ingreso
@@ -351,9 +428,14 @@
                             </flux:field>
 
                             <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
-                                <flux:button class="w-full" type="button" variant="primary" wire:click="checkout">
+                                <button 
+                                    type="button" 
+                                    x-data
+                                    @click="$wire.checkout().then(() => { console.log('✅ Salida registrada, reiniciando cámara...'); setTimeout(() => { if(window.__baneroStartQrScanner) { console.log('🎥 Ejecutando startQrScanner...'); window.__baneroStartQrScanner(); } else { console.error('❌ window.__baneroStartQrScanner no disponible'); } }, 500); })"
+                                    class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                                >
                                     Registrar salida
-                                </flux:button>
+                                </button>
                             </div>
                         </div>
                     @endif
@@ -373,22 +455,47 @@
             const stopQrScanner = async () => {
                 if (!window.__qrInstance) return;
 
-                try { await window.__qrInstance.stop(); } catch (e) {}
-                try { await window.__qrInstance.clear(); } catch (e) {}
+                console.log('🛑 Deteniendo scanner...');
+                try { 
+                    await window.__qrInstance.stop(); 
+                    console.log('✅ Scanner detenido');
+                } catch (e) { 
+                    console.log('⚠️ Error al detener:', e.message);
+                }
+                try { 
+                    await window.__qrInstance.clear(); 
+                    console.log('✅ Scanner limpiado');
+                } catch (e) { 
+                    console.log('⚠️ Error al limpiar:', e.message);
+                }
                 window.__qrInstance = null;
+                
+                // Limpiar el elemento del DOM
+                const el = document.getElementById('qr-reader');
+                if (el) {
+                    el.innerHTML = '';
+                    console.log('✅ Elemento DOM limpiado');
+                }
             };
 
-            const startQrScanner = () => {
+            const startQrScanner = async () => {
+                console.log('🚀 startQrScanner() llamado');
                 const el = document.getElementById('qr-reader');
-                if (!el) return; // si no estamos en la página o aún no está montado
+                if (!el) {
+                    console.log('❌ Elemento qr-reader no encontrado');
+                    return;
+                }
 
                 if (typeof Html5Qrcode === 'undefined') {
+                    console.log('⏳ Html5Qrcode no cargado, reintentando...');
                     setTimeout(startQrScanner, 200);
                     return;
                 }
 
-                stopQrScanner();
+                console.log('🛑 Deteniendo scanner anterior si existe...');
+                await stopQrScanner();
 
+                console.log('🎥 Iniciando nueva instancia de scanner...');
                 const qr = new Html5Qrcode('qr-reader');
                 window.__qrInstance = qr;
 
@@ -432,7 +539,59 @@
             });
 
             document.addEventListener('banero-scanner-reset', () => {
+                console.log('🔄 Evento banero-scanner-reset recibido, reiniciando scanner...');
                 startQrScanner();
+            });
+            
+            document.addEventListener('restart-qr-scanner', () => {
+                console.log('📷 Evento restart-qr-scanner recibido, reiniciando...');
+                startQrScanner();
+            });
+            
+            // Escuchar evento de Livewire para reiniciar cámara
+            Livewire.on('restart-camera', () => {
+                console.log('📷 Evento restart-camera recibido desde Livewire, reiniciando...');
+                setTimeout(() => {
+                    startQrScanner();
+                }, 300);
+            });
+            
+            // También escuchar como evento de window para compatibilidad
+            window.addEventListener('restart-camera', () => {
+                console.log('📷 Evento restart-camera recibido desde window, reiniciando...');
+                setTimeout(() => {
+                    startQrScanner();
+                }, 300);
+            });
+            
+            // Escuchar cuando Livewire termina cualquier request
+            window.addEventListener('livewire:commit', ({ detail }) => {
+                console.log('🔍 Livewire commit detectado');
+                // Esperar un poco y verificar si no hay QR cargado pero la cámara está detenida
+                setTimeout(() => {
+                    const hasData = document.querySelector('[wire\\:submit="confirm"]') || 
+                                   document.querySelector('[wire\\:click="checkout"]');
+                    const hasError = document.querySelector('.text-red-600, .text-red-400');
+                    const hasMessage = document.querySelector('[x-data*="message"]');
+                    
+                    // Si no hay datos cargados, no hay errores visibles, y la cámara está detenida, reiniciar
+                    if (!hasData && !hasError && !window.__qrInstance) {
+                        console.log('📷 No hay datos ni cámara activa, reiniciando automáticamente...');
+                        startQrScanner();
+                    } else {
+                        console.log('ℹ️ Estado: hasData=', !!hasData, ', hasError=', !!hasError, ', cameraActive=', !!window.__qrInstance);
+                    }
+                }, 800);
+            });
+            
+            // Escuchar eventos específicos de Livewire usando el hook
+            document.addEventListener('livewire:init', () => {
+                Livewire.on('restart-camera', () => {
+                    console.log('📷 Evento restart-camera recibido desde Livewire hook, reiniciando...');
+                    setTimeout(() => {
+                        startQrScanner();
+                    }, 300);
+                });
             });
         })();
     </script>

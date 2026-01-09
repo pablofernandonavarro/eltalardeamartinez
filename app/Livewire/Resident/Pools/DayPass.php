@@ -206,30 +206,30 @@ class DayPass extends Component
         // Si alguno no corresponde, lo descartamos (y volvemos a sincronizar limpio)
         $this->selectedGuestIds = array_values(array_unique($allowedGuests));
 
-        // VALIDACIÓN TRIPLE: Forzar cumplimiento absoluto del reglamento
+        // VALIDACIÓN: Forzar cumplimiento absoluto del reglamento mensual
         $limitsInfo = $this->calculateAvailableLimits();
-        $maxAllowed = $limitsInfo['max_guests_today'] ?? 999;
-        $maxMonthly = $limitsInfo['max_guests_month'] ?? 999;
-        $usedThisMonth = $limitsInfo['used_this_month'] ?? 0;
-        $availableMonth = $limitsInfo['available_month'] ?? 999;
+        $isWeekend = $limitsInfo['is_weekend'] ?? false;
         
-        // Validar límite diario
-        if (count($this->selectedGuestIds) > $maxAllowed) {
-            $isWeekend = $limitsInfo['is_weekend'] ?? false;
-            $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
+        // Obtener el límite mensual disponible según tipo de día
+        $availableMonth = $isWeekend 
+            ? ($limitsInfo['available_weekend_month'] ?? 999)
+            : ($limitsInfo['available_weekday_month'] ?? 999);
+        
+        $usedThisMonth = $isWeekend
+            ? ($limitsInfo['used_weekends_month'] ?? 0)
+            : ($limitsInfo['used_weekdays_month'] ?? 0);
             
-            $this->addError('error', "REGLAMENTO VIOLADO: Máximo {$maxAllowed} invitados permitidos en {$dayType}. El sistema ha ajustado automáticamente la cantidad.");
-            
-            // Truncar automáticamente
-            $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, $maxAllowed);
-        }
+        $maxMonthly = $isWeekend
+            ? ($limitsInfo['max_guests_weekend_month'] ?? 2)
+            : ($limitsInfo['max_guests_weekday_month'] ?? 4);
         
         // Validar límite mensual
         if (count($this->selectedGuestIds) > $availableMonth) {
-            $this->addError('error', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxMonthly} invitados este mes. Solo puedes agregar {$availableMonth} invitados más.");
+            $dayType = $isWeekend ? 'fines de semana' : 'días de semana';
+            $this->addError('error', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxMonthly} invitados únicos en {$dayType} este mes. Solo podés agregar {$availableMonth} invitados más.");
             
             // Truncar al disponible mensual
-            $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, (int)$availableMonth);
+            $this->selectedGuestIds = array_slice($this->selectedGuestIds, 0, max(0, (int)$availableMonth));
         }
 
         $this->pass->guests()->sync($this->selectedGuestIds);
@@ -319,92 +319,62 @@ class DayPass extends Component
         $isWeekend = $today->isWeekend();
         $dayOfWeek = $today->dayOfWeek;
 
-        // Obtener pool habilitado (asumimos el primero)
-        $pool = \App\Models\Pool::query()->first();
-        if (! $pool) {
-            return ['has_limits' => false];
-        }
-
-        // Contar invitados únicos usados este mes (no suma reingresos)
+        // Contar invitados únicos por tipo de día este mes (TODOS LOS POOLS - el límite es por unidad)
         $monthStart = $today->copy()->startOfMonth();
         $monthEnd = $today->copy()->endOfMonth();
         
-        // Contar invitados únicos: obtener IDs distintos de pool_guests que ingresaron este mes
-        $usedThisMonth = \DB::table('pool_entry_guests')
+        // Contar invitados únicos usados en DÍAS DE SEMANA este mes (TODOS LOS POOLS)
+        $usedWeekdaysMonth = \DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
+            ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
+            ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
+            ->value('total');
         
-        // Contar invitados únicos usados en FINES DE SEMANA este mes
-        $usedWeekendsThisMonth = \DB::table('pool_entry_guests')
+        // Contar invitados únicos usados en FINES DE SEMANA este mes (TODOS LOS POOLS)
+        $usedWeekendsMonth = \DB::table('pool_entry_guests')
             ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
             ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
             ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
             ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
+            ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
+            ->value('total');
 
-        // ⚠️ LÍMITES CONFIGURABLES DINÁMICAMENTE
-        $allowExtraPayment = PoolSetting::get('allow_extra_payment', false);
-        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
-        $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+        // Obtener límites mensuales para ambos tipos de día
+        $maxGuestsWeekdayMonth = PoolSetting::get('max_guests_weekday', 4);
+        $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend', 2);
+        $availableWeekdayMonth = max(0, $maxGuestsWeekdayMonth - $usedWeekdaysMonth);
+        $availableWeekendMonth = max(0, $maxGuestsWeekendMonth - $usedWeekendsMonth);
         
-        // Contar cuántos fines de semana quedan este mes (desde hoy)
-        $remainingWeekends = 0;
-        $current = $today->copy();
-        $monthEnd = $today->copy()->endOfMonth();
-        
-        while ($current <= $monthEnd) {
-            if ($current->isWeekend()) {
-                $remainingWeekends++;
-            }
-            $current->addDay();
-        }
-        
-        if ($isWeekend) {
-            // FINES DE SEMANA Y FERIADOS: Leer de configuración
-            $maxGuestsToday = PoolSetting::get('max_guests_weekend', 2);
+        // Obtener límite diario según tipo de día
+        $maxGuestsToday = $isWeekend 
+            ? PoolSetting::get('max_guests_weekend_day', 2)
+            : PoolSetting::get('max_guests_weekday_day', 4);
 
-            $paymentMessage = $allowExtraPayment 
-                ? 'Pods pagar por invitados extra si exceds el límite.' 
-                : 'No se aceptan pagos por invitados extra.';
+        $hasQuota = $isWeekend ? ($availableWeekendMonth > 0) : ($availableWeekdayMonth > 0);
 
-            return [
-                'has_limits' => true,
-                'is_weekend' => true,
-                'max_guests_today' => $maxGuestsToday,
-                'max_guests_month' => $maxGuestsMonth,
-                'used_this_month' => $usedThisMonth,
-                'used_weekends_month' => $usedWeekendsThisMonth,
-                'available_month' => $availableMonth,
-                'remaining_weekends' => $remainingWeekends,
-                'allow_extra_payment' => $allowExtraPayment,
-                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados los fines de semana y feriados. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
-            ];
-        } else {
-            // LUNES A VIERNES: Leer de configuración
-            $maxGuestsToday = PoolSetting::get('max_guests_weekday', 4);
-
-            $paymentMessage = $allowExtraPayment 
-                ? 'Pods pagar por invitados extra si exceds el límite.' 
-                : 'No se aceptan pagos por invitados extra.';
-
-            return [
-                'has_limits' => true,
-                'is_weekend' => false,
-                'max_guests_today' => $maxGuestsToday,
-                'max_guests_month' => $maxGuestsMonth,
-                'used_this_month' => $usedThisMonth,
-                'used_weekends_month' => $usedWeekendsThisMonth,
-                'available_month' => $availableMonth,
-                'remaining_weekends' => $remainingWeekends,
-                'allow_extra_payment' => $allowExtraPayment,
-                'message' => "Reglamento: Máximo {$maxGuestsToday} invitados de lunes a viernes. Límite mensual: {$maxGuestsMonth}. {$paymentMessage}",
-            ];
-        }
+        return [
+            'has_limits' => true,
+            'is_weekend' => $isWeekend,
+            'max_guests_today' => $maxGuestsToday,
+            // Límites de días de semana
+            'max_guests_weekday_month' => $maxGuestsWeekdayMonth,
+            'used_weekdays_month' => $usedWeekdaysMonth,
+            'available_weekday_month' => $availableWeekdayMonth,
+            // Límites de fines de semana
+            'max_guests_weekend_month' => $maxGuestsWeekendMonth,
+            'used_weekends_month' => $usedWeekendsMonth,
+            'available_weekend_month' => $availableWeekendMonth,
+            // Estado general
+            'has_quota' => $hasQuota,
+            'message' => $hasQuota 
+                ? ($isWeekend 
+                    ? "Fin de semana: {$availableWeekendMonth} de {$maxGuestsWeekendMonth} invitados únicos disponibles. Los invitados pueden reingresar el mismo día." 
+                    : "Día de semana: {$availableWeekdayMonth} de {$maxGuestsWeekdayMonth} invitados únicos disponibles. Los invitados pueden reingresar el mismo día.")
+                : ($isWeekend
+                    ? "Límite de fin de semana agotado: Has usado {$usedWeekendsMonth} de {$maxGuestsWeekendMonth} invitados únicos en fines de semana este mes."
+                    : "Límite de día de semana agotado: Has usado {$usedWeekdaysMonth} de {$maxGuestsWeekdayMonth} invitados únicos en días de semana este mes."),
+        ];
     }
 }

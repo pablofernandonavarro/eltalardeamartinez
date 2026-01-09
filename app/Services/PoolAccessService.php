@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Events\PoolEntryRegistered;
 use App\Models\Pool;
 use App\Models\PoolEntry;
+use App\Models\PoolSetting;
 use App\Models\Resident;
 use App\Models\Unit;
 use App\Models\User;
@@ -140,16 +141,18 @@ class PoolAccessService
             throw new \Exception("El máximo de invitados permitidos es {$rule->max_guests_per_unit}.");
         }
 
-        // Validar máximo de ingresos diarios SOLO si hay invitados
-        // Los propietarios/inquilinos/residentes pueden ingresar solos sin límite
-        if ($guestsCount > 0 && $rule->max_entries_per_day > 0) {
-            $todayEntries = PoolEntry::forUnit($unit->id)
+        // Validar máximo de personas simultáneas (configuración global)
+        // Cuenta solo entradas ACTIVAS (sin salida) para esta unidad
+        $maxEntriesPerDay = PoolSetting::get('max_entries_per_day', 0);
+        if ($maxEntriesPerDay > 0) {
+            $activeEntries = PoolEntry::forUnit($unit->id)
                 ->where('pool_id', $pool->id)
                 ->forDate($enteredAtDate->toDateString())
+                ->whereNull('exited_at') // Solo contar entradas activas sin salida
                 ->count();
 
-            if ($todayEntries >= $rule->max_entries_per_day) {
-                throw new \Exception("Se ha alcanzado el máximo de ingresos diarios ({$rule->max_entries_per_day}).");
+            if ($activeEntries >= $maxEntriesPerDay) {
+                throw new \Exception("Ya hay {$activeEntries} persona(s) de esta unidad dentro de la pileta. Máximo permitido: {$maxEntriesPerDay}.");
             }
         }
 

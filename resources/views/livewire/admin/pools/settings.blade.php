@@ -96,6 +96,30 @@
                     </flux:field>
                 </div>
 
+                {{-- Máximo de Ingresos Diarios --}}
+                <div class="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-500 dark:border-green-500 rounded-lg">
+                    <flux:field>
+                        <flux:label class="flex items-center gap-2 text-base font-semibold text-green-900 dark:text-green-100">
+                            <span class="text-2xl">🚪</span>
+                            <span>Máximo de Personas Simultáneas por Unidad</span>
+                        </flux:label>
+                        <flux:description class="text-green-700 dark:text-green-300">
+                            Cuántas personas de una unidad pueden estar dentro de la pileta al mismo tiempo (0 = sin límite)
+                        </flux:description>
+                        <div class="flex items-center gap-4 mt-2">
+                            <flux:input 
+                                type="number" 
+                                wire:model="maxEntriesPerDay" 
+                                min="0" 
+                                max="20"
+                                class="w-24 text-xl font-bold text-center"
+                            />
+                            <span class="text-sm text-green-700 dark:text-green-300 font-medium">personas simultáneas</span>
+                        </div>
+                        <flux:error name="maxEntriesPerDay" />
+                    </flux:field>
+                </div>
+
                 {{-- Pagos Extra --}}
                 <div class="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-500 rounded-lg">
                     <flux:field>

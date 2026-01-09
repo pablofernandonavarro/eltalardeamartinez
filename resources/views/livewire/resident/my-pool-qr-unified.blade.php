@@ -1,8 +1,8 @@
 <div>
     <div class="mb-6">
-        <flux:heading size="xl">Mi QR de Pileta (hoy)</flux:heading>
+        <flux:heading size="xl">Mi QR de Pileta</flux:heading>
         <p class="text-sm text-gray-500 mt-1">
-            Precargá la cantidad de invitados para hoy. El bañero podrá elegir cuántos ingresan (hasta ese límite).
+            Generá tu QR personal para entrar solo, o precargá invitados para el día.
         </p>
     </div>
 
@@ -60,7 +60,7 @@
 
                 @if($hasWeekdayLimit && $hasWeekendLimit)
                     <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
-                        <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITES MENSUALES AGOTADOS - No se pueden agregar más invitados nuevos este mes (ni semana ni fin de semana)</span>
+                        <span class="text-red-600 dark:text-red-400 font-bold text-sm">⚠️ LÍMITES MENSUALES AGOTADOS - No se pueden agregar más invitados nuevos este mes</span>
                     </div>
                 @elseif($limitsInfo['is_weekend'] && $hasWeekendLimit)
                     <div class="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
@@ -73,7 +73,7 @@
                 @endif
 
                 <div class="text-xs text-gray-600 dark:text-gray-400 pt-3 border-t border-gray-300 dark:border-gray-700">
-                    <strong>⚠️ Importante:</strong> Como anfitrión, debés estar presente obligatoriamente durante toda la permanencia de tus invitados. Los préstamos transitorios de unidad no dan derecho al uso de la pileta. <strong class="text-red-600 dark:text-red-400">No existe la posibilidad de pagar por invitados extra.</strong>
+                    <strong>⚠️ Importante:</strong> Como anfitrión, debés estar presente obligatoriamente durante toda la permanencia de tus invitados. <strong class="text-red-600 dark:text-red-400">No existe la posibilidad de pagar por invitados extra.</strong>
                 </div>
             </div>
         </flux:callout>
@@ -98,103 +98,10 @@
     @else
         <div class="grid gap-6 lg:grid-cols-2">
             <style>
-                /* Mejor UX móvil: checkboxes grandes */
                 input[type="checkbox"] { width: 18px; height: 18px; }
             </style>
-            <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                <flux:heading size="lg" class="mb-4">Configuración del día</flux:heading>
-
-                <form wire:submit="save" class="space-y-6">
-                    <flux:field>
-                        <flux:label>Unidad</flux:label>
-                        <flux:select wire:model.live="unitId">
-                            @foreach($units as $unitUser)
-                                <option value="{{ $unitUser->unit_id }}">
-                                    {{ $unitUser->unit->full_identifier }}
-                                    ({{ $unitUser->unit->building->complex->name }})
-                                </option>
-                            @endforeach
-                        </flux:select>
-                        <flux:error name="unitId" />
-                    </flux:field>
-
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <flux:label>Invitados precargados (hoy)</flux:label>
-                            <flux:button href="{{ route('resident.pools.guests.index') }}" size="sm" variant="ghost" wire:navigate>
-                                Administrar invitados
-                            </flux:button>
-                        </div>
-
-                        @if($guests->isEmpty())
-                            <flux:callout color="blue">
-                                No tenés invitados cargados para esta unidad. Crealos en “Mis invitados”.
-                            </flux:callout>
-                        @else
-                            <div class="space-y-2 max-h-[320px] overflow-auto">
-                                @foreach($guests as $guest)
-                                    @php
-                                        $isSelected = in_array($guest->id, $selectedGuestIds);
-                                        $currentCount = count($selectedGuestIds);
-                                        // Usar el límite disponible mensual según tipo de día (no el diario)
-                                        $isWeekend = $limitsInfo['is_weekend'] ?? false;
-                                        $maxAllowed = $isWeekend 
-                                            ? ($limitsInfo['available_weekend_month'] ?? 999)
-                                            : ($limitsInfo['available_weekday_month'] ?? 999);
-                                        // Deshabilitar checkbox si: no está seleccionado Y ya se alcanzó el límite
-                                        $isDisabled = !$isSelected && $currentCount >= $maxAllowed;
-                                    @endphp
-                                    <label class="flex items-center gap-3 p-3 border {{ $isDisabled ? 'border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 opacity-50 cursor-not-allowed' : 'border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800' }} rounded">
-                                        <input
-                                            type="checkbox"
-                                            value="{{ $guest->id }}"
-                                            wire:model="selectedGuestIds"
-                                            @disabled($isDisabled)
-                                        />
-
-                                        @if($guest->profilePhotoUrl())
-                                            <img src="{{ $guest->profilePhotoUrl() }}" alt="{{ $guest->name }}" class="h-10 w-10 rounded-full object-cover" />
-                                        @else
-                                            <div class="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold">
-                                                {{ \Illuminate\Support\Str::of($guest->name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
-                                            </div>
-                                        @endif
-
-                                        <div class="flex-1">
-                                            <div class="font-medium">{{ $guest->name }}</div>
-                                            <div class="text-xs text-gray-500">
-                                                {{ $guest->document_type }} {{ $guest->document_number }}
-                                            </div>
-                                        </div>
-                                    </label>
-                                @endforeach
-                            </div>
-                        @endif
-
-                        <div class="text-sm text-gray-500">
-                            Seleccionados: {{ $selectedGuestsCount ?? 0 }}
-                        </div>
-                    </div>
-
-                    <div class="flex gap-3 items-center">
-                        <flux:button type="submit" variant="primary">Guardar</flux:button>
-
-                        <button
-                            type="button"
-                            wire:click="regenerateToken"
-                            wire:loading.attr="disabled"
-                            @disabled(! $pass || $pass?->used_at)
-                            class="px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Regenera el QR (solo si aún no fue usado)"
-                        >
-                            Regenerar QR
-                        </button>
-
-                        <span wire:loading wire:target="regenerateToken" class="text-sm text-gray-500">Actualizando…</span>
-                    </div>
-                </form>
-            </div>
-
+            
+            {{-- Columna izquierda: Configuración --}}
             <div class="space-y-6">
                 {{-- QR Personal --}}
                 <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
@@ -203,13 +110,15 @@
                         <flux:badge color="green">Permanente</flux:badge>
                     </div>
 
-                    @if(!$currentResident)
-                        <flux:callout color="blue">Seleccioná una unidad para ver tu QR personal.</flux:callout>
-                    @elseif($currentResident->isMinor())
+                    @if(!$resident && !$useUserQr)
+                        <flux:callout color="yellow">
+                            No se encontró tu perfil. Contactá al administrador.
+                        </flux:callout>
+                    @elseif($resident && $resident->isMinor())
                         <flux:callout color="yellow">
                             Solo los residentes mayores de 18 años pueden tener un QR personal.
                         </flux:callout>
-                    @elseif($currentResident->canHavePersonalQr() && $currentResident->qr_token)
+                    @elseif($qrToken)
                         <div class="flex flex-col items-center gap-4">
                             <p class="text-sm text-gray-600 dark:text-gray-400 text-center">
                                 Este QR es tuyo y permanente. Usalo para entrar solo a la pileta.
@@ -224,7 +133,7 @@
                                     <flux:label>Código personal</flux:label>
 
                                     <div class="flex gap-2 items-stretch">
-                                        <flux:input id="resident-personal-token" value="{{ $currentResident->qr_token }}" readonly class="flex-1" />
+                                        <flux:input id="resident-personal-token" value="{{ $qrToken }}" readonly class="flex-1 font-mono text-sm" />
 
                                         <button
                                             id="resident-personal-copy-btn"
@@ -244,7 +153,7 @@
 
                             <button
                                 type="button"
-                                wire:click="regeneratePersonalQr"
+                                wire:click="regenerateQr"
                                 wire:loading.attr="disabled"
                                 class="text-sm px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -254,24 +163,102 @@
                     @endif
                 </div>
 
-                {{-- QR Diario --}}
+                {{-- Configuración invitados --}}
                 <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                    <div class="flex items-center justify-between mb-4">
-                        <flux:heading size="lg">QR Diario (con invitados)</flux:heading>
-                        <div class="text-sm text-gray-500">Invitados: {{ $pass?->guests_allowed ?? 0 }}</div>
-                    </div>
+                    <flux:heading size="lg" class="mb-4">Invitados para hoy</flux:heading>
+
+                    <form wire:submit="save" class="space-y-6">
+                        <flux:field>
+                            <flux:label>Unidad</flux:label>
+                            <flux:select wire:model.live="unitId">
+                                @foreach($units as $unitUser)
+                                    <option value="{{ $unitUser->unit_id }}">
+                                        {{ $unitUser->unit->full_identifier }}
+                                        ({{ $unitUser->unit->building->complex->name }})
+                                    </option>
+                                @endforeach
+                            </flux:select>
+                            <flux:error name="unitId" />
+                        </flux:field>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <flux:label>Invitados precargados</flux:label>
+                                <flux:button href="{{ route('resident.pools.guests.index') }}" size="sm" variant="ghost" wire:navigate>
+                                    Administrar
+                                </flux:button>
+                            </div>
+
+                            @if($guests->isEmpty())
+                                <flux:callout color="blue">
+                                    No tenés invitados cargados. Crealos en "Mis invitados".
+                                </flux:callout>
+                            @else
+                                <div class="space-y-2 max-h-[320px] overflow-auto">
+                                    @foreach($guests as $guest)
+                                        @php
+                                            $isSelected = in_array($guest->id, $selectedGuestIds);
+                                            $currentCount = count($selectedGuestIds);
+                                            $isWeekend = $limitsInfo['is_weekend'] ?? false;
+                                            $maxAllowed = $isWeekend 
+                                                ? ($limitsInfo['available_weekend_month'] ?? 999)
+                                                : ($limitsInfo['available_weekday_month'] ?? 999);
+                                            $isDisabled = !$isSelected && $currentCount >= $maxAllowed;
+                                        @endphp
+                                        <label class="flex items-center gap-3 p-3 border {{ $isDisabled ? 'border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 opacity-50 cursor-not-allowed' : 'border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800' }} rounded">
+                                            <input
+                                                type="checkbox"
+                                                value="{{ $guest->id }}"
+                                                wire:model="selectedGuestIds"
+                                                @disabled($isDisabled)
+                                            />
+
+                                            @if($guest->profilePhotoUrl())
+                                                <img src="{{ $guest->profilePhotoUrl() }}" alt="{{ $guest->name }}" class="h-10 w-10 rounded-full object-cover" />
+                                            @else
+                                                <div class="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold">
+                                                    {{ \Illuminate\Support\Str::of($guest->name)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
+                                                </div>
+                                            @endif
+
+                                            <div class="flex-1">
+                                                <div class="font-medium">{{ $guest->name }}</div>
+                                                <div class="text-xs text-gray-500">
+                                                    {{ $guest->document_type }} {{ $guest->document_number }}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <div class="text-sm text-gray-500">
+                                Seleccionados: {{ $selectedGuestsCount ?? 0 }}
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 items-center">
+                            <flux:button type="submit" variant="primary">Guardar invitados</flux:button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Columna derecha: QR Diario --}}
+            <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <flux:heading size="lg">QR Diario (con invitados)</flux:heading>
+                    <div class="text-sm text-gray-500">Invitados: {{ $pass?->guests_allowed ?? 0 }}</div>
+                </div>
 
                 @if(!$pass)
-                    <flux:callout color="blue">Seleccioná una unidad para generar el QR.</flux:callout>
+                    <flux:callout color="blue">Seleccioná una unidad para generar tu QR del día.</flux:callout>
                 @else
-                    @if($pass->used_at)
-                        <flux:callout color="yellow" class="mb-4">
-                            Este pase ya se usó hoy (último registro: {{ $pass->used_at->format('d/m/Y H:i') }}).
-                            Podés reingresar con el mismo QR.
-                        </flux:callout>
-                    @endif
-
                     <div class="flex flex-col items-center gap-4">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center">
+                            Mostrá este QR al bañero. El bañero elegirá cuántos invitados ingresan.
+                        </p>
+
                         <div class="bg-white p-4 rounded-lg">
                             <div id="resident-daypass-qr" class="w-[220px] h-[220px]" wire:ignore></div>
                         </div>
@@ -281,7 +268,7 @@
                                 <flux:label>Código (por si no se puede escanear)</flux:label>
 
                                 <div class="flex gap-2 items-stretch">
-                                    <flux:input id="resident-daypass-token" value="{{ $pass->token }}" readonly class="flex-1" />
+                                    <flux:input id="resident-daypass-token" value="{{ $pass->token }}" readonly class="flex-1 font-mono text-sm" />
 
                                     <button
                                         id="resident-daypass-copy-btn"
@@ -298,9 +285,19 @@
                                 </div>
                             </flux:field>
                         </div>
+
+                        <button
+                            type="button"
+                            wire:click="regenerateToken"
+                            wire:loading.attr="disabled"
+                            @disabled($pass->used_at)
+                            class="text-sm px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Regenera el QR (solo si aún no fue usado)"
+                        >
+                            Regenerar QR diario
+                        </button>
                     </div>
                 @endif
-                </div>
             </div>
         </div>
     @endif
@@ -308,138 +305,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script>
         (function () {
-            let currentToken = @json($pass?->token);
-            let currentPersonalToken = @json($currentResident?->qr_token);
+            let currentPersonalToken = @json($qrToken);
+            let currentDaypassToken = @json($pass?->token);
 
-            async function copyTokenToClipboard(token) {
+            // Personal QR functions
+            async function copyPersonalToken(token) {
                 if (!token) return;
-
                 try {
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         await navigator.clipboard.writeText(token);
                         return;
                     }
-                } catch (e) {
-                    // fallback abajo
-                }
-
-                // Fallback muy compatible
-                const input = document.getElementById('resident-daypass-token');
-                if (input) {
-                    input.focus();
-                    input.select();
-                    document.execCommand('copy');
-                }
-            }
-
-            function showCopiedHint() {
-                const hint = document.getElementById('resident-daypass-copy-hint');
-                if (!hint) return;
-                hint.style.display = 'block';
-                setTimeout(() => { hint.style.display = 'none'; }, 1200);
-            }
-
-            function bindCopyButton() {
-                const btn = document.getElementById('resident-daypass-copy-btn');
-                if (!btn || btn.__bound) return;
-                btn.__bound = true;
-
-                btn.addEventListener('click', async () => {
-                    await copyTokenToClipboard(currentToken);
-                    showCopiedHint();
-                });
-            }
-
-            function renderInto(el, token) {
-                if (!el) return;
-
-                currentToken = token;
-
-                if (!token) {
-                    el.innerHTML = '';
-                    return;
-                }
-
-                const tryRender = () => {
-                    if (typeof window.QRCode === 'undefined') {
-                        setTimeout(tryRender, 100);
-                        return;
-                    }
-
-                    el.innerHTML = '';
-
-                    new window.QRCode(el, {
-                        text: token,
-                        width: 220,
-                        height: 220,
-                        correctLevel: window.QRCode.CorrectLevel.M,
-                    });
-                };
-
-                tryRender();
-            }
-
-            function renderFromBladeToken() {
-                const el = document.getElementById('resident-daypass-qr');
-                renderInto(el, @json($pass?->token));
-            }
-
-            // Render inicial
-            window.addEventListener('load', () => {
-                bindCopyButton();
-                renderFromBladeToken();
-            });
-
-            // Si se navega con wire:navigate
-            document.addEventListener('livewire:navigated', () => {
-                bindCopyButton();
-                renderFromBladeToken();
-            });
-
-            // Render cuando Livewire actualiza el token (guardar / regenerar)
-            function onTokenUpdated(event) {
-                bindCopyButton();
-
-                const token = event?.detail?.token || null;
-
-                // Actualizar el input visible (Livewire a veces lo re-renderiza)
-                const input = document.getElementById('resident-daypass-token');
-                if (input && token) {
-                    input.value = token;
-                }
-
-                const el = document.getElementById('resident-daypass-qr');
-                renderInto(el, token);
-            }
-
-            // Livewire despacha eventos en window, pero escuchamos también en document por compatibilidad
-            window.addEventListener('resident-daypass-qr-updated', onTokenUpdated);
-            document.addEventListener('resident-daypass-qr-updated', onTokenUpdated);
-
-            // Personal QR handling
-            function bindPersonalCopyButton() {
-                const btn = document.getElementById('resident-personal-copy-btn');
-                if (!btn || btn.__bound) return;
-                btn.__bound = true;
-
-                btn.addEventListener('click', async () => {
-                    await copyPersonalTokenToClipboard(currentPersonalToken);
-                    showPersonalCopiedHint();
-                });
-            }
-
-            async function copyPersonalTokenToClipboard(token) {
-                if (!token) return;
-
-                try {
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        await navigator.clipboard.writeText(token);
-                        return;
-                    }
-                } catch (e) {
-                    // fallback abajo
-                }
-
+                } catch (e) {}
                 const input = document.getElementById('resident-personal-token');
                 if (input) {
                     input.focus();
@@ -455,25 +332,30 @@
                 setTimeout(() => { hint.style.display = 'none'; }, 1200);
             }
 
+            function bindPersonalCopyButton() {
+                const btn = document.getElementById('resident-personal-copy-btn');
+                if (!btn || btn.__bound) return;
+                btn.__bound = true;
+                btn.addEventListener('click', async () => {
+                    await copyPersonalToken(currentPersonalToken);
+                    showPersonalCopiedHint();
+                });
+            }
+
             function renderPersonalQR(token) {
                 const el = document.getElementById('resident-personal-qr');
                 if (!el) return;
-
                 currentPersonalToken = token;
-
                 if (!token) {
                     el.innerHTML = '';
                     return;
                 }
-
                 const tryRender = () => {
                     if (typeof window.QRCode === 'undefined') {
                         setTimeout(tryRender, 100);
                         return;
                     }
-
                     el.innerHTML = '';
-
                     new window.QRCode(el, {
                         text: token,
                         width: 220,
@@ -481,40 +363,107 @@
                         correctLevel: window.QRCode.CorrectLevel.M,
                     });
                 };
-
                 tryRender();
             }
 
-            function renderPersonalFromBlade() {
-                renderPersonalQR(@json($currentResident?->qr_token));
-            }
-
-            function onPersonalTokenUpdated(event) {
-                bindPersonalCopyButton();
-
-                const token = event?.detail?.token || null;
-
-                const input = document.getElementById('resident-personal-token');
-                if (input && token) {
-                    input.value = token;
+            // Daypass QR functions
+            async function copyDaypassToken(token) {
+                if (!token) return;
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(token);
+                        return;
+                    }
+                } catch (e) {}
+                const input = document.getElementById('resident-daypass-token');
+                if (input) {
+                    input.focus();
+                    input.select();
+                    document.execCommand('copy');
                 }
-
-                renderPersonalQR(token);
             }
 
-            // Render personal QR on load
+            function showDaypassCopiedHint() {
+                const hint = document.getElementById('resident-daypass-copy-hint');
+                if (!hint) return;
+                hint.style.display = 'block';
+                setTimeout(() => { hint.style.display = 'none'; }, 1200);
+            }
+
+            function bindDaypassCopyButton() {
+                const btn = document.getElementById('resident-daypass-copy-btn');
+                if (!btn || btn.__bound) return;
+                btn.__bound = true;
+                btn.addEventListener('click', async () => {
+                    await copyDaypassToken(currentDaypassToken);
+                    showDaypassCopiedHint();
+                });
+            }
+
+            function renderDaypassQR(token) {
+                const el = document.getElementById('resident-daypass-qr');
+                if (!el) return;
+                currentDaypassToken = token;
+                if (!token) {
+                    el.innerHTML = '';
+                    return;
+                }
+                const tryRender = () => {
+                    if (typeof window.QRCode === 'undefined') {
+                        setTimeout(tryRender, 100);
+                        return;
+                    }
+                    el.innerHTML = '';
+                    new window.QRCode(el, {
+                        text: token,
+                        width: 220,
+                        height: 220,
+                        correctLevel: window.QRCode.CorrectLevel.M,
+                    });
+                };
+                tryRender();
+            }
+
+            // Initial render
             window.addEventListener('load', () => {
                 bindPersonalCopyButton();
-                renderPersonalFromBlade();
+                bindDaypassCopyButton();
+                renderPersonalQR(@json($qrToken));
+                renderDaypassQR(@json($pass?->token));
             });
 
             document.addEventListener('livewire:navigated', () => {
                 bindPersonalCopyButton();
-                renderPersonalFromBlade();
+                bindDaypassCopyButton();
+                renderPersonalQR(@json($qrToken));
+                renderDaypassQR(@json($pass?->token));
             });
 
-            window.addEventListener('resident-personal-qr-updated', onPersonalTokenUpdated);
-            document.addEventListener('resident-personal-qr-updated', onPersonalTokenUpdated);
+            // Handle QR regeneration events
+            function onPersonalQrUpdated(event) {
+                bindPersonalCopyButton();
+                const token = event?.detail?.token || null;
+                const input = document.getElementById('resident-personal-token');
+                if (input && token) {
+                    input.value = token;
+                }
+                renderPersonalQR(token);
+            }
+
+            function onDaypassQrUpdated(event) {
+                bindDaypassCopyButton();
+                const token = event?.detail?.token || null;
+                const input = document.getElementById('resident-daypass-token');
+                if (input && token) {
+                    input.value = token;
+                }
+                renderDaypassQR(token);
+            }
+
+            window.addEventListener('resident-qr-updated', onPersonalQrUpdated);
+            document.addEventListener('resident-qr-updated', onPersonalQrUpdated);
+            window.addEventListener('resident-daypass-qr-updated', onDaypassQrUpdated);
+            document.addEventListener('resident-daypass-qr-updated', onDaypassQrUpdated);
         })();
     </script>
 </div>

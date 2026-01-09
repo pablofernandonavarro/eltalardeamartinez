@@ -28,6 +28,8 @@ class Scanner extends Component
 
     public ?int $scannedUserId = null; // Para usuarios con QR personal
 
+    public ?int $selectedResidentId = null; // Residente seleccionado para day-pass
+
     public ?int $poolId = null;
 
     public ?string $exitNotes = null;
@@ -80,20 +82,18 @@ class Scanner extends Component
 
     public function resetScanner(): void
     {
+        \Log::info('🔄 resetScanner() - Limpiando estado');
+        
         $this->resetErrorBag();
-
         $this->token = '';
         $this->pass = null;
         $this->scannedResident = null;
         $this->scannedUserId = null;
-        // NO resetear poolId - debe mantenerse con la pileta del turno activo
+        $this->selectedResidentId = null;
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
         $this->showGuestList = false;
         $this->action = 'entry';
-
-        // Re-habilitar cámara en el frontend
-        $this->dispatch('banero-scanner-reset');
     }
 
     public function toggleGuestList(): void
@@ -142,15 +142,32 @@ class Scanner extends Component
         $this->pass = null;
         $this->scannedResident = null;
         $this->scannedUserId = null;
+        $this->selectedResidentId = null;
         // NO resetear poolId - debe mantenerse con la pileta del turno activo
         $this->exitNotes = null;
         $this->selectedGuestIds = [];
         $this->showGuestList = false;
         $this->action = 'entry';
 
-        $token = trim($this->token);
+        // DEBUG DETALLADO - Ver exactamente qué llega del scanner
+        \Log::info('===== SCAN QR - ANTES DE LIMPIAR =====');
+        \Log::info('Token ORIGINAL: "' . $this->token . '"');
+        \Log::info('Longitud: ' . strlen($this->token));
+        \Log::info('Hex completo: ' . bin2hex($this->token));
+        
+        // Limpieza agresiva del token: trim, minúsculas, remover espacios internos y caracteres de control
+        $token = strtolower(trim($this->token));
+        $token = preg_replace('/\s+/', '', $token); // Remover todos los espacios
+        $token = preg_replace('/[\x00-\x1F\x7F]/u', '', $token); // Remover caracteres de control (invisibles)
+        
+        \Log::info('===== SCAN QR - DESPUÉS DE LIMPIAR =====');
+        \Log::info('Token LIMPIADO: "' . $token . '"');
+        \Log::info('Longitud limpiada: ' . strlen($token));
+        \Log::info('Hex limpio: ' . bin2hex($token));
+        \Log::info('========================================');
+        
         if ($token === '') {
-            \Log::warning('Token vacío');
+            \Log::warning('Token vacío después de limpieza');
             $this->addError('token', 'Debe ingresar o escanear un token.');
 
             return;
@@ -159,7 +176,7 @@ class Scanner extends Component
         // Intentar buscar primero como QR personal de residente
         $resident = Resident::query()
             ->with(['unit.building.complex', 'user', 'authUser'])
-            ->where('qr_token', $token)
+            ->whereRaw('LOWER(qr_token) = ?', [$token])
             ->active()
             ->first();
 
@@ -176,13 +193,18 @@ class Scanner extends Component
             // Acción automática según estado actual
             $openEntry = $this->findOpenEntryForResident($resident);
             $this->action = $openEntry ? 'exit' : 'entry';
+            
+            \Log::info('🎯 Acción determinada para residente', [
+                'action' => $this->action,
+                'openEntry_exists' => (bool)$openEntry
+            ]);
 
             return;
         }
 
         // Si no es QR de residente, buscar como QR personal de usuario
         $user = User::query()
-            ->where('qr_token', $token)
+            ->whereRaw('LOWER(qr_token) = ?', [$token])
             ->whereNotNull('approved_at')
             ->first();
 
@@ -231,7 +253,7 @@ class Scanner extends Component
         // Si no es un QR de usuario ni residente, buscar como day-pass
         $pass = PoolDayPass::query()
             ->with(['unit.building.complex', 'user', 'resident', 'guests', 'poolEntry.pool', 'poolEntry.guests'])
-            ->where('token', $token)
+            ->whereRaw('LOWER(token) = ?', [$token])
             ->first();
 
         if (! $pass) {
@@ -273,9 +295,10 @@ class Scanner extends Component
 
     public function confirm(PoolAccessService $poolAccessService): void
     {
-        \Log::info('🟢 confirm() LLAMADO', [
+        \Log::info('🟢 🟢 🟢 confirm() LLAMADO 🟢 🟢 🟢', [
             'has_pass' => (bool)$this->pass,
             'has_resident' => (bool)$this->scannedResident,
+            'scannedUserId' => $this->scannedUserId,
             'action' => $this->action,
             'poolId' => $this->poolId,
             'selectedGuestIds' => $this->selectedGuestIds
@@ -312,6 +335,7 @@ class Scanner extends Component
 
         $this->validate([
             'poolId' => 'required|exists:pools,id',
+            'selectedResidentId' => 'nullable|integer|exists:residents,id',
             'selectedGuestIds' => 'array',
             'selectedGuestIds.*' => 'integer',
         ], [
@@ -328,69 +352,80 @@ class Scanner extends Component
         $unit = Unit::findOrFail($this->pass->unit_id);
         $pool = Pool::findOrFail($this->poolId);
 
-        // VALIDACIÓN 1: Contar invitados únicos que YA INGRESARON HOY
-        $today = now()->toDateString();
-        $guestsUsedToday = \DB::table('pool_entry_guests')
-            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
-            ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
-            ->whereDate('pool_entries.entered_at', $today)
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
-
-        // Verificar cuántos invitados NUEVOS (no repetidos) se intentan ingresar
-        $alreadyEnteredToday = \DB::table('pool_entry_guests')
-            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
-            ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
-            ->whereDate('pool_entries.entered_at', $today)
-            ->whereIn('pool_entry_guests.pool_guest_id', $this->selectedGuestIds)
-            ->pluck('pool_entry_guests.pool_guest_id')
-            ->unique()
-            ->toArray();
+        // VALIDACIÓN 1: Límites mensuales separados por tipo de día
+        $today = now();
+        $isWeekend = $today->isWeekend();
+        $monthStart = $today->copy()->startOfMonth();
+        $monthEnd = $today->copy()->endOfMonth();
         
-        $newGuestsCount = count(array_diff($this->selectedGuestIds, $alreadyEnteredToday));
-        $totalUniqueTodayAfterEntry = $guestsUsedToday + $newGuestsCount;
-        
-        // Verificar límite diario según día de semana o fin de semana
-        $maxAllowedByRegulation = $this->calculateMaxGuestsAllowedToday();
-        $isWeekend = now()->isWeekend();
-        $dayType = $isWeekend ? 'fin de semana' : 'día de semana';
-        
-        if ($totalUniqueTodayAfterEntry > $maxAllowedByRegulation) {
-            $this->addError('selectedGuestIds', "REGLAMENTO VIOLADO: Ya usó {$guestsUsedToday} invitados únicos hoy ({$dayType}). Máximo {$maxAllowedByRegulation} permitidos. No se aceptan pagos por invitados extra.");
-            return;
+        if ($isWeekend) {
+            // Es fin de semana: validar contra invitados usados en fines de semana del mes
+            $usedWeekendsMonth = \DB::table('pool_entry_guests')
+                ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+                ->where('pool_entries.unit_id', $unit->id)
+                ->where('pool_entries.pool_id', $pool->id)
+                ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+                ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)') // 1=Domingo, 7=Sábado
+                ->distinct('pool_entry_guests.pool_guest_id')
+                ->count('pool_entry_guests.pool_guest_id');
+            
+            // Verificar cuántos invitados NUEVOS se intentan ingresar
+            $alreadyUsedWeekendsMonth = \DB::table('pool_entry_guests')
+                ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+                ->where('pool_entries.unit_id', $unit->id)
+                ->where('pool_entries.pool_id', $pool->id)
+                ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+                ->whereRaw('DAYOFWEEK(pool_entries.entered_at) IN (1, 7)')
+                ->whereIn('pool_entry_guests.pool_guest_id', $this->selectedGuestIds)
+                ->pluck('pool_entry_guests.pool_guest_id')
+                ->unique()
+                ->toArray();
+            
+            $newGuestsCount = count(array_diff($this->selectedGuestIds, $alreadyUsedWeekendsMonth));
+            $maxAllowedMonth = PoolSetting::get('max_guests_weekend', 2);
+            $availableMonth = max(0, $maxAllowedMonth - $usedWeekendsMonth);
+            
+            if ($newGuestsCount > $availableMonth) {
+                $this->addError('selectedGuestIds', "LÍMITE MENSUAL DE FIN DE SEMANA EXCEDIDO: Has usado {$usedWeekendsMonth} de {$maxAllowedMonth} invitados únicos en fines de semana este mes. Solo puedes agregar {$availableMonth} invitados nuevos. Puedes reingresar con los mismos invitados el mismo día.");
+                return;
+            }
+        } else {
+            // Es día de semana: validar contra invitados usados en días de semana del mes
+            $usedWeekdaysMonth = \DB::table('pool_entry_guests')
+                ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+                ->where('pool_entries.unit_id', $unit->id)
+                ->where('pool_entries.pool_id', $pool->id)
+                ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+                ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes=2 a Viernes=6
+                ->distinct('pool_entry_guests.pool_guest_id')
+                ->count('pool_entry_guests.pool_guest_id');
+            
+            // Verificar cuántos invitados NUEVOS se intentan ingresar
+            $alreadyUsedWeekdaysMonth = \DB::table('pool_entry_guests')
+                ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+                ->where('pool_entries.unit_id', $unit->id)
+                ->where('pool_entries.pool_id', $pool->id)
+                ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+                ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)')
+                ->whereIn('pool_entry_guests.pool_guest_id', $this->selectedGuestIds)
+                ->pluck('pool_entry_guests.pool_guest_id')
+                ->unique()
+                ->toArray();
+            
+            $newGuestsCount = count(array_diff($this->selectedGuestIds, $alreadyUsedWeekdaysMonth));
+            $maxAllowedMonth = PoolSetting::get('max_guests_weekday', 4);
+            $availableMonth = max(0, $maxAllowedMonth - $usedWeekdaysMonth);
+            
+            if ($newGuestsCount > $availableMonth) {
+                $this->addError('selectedGuestIds', "LÍMITE MENSUAL DE DÍA DE SEMANA EXCEDIDO: Has usado {$usedWeekdaysMonth} de {$maxAllowedMonth} invitados únicos en días de semana este mes. Solo puedes agregar {$availableMonth} invitados nuevos. Puedes reingresar con los mismos invitados el mismo día.");
+                return;
+            }
         }
 
         // VALIDACIÓN 2: No más que los precargados
         if ($guestsCount > $this->pass->guests_allowed) {
             $this->addError('selectedGuestIds', 'No puede registrar más invitados que los precargados por el usuario.');
 
-            return;
-        }
-        
-        // VALIDACIÓN 3: Cumplir con el límite mensual (invitados únicos)
-        $unit = Unit::findOrFail($this->pass->unit_id);
-        $pool = Pool::findOrFail($this->poolId);
-        $today = now();
-        $monthStart = $today->copy()->startOfMonth();
-        $monthEnd = $today->copy()->endOfMonth();
-        
-        // Contar invitados únicos este mes (no suma reingresos)
-        $usedThisMonth = \DB::table('pool_entry_guests')
-            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
-            ->where('pool_entries.unit_id', $unit->id)
-            ->where('pool_entries.pool_id', $pool->id)
-            ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
-            ->distinct('pool_entry_guests.pool_guest_id')
-            ->count('pool_entry_guests.pool_guest_id');
-        
-        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
-        $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
-        
-        if ($guestsCount > $availableMonth) {
-            $this->addError('selectedGuestIds', "LÍMITE MENSUAL EXCEDIDO: Has usado {$usedThisMonth} de {$maxGuestsMonth} invitados únicos este mes. Solo puedes agregar {$availableMonth} invitados más.");
-            
             return;
         }
 
@@ -403,7 +438,16 @@ class Scanner extends Component
 
             $entry = null;
 
-            if ($this->pass->resident_id) {
+            // Si se seleccionó un residente específico, usarlo
+            if ($this->selectedResidentId) {
+                /** @var Resident $resident */
+                $resident = Resident::findOrFail($this->selectedResidentId);
+                // Verificar que el residente pertenezca a la unidad del pass
+                if ($resident->unit_id !== $this->pass->unit_id) {
+                    throw new \Exception('El residente seleccionado no pertenece a esta unidad.');
+                }
+                $entry = $poolAccessService->registerResidentEntry($pool, $unit, $resident, $guestsCount, now()->toDateTimeString());
+            } elseif ($this->pass->resident_id) {
                 /** @var Resident $resident */
                 $resident = Resident::findOrFail($this->pass->resident_id);
                 $entry = $poolAccessService->registerResidentEntry($pool, $unit, $resident, $guestsCount, now()->toDateTimeString());
@@ -425,13 +469,12 @@ class Scanner extends Component
                 'pool_entry_id' => $entry->id,
             ]);
 
-            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
+            session()->flash('message', 'Ingreso registrado correctamente.');
 
-            // Actualizar estado a 'exit' porque ahora está adentro
-            $this->action = 'exit';
-            // NO resetear poolId - debe mantenerse con la pileta del turno activo
-            $this->selectedGuestIds = [];
-            // Mantenemos pass y token para facilitar la salida
+            // Resetear completamente para permitir nuevo escaneo
+            $this->dispatch('entry-registered')->to(Inside::class);
+            $this->resetScanner();
+            $this->dispatch('restart-camera')->self();
         } catch (\Exception $e) {
             $this->addError('error', $e->getMessage());
         }
@@ -449,9 +492,13 @@ class Scanner extends Component
             ->whereNull('exited_at');
 
         if ($this->pass->resident_id) {
+            // Si el pass es de un residente, buscar por resident_id
             $q->where('resident_id', $this->pass->resident_id);
         } else {
-            $q->where('user_id', $this->pass->user_id);
+            // Si el pass es de un usuario, buscar por user_id Y sin resident_id
+            // (para no confundir con entradas donde un residente usó el QR del usuario)
+            $q->where('user_id', $this->pass->user_id)
+              ->whereNull('resident_id');
         }
 
         return $q->latest('entered_at')->first();
@@ -508,8 +555,27 @@ class Scanner extends Component
             return;
         }
 
-        // Evitar doble entrada
-        $openEntry = $this->findOpenEntryForResident($this->scannedResident);
+        // Evitar doble entrada - forzar recarga desde BD
+        \Log::info('🔍 Verificando entrada abierta...', [
+            'unit_id' => $this->scannedResident->unit_id,
+            'resident_id' => $this->scannedResident->id,
+            'date' => now()->toDateString()
+        ]);
+        
+        $openEntry = \App\Models\PoolEntry::query()
+            ->where('unit_id', $this->scannedResident->unit_id)
+            ->where('resident_id', $this->scannedResident->id)
+            ->whereDate('entered_at', now()->toDateString())
+            ->whereNull('exited_at')
+            ->latest('entered_at')
+            ->first();
+        
+        \Log::info('📊 Resultado búsqueda entrada abierta', [
+            'found' => $openEntry !== null,
+            'entry_id' => $openEntry?->id,
+            'exited_at' => $openEntry?->exited_at
+        ]);
+            
         if ($openEntry) {
             \Log::warning('⚠️ Residente ya tiene entrada abierta', ['entry_id' => $openEntry->id]);
             $this->addError('error', 'Este residente ya está en la pileta. Registre la salida antes de volver a ingresar.');
@@ -533,16 +599,26 @@ class Scanner extends Component
             \Log::info('🏠 Unit encontrado', ['unit' => $unit->full_identifier]);
 
             // Registrar entrada del residente sin invitados
-            \Log::info('🟢 Llamando a registerResidentEntry...');
+            \Log::info('🟢 Llamando a registerResidentEntry...', [
+                'pool_id' => $pool->id,
+                'unit_id' => $unit->id,
+                'resident_id' => $this->scannedResident->id,
+                'guests_count' => 0
+            ]);
+            
             $entry = $poolAccessService->registerResidentEntry($pool, $unit, $this->scannedResident, 0, now()->toDateTimeString());
+            
             \Log::info('✅ Entrada registrada exitosamente', ['entry_id' => $entry->id]);
+            
+            // Notificar a otros componentes
+            $this->dispatch('entry-registered')->to(Inside::class);
+            
+            // Resetear scanner para permitir nuevo escaneo inmediato
+            $this->resetScanner();
+            $this->dispatch('restart-camera')->self();
+            
+            session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
 
-            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
-
-            // Actualizar estado a 'exit' porque ahora está adentro
-            $this->action = 'exit';
-            // NO resetear poolId - debe mantenerse con la pileta del turno activo
-            // Mantenemos scannedResident y token para facilitar la salida
         } catch (\Exception $e) {
             \Log::error('🔴 ERROR al registrar entrada', [
                 'error' => $e->getMessage(),
@@ -566,9 +642,23 @@ class Scanner extends Component
         }
 
         $user = User::findOrFail($this->scannedUserId);
+        
+        $unitId = $user->currentUnitUsers()->first()?->unit_id;
+        if (!$unitId) {
+            $this->addError('error', 'El usuario no tiene una unidad activa.');
+            return;
+        }
 
-        // Evitar doble entrada
-        $openEntry = $this->findOpenEntryForUser($user);
+        // Evitar doble entrada - forzar recarga desde BD
+        $openEntry = \App\Models\PoolEntry::query()
+            ->where('unit_id', $unitId)
+            ->where('user_id', $user->id)
+            ->whereNull('resident_id')
+            ->whereDate('entered_at', now()->toDateString())
+            ->whereNull('exited_at')
+            ->latest('entered_at')
+            ->first();
+            
         if ($openEntry) {
             \Log::warning('⚠️ Usuario ya tiene entrada abierta', ['entry_id' => $openEntry->id]);
             $this->addError('error', 'Este usuario ya está en la pileta. Registre la salida antes de volver a ingresar.');
@@ -599,10 +689,15 @@ class Scanner extends Component
             \Log::info('🟢 Llamando a registerEntry (usuario)...');
             $entry = $poolAccessService->registerEntry($pool, $unit, $user, 0, now()->toDateTimeString());
             \Log::info('✅ Entrada registrada exitosamente', ['entry_id' => $entry->id]);
-
-            session()->flash('message', 'Ingreso registrado correctamente. Para salir, vuelva a escanear el QR.');
-
-            $this->action = 'exit';
+            
+            // Notificar a otros componentes
+            $this->dispatch('entry-registered')->to(Inside::class);
+            
+            // Resetear scanner para permitir nuevo escaneo inmediato
+            $this->resetScanner();
+            $this->dispatch('restart-camera')->self();
+            
+            session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
         } catch (\Exception $e) {
             \Log::error('🔴 ERROR al registrar entrada de usuario', [
                 'error' => $e->getMessage(),
@@ -648,14 +743,15 @@ class Scanner extends Component
             'exited_by_user_id' => auth()->id(),
             'exit_notes' => $this->exitNotes,
         ]);
+        
+        // Notificar a otros componentes
+        $this->dispatch('entry-registered')->to(Inside::class);
 
-        session()->flash('message', 'Salida registrada correctamente. Puede registrar un nuevo ingreso sin volver a escanear.');
-
-        // Mantener el QR cargado pero limpiar notas y resetear acción a 'entry'
-        $this->exitNotes = null;
-        $this->action = 'entry';
-        // NO resetear poolId - debe mantenerse con la pileta del turno activo
-        // NO limpiamos token, pass ni scannedResident para permitir reingreso inmediato
+        // Resetear completamente para forzar nuevo escaneo
+        $this->resetScanner();
+        $this->dispatch('restart-camera')->self();
+        
+        session()->flash('message', '✅ Salida registrada correctamente. Escanee nuevamente para registrar nuevo ingreso.');
     }
 
     /**
@@ -697,10 +793,56 @@ class Scanner extends Component
             $limitsInfo = $this->calculateLimitsInfo();
         }
 
+        // Obtener residentes y usuarios disponibles de la unidad para day-pass
+        $availableResidents = [];
+        if ($this->pass) {
+            $unit = Unit::find($this->pass->unit_id);
+            if ($unit) {
+                // Obtener residentes activos de la unidad
+                $residents = Resident::where('unit_id', $unit->id)
+                    ->active()
+                    ->orderBy('name')
+                    ->get();
+                
+                // Obtener usuarios activos de la unidad
+                $users = $unit->currentUsers()->get();
+                $userIds = $users->pluck('id')->toArray();
+                
+                // Combinar en una lista única
+                foreach ($users as $user) {
+                    // Solo agregar usuarios que tengan nombre válido
+                    if (!empty(trim($user->name))) {
+                        $availableResidents[] = [
+                            'type' => 'user',
+                            'id' => null, // Los usuarios no tienen resident_id
+                            'user_id' => $user->id,
+                            'name' => $user->name,
+                            'role' => $user->pivot->role ?? 'Usuario',
+                        ];
+                    }
+                }
+                
+                // Agregar residentes que NO sean usuarios (para evitar duplicados)
+                foreach ($residents as $resident) {
+                    // Solo agregar si el residente no es un usuario de la unidad Y tiene nombre válido
+                    if (!in_array($resident->user_id, $userIds) && !empty(trim($resident->name))) {
+                        $availableResidents[] = [
+                            'type' => 'resident',
+                            'id' => $resident->id,
+                            'user_id' => $resident->user_id,
+                            'name' => $resident->name,
+                            'role' => $resident->relationship ?? 'Residente',
+                        ];
+                    }
+                }
+            }
+        }
+
         return view('livewire.banero.pools.scanner', [
             'pool' => $pool,
             'pass' => $this->pass,
             'limitsInfo' => $limitsInfo,
+            'availableResidents' => $availableResidents,
         ])->layout('components.layouts.banero', ['title' => 'Escanear QR']);
     }
 
