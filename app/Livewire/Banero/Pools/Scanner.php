@@ -35,6 +35,11 @@ class Scanner extends Component
     public ?string $exitNotes = null;
 
     /**
+     * Entrada abierta encontrada durante loadPass() para usar en checkout automático.
+     */
+    public ?\App\Models\PoolEntry $foundOpenEntry = null;
+
+    /**
      * IDs de invitados (pool_guests) que efectivamente ingresan.
      *
      * @var array<int>
@@ -96,6 +101,7 @@ class Scanner extends Component
         $this->showGuestList = false;
         $this->action = 'entry';
         $this->skipUpdatedToken = false; // Asegurar que el flag esté reseteado
+        $this->foundOpenEntry = null; // Limpiar entrada encontrada
 
         // Emitir evento para reiniciar la cámara
         $this->dispatch('restart-camera')->self();
@@ -150,6 +156,7 @@ class Scanner extends Component
         $this->selectedGuestIds = [];
         $this->showGuestList = false;
         $this->action = 'entry';
+        $this->foundOpenEntry = null; // Limpiar entrada encontrada
 
         // Asignar el nuevo token después de limpiar el estado
         $this->token = $scannedToken;
@@ -176,6 +183,7 @@ class Scanner extends Component
         $this->selectedGuestIds = [];
         $this->showGuestList = false;
         $this->action = 'entry';
+        $this->foundOpenEntry = null; // Limpiar entrada encontrada
 
         // DEBUG DETALLADO - Ver exactamente qué llega del scanner
         \Log::info('===== SCAN QR - ANTES DE LIMPIAR =====');
@@ -233,6 +241,9 @@ class Scanner extends Component
 
             // Si ya está adentro, ejecutar salida automáticamente
             if ($this->action === 'exit') {
+                // Guardar la entrada encontrada para usar en checkout
+                $this->foundOpenEntry = $openEntry;
+
                 \Log::info('🚪 Ejecutando checkout automático para residente', [
                     'resident_id' => $resident->id,
                     'resident_name' => $resident->name,
@@ -305,10 +316,25 @@ class Scanner extends Component
 
             // Si ya está adentro, ejecutar salida automáticamente
             if ($this->action === 'exit') {
-                \Log::info('🚪 Ejecutando checkout automático para usuario');
-                $this->checkout();
-                // El checkout ya limpia todo el estado mediante resetScanner()
-                \Log::info('✅ Checkout automático completado, estado limpio para siguiente escaneo');
+                // Guardar la entrada encontrada para usar en checkout
+                $this->foundOpenEntry = $openEntry;
+
+                \Log::info('🚪 Ejecutando checkout automático para usuario', [
+                    'user_id' => $user->id,
+                    'entry_id' => $openEntry?->id,
+                ]);
+
+                try {
+                    $this->checkout();
+                    // El checkout ya limpia todo el estado mediante resetScanner()
+                    \Log::info('✅ Checkout automático completado, estado limpio para siguiente escaneo');
+                } catch (\Exception $e) {
+                    \Log::error('❌ Error en checkout automático para usuario', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    $this->addError('error', 'Error al registrar la salida: '.$e->getMessage());
+                }
 
                 return;
             }
@@ -850,9 +876,17 @@ class Scanner extends Component
             return;
         }
 
-        // Buscar siempre el ingreso abierto (sin salida)
+        // Si tenemos una entrada encontrada previamente (checkout automático), usarla
+        // De lo contrario, buscar la entrada
         $entry = null;
-        if ($this->scannedUserId) {
+        if ($this->foundOpenEntry) {
+            \Log::info('✅ Usando entrada encontrada previamente', [
+                'entry_id' => $this->foundOpenEntry->id,
+            ]);
+            $entry = $this->foundOpenEntry;
+            // Recargar desde BD para asegurar que tenemos los datos más recientes
+            $entry = \App\Models\PoolEntry::find($entry->id);
+        } elseif ($this->scannedUserId) {
             // Es un usuario con QR personal
             \Log::info('🔍 Buscando entrada para usuario', ['user_id' => $this->scannedUserId]);
             $user = User::findOrFail($this->scannedUserId);
