@@ -223,16 +223,33 @@ class Scanner extends Component
             $this->action = $openEntry ? 'exit' : 'entry';
 
             \Log::info('🎯 Acción determinada para residente', [
+                'resident_id' => $resident->id,
+                'resident_name' => $resident->name,
                 'action' => $this->action,
                 'openEntry_exists' => (bool) $openEntry,
+                'openEntry_id' => $openEntry?->id,
+                'poolId' => $this->poolId,
             ]);
 
             // Si ya está adentro, ejecutar salida automáticamente
             if ($this->action === 'exit') {
-                \Log::info('🚪 Ejecutando checkout automático para residente');
-                $this->checkout();
-                // El checkout ya limpia todo el estado mediante resetScanner()
-                \Log::info('✅ Checkout automático completado, estado limpio para siguiente escaneo');
+                \Log::info('🚪 Ejecutando checkout automático para residente', [
+                    'resident_id' => $resident->id,
+                    'resident_name' => $resident->name,
+                    'entry_id' => $openEntry?->id,
+                ]);
+
+                try {
+                    $this->checkout();
+                    // El checkout ya limpia todo el estado mediante resetScanner()
+                    \Log::info('✅ Checkout automático completado exitosamente, estado limpio para siguiente escaneo');
+                } catch (\Exception $e) {
+                    \Log::error('❌ Error en checkout automático', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    $this->addError('error', 'Error al registrar la salida: '.$e->getMessage());
+                }
 
                 return;
             }
@@ -560,30 +577,68 @@ class Scanner extends Component
 
     protected function findOpenEntryForResident(Resident $resident): ?\App\Models\PoolEntry
     {
-        return \App\Models\PoolEntry::query()
+        $query = \App\Models\PoolEntry::query()
             ->where('unit_id', $resident->unit_id)
             ->where('resident_id', $resident->id)
             ->whereDate('entered_at', now()->toDateString())
-            ->whereNull('exited_at')
-            ->latest('entered_at')
-            ->first();
+            ->whereNull('exited_at');
+
+        // Si hay un poolId del turno activo, filtrar por él también
+        if ($this->poolId) {
+            $query->where('pool_id', $this->poolId);
+        }
+
+        $entry = $query->latest('entered_at')->first();
+
+        \Log::info('🔍 Búsqueda de entrada abierta para residente', [
+            'resident_id' => $resident->id,
+            'resident_name' => $resident->name,
+            'unit_id' => $resident->unit_id,
+            'pool_id' => $this->poolId,
+            'found' => $entry !== null,
+            'entry_id' => $entry?->id,
+            'entry_pool_id' => $entry?->pool_id,
+            'entry_entered_at' => $entry?->entered_at?->toDateTimeString(),
+        ]);
+
+        return $entry;
     }
 
     protected function findOpenEntryForUser(User $user): ?\App\Models\PoolEntry
     {
         $unitId = $user->currentUnitUsers()->first()?->unit_id;
         if (! $unitId) {
+            \Log::warning('⚠️ Usuario sin unidad activa', ['user_id' => $user->id]);
+
             return null;
         }
 
-        return \App\Models\PoolEntry::query()
+        $query = \App\Models\PoolEntry::query()
             ->where('unit_id', $unitId)
             ->where('user_id', $user->id)
             ->whereNull('resident_id')
             ->whereDate('entered_at', now()->toDateString())
-            ->whereNull('exited_at')
-            ->latest('entered_at')
-            ->first();
+            ->whereNull('exited_at');
+
+        // Si hay un poolId del turno activo, filtrar por él también
+        if ($this->poolId) {
+            $query->where('pool_id', $this->poolId);
+        }
+
+        $entry = $query->latest('entered_at')->first();
+
+        \Log::info('🔍 Búsqueda de entrada abierta para usuario', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'unit_id' => $unitId,
+            'pool_id' => $this->poolId,
+            'found' => $entry !== null,
+            'entry_id' => $entry?->id,
+            'entry_pool_id' => $entry?->pool_id,
+            'entry_entered_at' => $entry?->entered_at?->toDateTimeString(),
+        ]);
+
+        return $entry;
     }
 
     protected function confirmResidentEntry(PoolAccessService $poolAccessService): void
@@ -771,40 +826,77 @@ class Scanner extends Component
 
     public function checkout(): void
     {
+        \Log::info('🚪 checkout() INICIADO', [
+            'has_pass' => (bool) $this->pass,
+            'has_scannedResident' => (bool) $this->scannedResident,
+            'scannedUserId' => $this->scannedUserId,
+            'scannedResident_id' => $this->scannedResident?->id,
+            'scannedResident_name' => $this->scannedResident?->name,
+            'action' => $this->action,
+            'poolId' => $this->poolId,
+        ]);
+
         if (! $this->pass && ! $this->scannedResident) {
+            \Log::warning('⚠️ checkout() sin pass ni residente');
             $this->addError('error', 'Primero escanee un QR.');
 
             return;
         }
 
         if ($this->action !== 'exit') {
+            \Log::warning('⚠️ checkout() con action != exit', ['action' => $this->action]);
             $this->addError('error', 'No hay un ingreso abierto. Registre la entrada.');
 
             return;
         }
 
         // Buscar siempre el ingreso abierto (sin salida)
+        $entry = null;
         if ($this->scannedUserId) {
             // Es un usuario con QR personal
+            \Log::info('🔍 Buscando entrada para usuario', ['user_id' => $this->scannedUserId]);
             $user = User::findOrFail($this->scannedUserId);
             $entry = $this->findOpenEntryForUser($user);
         } elseif ($this->scannedResident) {
+            \Log::info('🔍 Buscando entrada para residente', [
+                'resident_id' => $this->scannedResident->id,
+                'resident_name' => $this->scannedResident->name,
+            ]);
             $entry = $this->findOpenEntryForResident($this->scannedResident);
         } else {
+            \Log::info('🔍 Buscando entrada para pass');
             $entry = $this->findOpenEntryForPass();
         }
 
+        \Log::info('📊 Resultado búsqueda entrada', [
+            'entry_found' => $entry !== null,
+            'entry_id' => $entry?->id,
+            'entry_pool_id' => $entry?->pool_id,
+            'entry_resident_id' => $entry?->resident_id,
+            'entry_user_id' => $entry?->user_id,
+            'entry_entered_at' => $entry?->entered_at?->toDateTimeString(),
+            'entry_exited_at' => $entry?->exited_at?->toDateTimeString(),
+        ]);
+
         if (! $entry) {
+            \Log::error('❌ No se encontró entrada abierta para checkout');
             $this->addError('error', 'No se encontró un ingreso abierto para hacer salida.');
 
             return;
         }
+
+        \Log::info('✅ Registrando salida', [
+            'entry_id' => $entry->id,
+            'exited_by_user_id' => auth()->id(),
+        ]);
 
         $entry->update([
             'exited_at' => now(),
             'exited_by_user_id' => auth()->id(),
             'exit_notes' => $this->exitNotes,
         ]);
+
+        \Log::info('✅ Salida registrada en BD', ['entry_id' => $entry->id]);
 
         // Notificar a otros componentes
         $this->dispatch('entry-registered')->to(Inside::class);
