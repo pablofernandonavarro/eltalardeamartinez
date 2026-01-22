@@ -201,6 +201,12 @@ class Scanner extends Component
                 'action' => $this->action,
                 'openEntry_exists' => (bool)$openEntry
             ]);
+            
+            // Si ya está adentro, ejecutar salida automáticamente
+            if ($this->action === 'exit') {
+                \Log::info('🚪 Ejecutando checkout automático para residente');
+                $this->checkout();
+            }
 
             return;
         }
@@ -249,6 +255,12 @@ class Scanner extends Component
             // Acción automática según estado actual
             $openEntry = $this->findOpenEntryForUser($user);
             $this->action = $openEntry ? 'exit' : 'entry';
+            
+            // Si ya está adentro, ejecutar salida automáticamente
+            if ($this->action === 'exit') {
+                \Log::info('🚪 Ejecutando checkout automático para usuario');
+                $this->checkout();
+            }
 
             return;
         }
