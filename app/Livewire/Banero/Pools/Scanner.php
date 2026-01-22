@@ -632,7 +632,8 @@ class Scanner extends Component
             $this->resetScanner();
             $this->dispatch('restart-camera')->self();
             
-            session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
+            // No usar session flash para evitar bloqueo del re-escaneo
+            \Log::info('✅ Entrada registrada - cámara reiniciada');
 
         } catch (\Exception $e) {
             \Log::error('🔴 ERROR al registrar entrada', [
@@ -712,7 +713,8 @@ class Scanner extends Component
             $this->resetScanner();
             $this->dispatch('restart-camera')->self();
             
-            session()->flash('message', '✅ Ingreso registrado. Escanee nuevamente para registrar salida.');
+            // No usar session flash para evitar bloqueo del re-escaneo
+            \Log::info('✅ Entrada de usuario registrada - cámara reiniciada');
         } catch (\Exception $e) {
             \Log::error('🔴 ERROR al registrar entrada de usuario', [
                 'error' => $e->getMessage(),
@@ -766,7 +768,8 @@ class Scanner extends Component
         $this->resetScanner();
         $this->dispatch('restart-camera')->self();
         
-        session()->flash('message', '✅ Salida registrada correctamente. Escanee nuevamente para registrar nuevo ingreso.');
+        // No usar session flash para evitar bloqueo del re-escaneo
+        \Log::info('✅ Salida registrada - cámara reiniciada');
     }
 
     /**
