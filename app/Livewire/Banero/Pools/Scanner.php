@@ -13,10 +13,15 @@ use Livewire\Component;
 
 class Scanner extends Component
 {
+    /**
+     * Token QR único para salida - todos los usuarios deben escanear este QR para salir
+     */
+    public const EXIT_QR_TOKEN = 'POOL_EXIT_2024';
+
     public ?\App\Models\PoolShift $activeShift = null;
 
     /**
-     * action: entry | exit (se decide automáticamente al escanear)
+     * action: entry | exit | exit_selection (cuando se escanea QR de salida)
      */
     public string $action = 'entry';
 
@@ -38,6 +43,18 @@ class Scanner extends Component
      * Entrada abierta encontrada durante loadPass() para usar en checkout automático.
      */
     public ?\App\Models\PoolEntry $foundOpenEntry = null;
+
+    /**
+     * Lista de entradas abiertas cuando se escanea el QR de salida.
+     *
+     * @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\PoolEntry>
+     */
+    public $openEntries = null;
+
+    /**
+     * ID de entrada seleccionada para salida.
+     */
+    public ?int $selectedEntryId = null;
 
     /**
      * IDs de invitados (pool_guests) que efectivamente ingresan.
@@ -102,9 +119,92 @@ class Scanner extends Component
         $this->action = 'entry';
         $this->skipUpdatedToken = false; // Asegurar que el flag esté reseteado
         $this->foundOpenEntry = null; // Limpiar entrada encontrada
+        $this->openEntries = null; // Limpiar lista de entradas abiertas
+        $this->selectedEntryId = null; // Limpiar entrada seleccionada
 
         // Emitir evento para reiniciar la cámara
         $this->dispatch('restart-camera')->self();
+    }
+
+    /**
+     * Cargar lista de entradas abiertas cuando se escanea el QR de salida único.
+     */
+    public function loadExitEntries(): void
+    {
+        \Log::info('📋 Cargando entradas abiertas para salida', [
+            'poolId' => $this->poolId,
+        ]);
+
+        if (! $this->poolId) {
+            $this->addError('error', 'No hay una pileta seleccionada.');
+
+            return;
+        }
+
+        $this->action = 'exit_selection';
+        $this->openEntries = \App\Models\PoolEntry::query()
+            ->where('pool_id', $this->poolId)
+            ->whereDate('entered_at', now()->toDateString())
+            ->whereNull('exited_at')
+            ->with(['pool', 'unit.building.complex', 'user', 'resident', 'guests'])
+            ->latest('entered_at')
+            ->get();
+
+        \Log::info('✅ Entradas abiertas cargadas', [
+            'count' => $this->openEntries->count(),
+        ]);
+
+        if ($this->openEntries->isEmpty()) {
+            $this->addError('error', 'No hay personas dentro de la pileta en este momento.');
+            $this->action = 'entry';
+        }
+    }
+
+    /**
+     * Registrar salida de una entrada específica seleccionada.
+     */
+    public function checkoutSelectedEntry(): void
+    {
+        if (! $this->selectedEntryId) {
+            $this->addError('error', 'Debe seleccionar una persona para registrar la salida.');
+
+            return;
+        }
+
+        $entry = \App\Models\PoolEntry::query()
+            ->where('id', $this->selectedEntryId)
+            ->where('pool_id', $this->poolId)
+            ->whereNull('exited_at')
+            ->first();
+
+        if (! $entry) {
+            $this->addError('error', 'La entrada seleccionada no existe o ya fue cerrada.');
+
+            return;
+        }
+
+        \Log::info('✅ Registrando salida de entrada seleccionada', [
+            'entry_id' => $entry->id,
+            'exited_by_user_id' => auth()->id(),
+        ]);
+
+        $entry->update([
+            'exited_at' => now(),
+            'exited_by_user_id' => auth()->id(),
+            'exit_notes' => $this->exitNotes,
+        ]);
+
+        // Notificar a otros componentes
+        $this->dispatch('entry-registered')->to(Inside::class);
+
+        // Recargar la lista de entradas abiertas
+        $this->loadExitEntries();
+
+        // Limpiar selección
+        $this->selectedEntryId = null;
+        $this->exitNotes = null;
+
+        \Log::info('✅ Salida registrada exitosamente');
     }
 
     public function toggleGuestList(): void
@@ -184,6 +284,8 @@ class Scanner extends Component
         $this->showGuestList = false;
         $this->action = 'entry';
         $this->foundOpenEntry = null; // Limpiar entrada encontrada
+        $this->openEntries = null; // Limpiar lista de entradas abiertas
+        $this->selectedEntryId = null; // Limpiar entrada seleccionada
 
         // DEBUG DETALLADO - Ver exactamente qué llega del scanner
         \Log::info('===== SCAN QR - ANTES DE LIMPIAR =====');
@@ -205,6 +307,15 @@ class Scanner extends Component
         if ($token === '') {
             \Log::warning('Token vacío después de limpieza');
             $this->addError('token', 'Debe ingresar o escanear un token.');
+
+            return;
+        }
+
+        // Verificar si es el QR único de salida
+        $exitToken = strtolower(trim(self::EXIT_QR_TOKEN));
+        if ($token === $exitToken) {
+            \Log::info('🚪 QR de salida único detectado');
+            $this->loadExitEntries();
 
             return;
         }

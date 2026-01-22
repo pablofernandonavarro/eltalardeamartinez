@@ -85,7 +85,9 @@
                         </div>
                     </div>
 
-                    @if($pass || $scannedResident)
+                    @if($action === 'exit_selection')
+                        <flux:badge color="red">Salida</flux:badge>
+                    @elseif($pass || $scannedResident)
                         @if($action === 'entry')
                             <flux:badge color="green">Entrada</flux:badge>
                         @else
@@ -96,7 +98,84 @@
             </div>
 
             <div class="p-4">
-                @if(!$pass && !$scannedResident)
+                @if($action === 'exit_selection')
+                    {{-- Selección de salida cuando se escanea QR único de salida --}}
+                    <div class="space-y-4">
+                        <flux:callout color="red" icon="door-open">
+                            <strong class="text-lg">🚪 QR de Salida Escaneado</strong><br>
+                            Seleccioná la persona que está saliendo de la pileta.
+                        </flux:callout>
+
+                        @if($openEntries && $openEntries->count() > 0)
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                @foreach($openEntries as $entry)
+                                    @php
+                                        $personName = $entry->resident ? $entry->resident->name : ($entry->user ? $entry->user->name : 'N/D');
+                                        $personPhoto = $entry->resident ? $entry->resident->profilePhotoUrl() : ($entry->user ? $entry->user->profilePhotoUrl() : null);
+                                        $unit = $entry->unit;
+                                    @endphp
+                                    <label class="flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all {{ $selectedEntryId == $entry->id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600' }}">
+                                        <input 
+                                            type="radio" 
+                                            name="selectedEntry" 
+                                            value="{{ $entry->id }}" 
+                                            wire:model="selectedEntryId" 
+                                            class="h-5 w-5 text-blue-600"
+                                        />
+                                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                                            @if($personPhoto)
+                                                <img src="{{ $personPhoto }}" alt="{{ $personName }}" class="h-12 w-12 rounded-full object-cover flex-shrink-0" />
+                                            @else
+                                                <div class="h-12 w-12 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                                                    {{ \Illuminate\Support\Str::of($personName)->explode(' ')->take(2)->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1))->implode('') }}
+                                                </div>
+                                            @endif
+                                            <div class="min-w-0 flex-1">
+                                                <div class="font-semibold truncate">{{ $personName }}</div>
+                                                <div class="text-sm text-gray-500 truncate">
+                                                    {{ $unit->full_identifier }} · {{ $unit->building->complex->name }}
+                                                </div>
+                                                <div class="mt-1 flex flex-wrap gap-2">
+                                                    @if($entry->resident)
+                                                        <flux:badge color="blue">Residente</flux:badge>
+                                                    @else
+                                                        <flux:badge color="gray">Usuario</flux:badge>
+                                                    @endif
+                                                    @if($entry->guests_count > 0)
+                                                        <flux:badge color="green">{{ $entry->guests_count }} invitado(s)</flux:badge>
+                                                    @endif
+                                                    <flux:badge color="yellow">Ingresó: {{ $entry->entered_at->format('H:i') }}</flux:badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <flux:field>
+                                <flux:label>Notas (opcional)</flux:label>
+                                <flux:textarea rows="2" wire:model="exitNotes" />
+                            </flux:field>
+
+                            <div class="sticky bottom-0 -mx-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 backdrop-blur p-4">
+                                <flux:button 
+                                    class="w-full" 
+                                    variant="primary" 
+                                    wire:click="checkoutSelectedEntry"
+                                    wire:loading.attr="disabled"
+                                    :disabled="!$selectedEntryId"
+                                >
+                                    <span wire:loading.remove>Registrar salida</span>
+                                    <span wire:loading>Registrando...</span>
+                                </flux:button>
+                            </div>
+                        @else
+                            <flux:callout color="yellow">
+                                No hay personas dentro de la pileta en este momento.
+                            </flux:callout>
+                        @endif
+                    </div>
+                @elseif(!$pass && !$scannedResident)
                     <div class="rounded-lg border border-dashed border-zinc-200 dark:border-zinc-700 p-6 text-center">
                         <div class="text-sm text-gray-500">Escanea un QR para ver los datos del titular.</div>
                     </div>
