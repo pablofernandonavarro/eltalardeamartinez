@@ -949,7 +949,15 @@ class Scanner extends Component
 
             // Usar JavaScript directo para mostrar notificación
             $personName = $this->scannedResident->name;
-            $this->js("window.showNotification('✅ ENTRADA registrada: {$personName}', 'success', 3000)");
+            $this->js("
+                console.log('🔔 Ejecutando notificación de ENTRADA desde backend');
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('✅ ENTRADA registrada: {$personName}', 'success', 3000);
+                } else {
+                    console.error('❌ window.showNotification no está definida');
+                    alert('✅ ENTRADA registrada: {$personName}');
+                }
+            ");
 
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
@@ -1037,7 +1045,15 @@ class Scanner extends Component
 
             // Usar JavaScript directo para mostrar notificación
             $personName = $user->name;
-            $this->js("window.showNotification('✅ ENTRADA registrada: {$personName}', 'success', 3000)");
+            $this->js("
+                console.log('🔔 Ejecutando notificación de ENTRADA (usuario) desde backend');
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('✅ ENTRADA registrada: {$personName}', 'success', 3000);
+                } else {
+                    console.error('❌ window.showNotification no está definida');
+                    alert('✅ ENTRADA registrada: {$personName}');
+                }
+            ");
 
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
@@ -1152,7 +1168,15 @@ class Scanner extends Component
         $personName = $entry->resident ? $entry->resident->name : ($entry->user ? $entry->user->name : 'Usuario');
 
         // Usar JavaScript directo para mostrar notificación
-        $this->js("window.showNotification('✅ SALIDA registrada: {$personName}', 'success', 3000)");
+        $this->js("
+            console.log('🔔 Ejecutando notificación de SALIDA desde backend');
+            if (typeof window.showNotification === 'function') {
+                window.showNotification('✅ SALIDA registrada: {$personName}', 'success', 3000);
+            } else {
+                console.error('❌ window.showNotification no está definida');
+                alert('✅ SALIDA registrada: {$personName}');
+            }
+        ");
 
         $this->dispatch('restart-camera')->self();
 
