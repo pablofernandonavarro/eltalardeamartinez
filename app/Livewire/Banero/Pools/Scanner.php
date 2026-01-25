@@ -947,12 +947,9 @@ class Scanner extends Component
             // Notificar a otros componentes
             $this->dispatch('entry-registered')->to(Inside::class);
 
-            // Disparar notificación de éxito
-            $this->dispatch('show-notification', [
-                'type' => 'success',
-                'message' => "✅ ENTRADA registrada: {$this->scannedResident->name}",
-                'duration' => 3000
-            ]);
+            // Usar JavaScript directo para mostrar notificación
+            $personName = $this->scannedResident->name;
+            $this->js("window.showNotification('✅ ENTRADA registrada: {$personName}', 'success', 3000)");
 
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
@@ -1038,12 +1035,9 @@ class Scanner extends Component
             // Notificar a otros componentes
             $this->dispatch('entry-registered')->to(Inside::class);
 
-            // Disparar notificación de éxito
-            $this->dispatch('show-notification', [
-                'type' => 'success',
-                'message' => "✅ ENTRADA registrada: {$user->name}",
-                'duration' => 3000
-            ]);
+            // Usar JavaScript directo para mostrar notificación
+            $personName = $user->name;
+            $this->js("window.showNotification('✅ ENTRADA registrada: {$personName}', 'success', 3000)");
 
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
@@ -1157,12 +1151,8 @@ class Scanner extends Component
         // Determinar nombre de la persona
         $personName = $entry->resident ? $entry->resident->name : ($entry->user ? $entry->user->name : 'Usuario');
 
-        // Disparar notificación de éxito
-        $this->dispatch('show-notification', [
-            'type' => 'success',
-            'message' => "✅ SALIDA registrada: {$personName}",
-            'duration' => 3000
-        ]);
+        // Usar JavaScript directo para mostrar notificación
+        $this->js("window.showNotification('✅ SALIDA registrada: {$personName}', 'success', 3000)");
 
         $this->dispatch('restart-camera')->self();
 
