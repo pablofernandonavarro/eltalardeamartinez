@@ -1,4 +1,43 @@
 <div class="max-w-6xl mx-auto">
+    {{-- Notificación flotante --}}
+    <div
+        x-data="{
+            show: false,
+            message: '',
+            type: 'success',
+            hideTimeout: null
+        }"
+        @show-notification.window="
+            show = true;
+            message = $event.detail.message || $event.detail[0].message;
+            type = $event.detail.type || $event.detail[0].type || 'success';
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => { show = false }, $event.detail.duration || $event.detail[0].duration || 3000);
+        "
+        x-show="show"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform translate-y-2"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform translate-y-2"
+        style="display: none;"
+        class="fixed top-4 right-4 z-50 max-w-md w-full"
+    >
+        <div
+            :class="{
+                'bg-green-500': type === 'success',
+                'bg-red-500': type === 'error',
+                'bg-yellow-500': type === 'warning',
+                'bg-blue-500': type === 'info'
+            }"
+            class="text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-pulse"
+        >
+            <div class="flex-1 font-bold text-lg" x-text="message"></div>
+            <button @click="show = false" class="text-white hover:text-gray-200 text-2xl font-bold">&times;</button>
+        </div>
+    </div>
+
     <div class="mb-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
             <flux:heading size="xl">Escanear QR</flux:heading>
@@ -754,6 +793,30 @@
                     setTimeout(() => {
                         startQrScanner();
                     }, 300);
+                });
+
+                // Escuchar evento de notificación para reproducir sonido
+                Livewire.on('show-notification', (event) => {
+                    const detail = Array.isArray(event) ? event[0] : event;
+                    console.log('🔔 Notificación:', detail);
+
+                    // Reproducir sonido de beep
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    // Configurar el beep
+                    oscillator.frequency.value = detail.type === 'success' ? 800 : 400; // Más alto para éxito
+                    oscillator.type = 'sine';
+
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
                 });
             });
 

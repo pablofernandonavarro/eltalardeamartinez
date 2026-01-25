@@ -947,11 +947,17 @@ class Scanner extends Component
             // Notificar a otros componentes
             $this->dispatch('entry-registered')->to(Inside::class);
 
+            // Disparar notificación de éxito
+            $this->dispatch('show-notification', [
+                'type' => 'success',
+                'message' => "✅ ENTRADA registrada: {$this->scannedResident->name}",
+                'duration' => 3000
+            ]);
+
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
             $this->dispatch('restart-camera')->self();
 
-            // No usar session flash para evitar bloqueo del re-escaneo
             \Log::info('✅ Entrada registrada - cámara reiniciada');
 
         } catch (\Exception $e) {
@@ -1032,11 +1038,17 @@ class Scanner extends Component
             // Notificar a otros componentes
             $this->dispatch('entry-registered')->to(Inside::class);
 
+            // Disparar notificación de éxito
+            $this->dispatch('show-notification', [
+                'type' => 'success',
+                'message' => "✅ ENTRADA registrada: {$user->name}",
+                'duration' => 3000
+            ]);
+
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
             $this->dispatch('restart-camera')->self();
 
-            // No usar session flash para evitar bloqueo del re-escaneo
             \Log::info('✅ Entrada de usuario registrada - cámara reiniciada');
         } catch (\Exception $e) {
             \Log::error('🔴 ERROR al registrar entrada de usuario', [
@@ -1142,9 +1154,18 @@ class Scanner extends Component
 
         \Log::info('🔄 Estado completamente limpiado después de checkout, listo para siguiente escaneo');
 
+        // Determinar nombre de la persona
+        $personName = $entry->resident ? $entry->resident->name : ($entry->user ? $entry->user->name : 'Usuario');
+
+        // Disparar notificación de éxito
+        $this->dispatch('show-notification', [
+            'type' => 'success',
+            'message' => "✅ SALIDA registrada: {$personName}",
+            'duration' => 3000
+        ]);
+
         $this->dispatch('restart-camera')->self();
 
-        // No usar session flash para evitar bloqueo del re-escaneo
         \Log::info('✅ Salida registrada - cámara reiniciada');
     }
 
