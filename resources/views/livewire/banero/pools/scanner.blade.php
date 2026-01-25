@@ -607,17 +607,31 @@
             let notificationTimeout = null;
 
             window.showNotification = function(message, type = 'success', duration = 3000) {
+                console.log('🔔 showNotification() llamada', {message, type, duration});
+
                 const notification = document.getElementById('scanner-notification');
                 const content = document.getElementById('notification-content');
                 const messageEl = document.getElementById('notification-message');
 
+                console.log('📍 Elementos encontrados:', {
+                    notification: !!notification,
+                    content: !!content,
+                    messageEl: !!messageEl
+                });
+
                 if (!notification || !content || !messageEl) {
-                    console.log('⚠️ Elementos de notificación no encontrados');
+                    console.error('⚠️ Elementos de notificación no encontrados');
+                    console.log('Elementos en DOM:', {
+                        notification: document.getElementById('scanner-notification'),
+                        content: document.getElementById('notification-content'),
+                        messageEl: document.getElementById('notification-message')
+                    });
                     return;
                 }
 
                 // Establecer el mensaje
                 messageEl.textContent = message;
+                console.log('✅ Mensaje establecido:', messageEl.textContent);
 
                 // Establecer el color según el tipo
                 content.className = 'text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3';
@@ -631,23 +645,29 @@
                     content.classList.add('bg-blue-500');
                 }
 
+                console.log('✅ Clases aplicadas:', content.className);
+
                 // Mostrar la notificación
                 notification.style.display = 'block';
                 notification.style.opacity = '0';
                 notification.style.transform = 'translateY(-10px)';
 
+                console.log('✅ Estilos iniciales aplicados');
+
                 setTimeout(() => {
                     notification.style.opacity = '1';
                     notification.style.transform = 'translateY(0)';
+                    console.log('✅ Animación de entrada ejecutada');
                 }, 10);
 
                 // Ocultar automáticamente
                 clearTimeout(notificationTimeout);
                 notificationTimeout = setTimeout(() => {
+                    console.log('⏰ Ocultando notificación automáticamente');
                     hideNotification();
                 }, duration);
 
-                console.log('📢 Notificación mostrada:', message);
+                console.log('📢 Notificación mostrada exitosamente:', message);
             };
 
             window.hideNotification = function() {
@@ -744,19 +764,30 @@
                                             scannedUserId: component.$wire.scannedUserId
                                         };
 
-                                        console.log('Estado antes:', stateBefore);
-                                        console.log('Estado después:', stateAfter);
+                                        console.log('🔍 Estado antes:', stateBefore);
+                                        console.log('🔍 Estado después:', stateAfter);
+
+                                        const wasCleared = !stateAfter.scannedResident && !stateAfter.scannedUserId;
+                                        const hadData = stateBefore.scannedResident || stateBefore.scannedUserId;
+
+                                        console.log('🔍 Verificación:', {
+                                            wasCleared,
+                                            hadData,
+                                            shouldShowNotification: wasCleared && hadData
+                                        });
 
                                         // Si se limpió el estado, significa que se procesó correctamente (entrada o salida)
-                                        if (!stateAfter.scannedResident && !stateAfter.scannedUserId &&
-                                            (stateBefore.scannedResident || stateBefore.scannedUserId)) {
-
+                                        if (wasCleared && hadData) {
                                             const personName = stateBefore.scannedResident?.name || 'Usuario';
                                             const wasExit = stateBefore.action === 'exit';
 
+                                            console.log('🎯 Mostrando notificación:', {personName, wasExit});
+
                                             if (wasExit) {
+                                                console.log('🚪 Llamando showNotification para SALIDA');
                                                 window.showNotification(`✅ SALIDA registrada: ${personName}`, 'success', 3000);
                                             } else {
+                                                console.log('🚪 Llamando showNotification para ENTRADA');
                                                 window.showNotification(`✅ ENTRADA registrada: ${personName}`, 'success', 3000);
                                             }
 
