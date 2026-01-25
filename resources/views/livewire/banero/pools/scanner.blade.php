@@ -114,7 +114,7 @@
 
             <div class="p-4">
                 <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-black/5 dark:bg-white/5">
-                    <div wire:ignore id="qr-reader" class="w-full" x-data x-init="$nextTick(() => { if(window.__baneroStartQrScanner) window.__baneroStartQrScanner(); })"></div>
+                    <div wire:ignore id="qr-reader" class="w-full"></div>
                 </div>
 
                 <details class="mt-4">
@@ -633,22 +633,12 @@
                     return;
                 }
 
-                // Verificar que Livewire esté disponible
-                if (typeof Livewire === 'undefined' || typeof @this === 'undefined') {
-                    console.log('⏳ Livewire no cargado, reintentando...');
-                    setTimeout(startQrScanner, 200);
-                    return;
-                }
-
                 console.log('🛑 Deteniendo scanner anterior si existe...');
                 await stopQrScanner();
 
                 console.log('🎥 Iniciando nueva instancia de scanner...');
                 const qr = new Html5Qrcode('qr-reader');
                 window.__qrInstance = qr;
-
-                // Guardar referencia al componente Livewire
-                const component = @this;
 
                 qr.start(
                     { facingMode: 'environment' },
@@ -659,11 +649,22 @@
                         // Detener cámara
                         try { await qr.stop(); } catch (e) { console.error('Error deteniendo cámara:', e); }
 
-                        // Llamar al método del componente usando la referencia guardada
+                        // Llamar al método del componente usando Livewire.find()
                         console.log('📤 Llamando a loadPassFromScan...');
                         try {
-                            await component.call('loadPassFromScan', decodedText);
-                            console.log('✅ Token procesado correctamente');
+                            // Obtener el componente Livewire dinámicamente
+                            const componentId = document.getElementById('qr-reader').closest('[wire\\:id]')?.getAttribute('wire:id');
+                            if (componentId) {
+                                const component = Livewire.find(componentId);
+                                if (component) {
+                                    await component.call('loadPassFromScan', decodedText);
+                                    console.log('✅ Token procesado correctamente');
+                                } else {
+                                    console.error('❌ Componente Livewire no encontrado');
+                                }
+                            } else {
+                                console.error('❌ No se pudo obtener el ID del componente');
+                            }
                         } catch (err) {
                             console.error('❌ Error procesando token:', err);
                         }
@@ -679,8 +680,20 @@
             // Exponer para poder reiniciar desde eventos sin redeclarar
             window.__baneroStartQrScanner = startQrScanner;
 
+            // Esperar a que Livewire esté completamente inicializado
+            document.addEventListener('livewire:init', () => {
+                console.log('✅ Livewire inicializado, arrancando scanner...');
+                // Dar un pequeño delay para asegurar que todo esté listo
+                setTimeout(() => {
+                    startQrScanner();
+                }, 500);
+            });
+
             document.addEventListener('livewire:navigated', () => {
-                startQrScanner();
+                console.log('✅ Navegación completada, arrancando scanner...');
+                setTimeout(() => {
+                    startQrScanner();
+                }, 300);
             });
 
             // Al navegar a otra pantalla, frenamos la cámara para evitar "Element not found"
