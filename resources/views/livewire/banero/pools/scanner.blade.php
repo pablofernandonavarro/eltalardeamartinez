@@ -746,69 +746,12 @@
                             if (componentId) {
                                 const component = Livewire.find(componentId);
                                 if (component) {
-                                    // Guardar el estado actual para detectar cambios
-                                    const stateBefore = {
-                                        action: component.$wire.action,
-                                        scannedResident: component.$wire.scannedResident,
-                                        scannedUserId: component.$wire.scannedUserId
-                                    };
+                                    // Marcar que estamos esperando una notificación
+                                    window.__waitingForNotification = true;
+                                    window.__scannedToken = decodedText;
 
                                     await component.call('loadPassFromScan', decodedText);
                                     console.log('✅ Token procesado correctamente');
-
-                                    // Pequeño delay para que Livewire actualice el estado
-                                    setTimeout(() => {
-                                        const stateAfter = {
-                                            action: component.$wire.action,
-                                            scannedResident: component.$wire.scannedResident,
-                                            scannedUserId: component.$wire.scannedUserId
-                                        };
-
-                                        console.log('🔍 Estado antes:', stateBefore);
-                                        console.log('🔍 Estado después:', stateAfter);
-
-                                        const wasCleared = !stateAfter.scannedResident && !stateAfter.scannedUserId;
-                                        const hadData = stateBefore.scannedResident || stateBefore.scannedUserId;
-
-                                        console.log('🔍 Verificación:', {
-                                            wasCleared,
-                                            hadData,
-                                            shouldShowNotification: wasCleared && hadData
-                                        });
-
-                                        // Si se limpió el estado, significa que se procesó correctamente (entrada o salida)
-                                        if (wasCleared && hadData) {
-                                            const personName = stateBefore.scannedResident?.name || 'Usuario';
-                                            const wasExit = stateBefore.action === 'exit';
-
-                                            console.log('🎯 Mostrando notificación:', {personName, wasExit});
-
-                                            if (wasExit) {
-                                                console.log('🚪 Llamando showNotification para SALIDA');
-                                                window.showNotification(`✅ SALIDA registrada: ${personName}`, 'success', 3000);
-                                            } else {
-                                                console.log('🚪 Llamando showNotification para ENTRADA');
-                                                window.showNotification(`✅ ENTRADA registrada: ${personName}`, 'success', 3000);
-                                            }
-
-                                            // Reproducir beep
-                                            try {
-                                                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                                                const oscillator = audioContext.createOscillator();
-                                                const gainNode = audioContext.createGain();
-                                                oscillator.connect(gainNode);
-                                                gainNode.connect(audioContext.destination);
-                                                oscillator.frequency.value = 800;
-                                                oscillator.type = 'sine';
-                                                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                                                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-                                                oscillator.start(audioContext.currentTime);
-                                                oscillator.stop(audioContext.currentTime + 0.2);
-                                            } catch (err) {
-                                                console.log('⚠️ Error al reproducir sonido:', err);
-                                            }
-                                        }
-                                    }, 500);
                                 } else {
                                     console.error('❌ Componente Livewire no encontrado');
                                 }
@@ -909,12 +852,15 @@
                 // Escuchar evento de notificación desde Livewire
                 Livewire.on('show-notification', (event) => {
                     const detail = Array.isArray(event) ? event[0] : event;
-                    console.log('🔔 Evento de notificación recibido:', detail);
+                    console.log('🔔 Evento show-notification recibido desde Livewire.on():', detail);
 
                     // Mostrar notificación visual
                     if (window.showNotification) {
                         window.showNotification(detail.message, detail.type, detail.duration);
                     }
+
+                    // Marcar que ya mostramos la notificación
+                    window.__waitingForNotification = false;
 
                     // Reproducir sonido de beep
                     try {
@@ -936,6 +882,18 @@
                         oscillator.stop(audioContext.currentTime + 0.2);
                     } catch (err) {
                         console.log('⚠️ Error al reproducir sonido:', err);
+                    }
+                });
+            });
+
+            // Escuchar TODOS los eventos de Livewire para debug
+            document.addEventListener('livewire:init', () => {
+                window.addEventListener('livewire:commit', (event) => {
+                    console.log('📦 livewire:commit event:', event.detail);
+
+                    // Si hay eventos en la respuesta, logearlos
+                    if (event.detail && event.detail.component && event.detail.component.effects && event.detail.component.effects.dispatches) {
+                        console.log('🎪 Eventos dispatched:', event.detail.component.effects.dispatches);
                     }
                 });
             });
