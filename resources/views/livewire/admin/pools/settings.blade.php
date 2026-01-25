@@ -48,27 +48,51 @@
                     </flux:field>
                 </div>
 
-                {{-- Fines de Semana --}}
+                {{-- Fines de Semana - Límite Diario --}}
                 <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-500 dark:border-orange-500 rounded-lg">
                     <flux:field>
                         <flux:label class="flex items-center gap-2 text-base font-semibold text-orange-900 dark:text-orange-100">
                             <span class="text-2xl">🌞</span>
-                            <span>Sábados, Domingos y Feriados</span>
+                            <span>Sábados, Domingos y Feriados - Límite Diario</span>
                         </flux:label>
                         <flux:description class="text-orange-700 dark:text-orange-300">
-                            Máximo de invitados permitidos en fines de semana
+                            Máximo de invitados permitidos por día en fines de semana
                         </flux:description>
                         <div class="flex items-center gap-4 mt-2">
-                            <flux:input 
-                                type="number" 
-                                wire:model="maxGuestsWeekend" 
-                                min="0" 
+                            <flux:input
+                                type="number"
+                                wire:model="maxGuestsWeekend"
+                                min="0"
                                 max="20"
                                 class="w-24 text-xl font-bold text-center"
                             />
                             <span class="text-sm text-orange-700 dark:text-orange-300 font-medium">invitados por día</span>
                         </div>
                         <flux:error name="maxGuestsWeekend" />
+                    </flux:field>
+                </div>
+
+                {{-- Fines de Semana - Límite Mensual --}}
+                <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 dark:border-amber-500 rounded-lg">
+                    <flux:field>
+                        <flux:label class="flex items-center gap-2 text-base font-semibold text-amber-900 dark:text-amber-100">
+                            <span class="text-2xl">📅</span>
+                            <span>Sábados, Domingos y Feriados - Límite Mensual</span>
+                        </flux:label>
+                        <flux:description class="text-amber-700 dark:text-amber-300">
+                            Máximo total de invitados permitidos en fines de semana/feriados por mes
+                        </flux:description>
+                        <div class="flex items-center gap-4 mt-2">
+                            <flux:input
+                                type="number"
+                                wire:model="maxGuestsWeekendMonth"
+                                min="0"
+                                max="50"
+                                class="w-24 text-xl font-bold text-center"
+                            />
+                            <span class="text-sm text-amber-700 dark:text-amber-300 font-medium">invitados por mes (fines de semana)</span>
+                        </div>
+                        <flux:error name="maxGuestsWeekendMonth" />
                     </flux:field>
                 </div>
 
