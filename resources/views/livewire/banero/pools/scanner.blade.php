@@ -5,6 +5,21 @@
             <p class="text-sm text-gray-500 mt-1">Entrada / salida automática.</p>
         </div>
 
+        {{-- Selector de pileta para admins --}}
+        @if(auth()->user()->isAdmin() && isset($allPools) && $allPools->count() > 1)
+            <div class="flex items-center gap-2">
+                <flux:field>
+                    <flux:label>Pileta:</flux:label>
+                    <flux:select wire:model.live="poolId">
+                        <option value="">Seleccionar pileta</option>
+                        @foreach($allPools as $p)
+                            <option value="{{ $p->id }}">{{ $p->name }}</option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+            </div>
+        @endif
+
         <div class="flex items-center gap-2">
             <button 
                 type="button" 
@@ -28,6 +43,52 @@
                 Nuevo
             </button>
             <flux:button href="{{ route('banero.pools.inside') }}" variant="ghost" wire:navigate>En pileta</flux:button>
+            <button 
+                type="button" 
+                @click="document.getElementById('exitQrModal').classList.remove('hidden')"
+                class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+            >
+                Ver QR de Salida
+            </button>
+        </div>
+    </div>
+
+    {{-- Modal para mostrar QR de salida --}}
+    <div id="exitQrModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onclick="this.classList.add('hidden')">
+        <div class="relative max-w-md w-full bg-white dark:bg-zinc-900 rounded-xl shadow-xl p-6" onclick="event.stopPropagation()">
+            <button 
+                type="button" 
+                onclick="document.getElementById('exitQrModal').classList.add('hidden')" 
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <div class="text-center space-y-4">
+                <div>
+                    <flux:heading size="lg">QR de Salida</flux:heading>
+                    <p class="text-sm text-gray-500 mt-2">Todos los usuarios deben escanear este QR para salir</p>
+                </div>
+
+                <div class="flex justify-center">
+                    <div class="p-4 bg-white rounded-lg border-2 border-red-500">
+                        <div id="exit-qr-code" class="w-64 h-64" wire:ignore></div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="text-sm font-mono bg-gray-100 dark:bg-gray-800 p-2 rounded break-all">
+                        {{ \App\Livewire\Banero\Pools\Scanner::EXIT_QR_TOKEN }}
+                    </div>
+                    <p class="text-xs text-gray-500">Token del QR de salida</p>
+                </div>
+
+                <flux:callout color="red">
+                    <strong>Importante:</strong> Este QR debe estar visible en la salida de la pileta para que los usuarios puedan escanearlo al salir.
+                </flux:callout>
+            </div>
         </div>
     </div>
 
@@ -524,6 +585,7 @@
     </div>
 
     <script src="https://unpkg.com/html5-qrcode" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script>
         (() => {
             // Importante: con wire:navigate, este script puede ejecutarse múltiples veces.
@@ -672,6 +734,55 @@
                     }, 300);
                 });
             });
+
+            // Generar QR de salida cuando se abre el modal
+            function renderExitQR() {
+                const exitToken = @json(\App\Livewire\Banero\Pools\Scanner::EXIT_QR_TOKEN);
+                const el = document.getElementById('exit-qr-code');
+                
+                if (!el) return;
+
+                // Limpiar contenido anterior
+                el.innerHTML = '';
+
+                // Esperar a que la librería QRCode esté cargada
+                function tryRender() {
+                    if (typeof window.QRCode !== 'undefined') {
+                        new window.QRCode(el, {
+                            text: exitToken,
+                            width: 256,
+                            height: 256,
+                            colorDark: '#000000',
+                            colorLight: '#ffffff',
+                            correctLevel: window.QRCode.CorrectLevel.M,
+                        });
+                    } else {
+                        setTimeout(tryRender, 100);
+                    }
+                }
+                tryRender();
+            }
+
+            // Renderizar QR cuando se abre el modal
+            const exitQrModal = document.getElementById('exitQrModal');
+            if (exitQrModal) {
+                exitQrModal.addEventListener('click', function(e) {
+                    if (e.target === this || e.target.closest('button[onclick*="exitQrModal"]')) {
+                        // Solo renderizar cuando se abre el modal (no cuando se cierra)
+                        if (!this.classList.contains('hidden')) {
+                            setTimeout(renderExitQR, 100);
+                        }
+                    }
+                });
+            }
+
+            // También renderizar cuando se hace clic en el botón
+            const exitQrButton = document.querySelector('button[onclick*="exitQrModal"]');
+            if (exitQrButton) {
+                exitQrButton.addEventListener('click', function() {
+                    setTimeout(renderExitQR, 200);
+                });
+            }
         })();
     </script>
 </div>

@@ -100,6 +100,7 @@ Route::prefix('pools')->name('pools.')->group(function () {
     Route::get('/', PoolsIndex::class)->name('index');
     Route::get('/register-entry', PoolsRegisterEntry::class)->name('register-entry');
     Route::get('/settings', PoolsSettings::class)->name('settings');
+    Route::get('/scanner', \App\Livewire\Banero\Pools\Scanner::class)->name('scanner');
 });
 
 Route::prefix('amenities')->name('amenities.')->group(function () {

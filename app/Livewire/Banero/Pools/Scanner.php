@@ -72,7 +72,23 @@ class Scanner extends Component
 
     public function mount(): void
     {
-        $this->activeShift = \App\Models\PoolShift::getActiveShiftForUser(auth()->id());
+        $user = auth()->user();
+
+        // Si es admin, permitir acceso sin turno activo
+        if ($user->isAdmin()) {
+            // Los admins pueden usar el scanner sin turno activo
+            // Si hay múltiples piletas, el admin puede seleccionar una
+            $pools = \App\Models\Pool::all();
+            if ($pools->count() === 1) {
+                $this->poolId = $pools->first()->id;
+            }
+
+            // Si hay múltiples piletas, el admin deberá seleccionar una manualmente
+            return;
+        }
+
+        // Para bañeros, requerir turno activo
+        $this->activeShift = \App\Models\PoolShift::getActiveShiftForUser($user->id);
 
         if (! $this->activeShift) {
             session()->flash('error', 'Debes iniciar tu turno antes de poder escanear QRs.');
@@ -135,10 +151,22 @@ class Scanner extends Component
             'poolId' => $this->poolId,
         ]);
 
+        // Para admins sin poolId, intentar usar la primera pileta disponible
         if (! $this->poolId) {
-            $this->addError('error', 'No hay una pileta seleccionada.');
+            if (auth()->user()->isAdmin()) {
+                $firstPool = Pool::first();
+                if ($firstPool) {
+                    $this->poolId = $firstPool->id;
+                } else {
+                    $this->addError('error', 'No hay piletas disponibles.');
 
-            return;
+                    return;
+                }
+            } else {
+                $this->addError('error', 'No hay una pileta seleccionada.');
+
+                return;
+            }
         }
 
         $this->action = 'exit_selection';
@@ -694,6 +722,11 @@ class Scanner extends Component
             return null;
         }
 
+        // IMPORTANTE: Limpiar caché de Eloquent para evitar datos obsoletos
+        // Esto resuelve el bug donde después de registrar una salida,
+        // el siguiente escaneo devolvía la entrada ya cerrada del caché
+        \App\Models\PoolEntry::clearBootedModels();
+
         $q = \App\Models\PoolEntry::query()
             ->where('unit_id', $this->pass->unit_id)
             ->whereDate('entered_at', now()->toDateString())
@@ -709,11 +742,31 @@ class Scanner extends Component
                 ->whereNull('resident_id');
         }
 
-        return $q->latest('entered_at')->first();
+        $entry = $q->latest('entered_at')->first();
+
+        // Si encontramos una entrada, recargarla desde BD y verificar que esté realmente abierta
+        if ($entry) {
+            $entry->refresh(); // Forzar recarga desde BD
+            // Doble verificación: si tiene exited_at, no es una entrada válida
+            if ($entry->exited_at !== null) {
+                \Log::warning('⚠️ Entrada encontrada pero ya cerrada (caché obsoleto)', [
+                    'entry_id' => $entry->id,
+                    'exited_at' => $entry->exited_at,
+                ]);
+                $entry = null;
+            }
+        }
+
+        return $entry;
     }
 
     protected function findOpenEntryForResident(Resident $resident): ?\App\Models\PoolEntry
     {
+        // IMPORTANTE: Limpiar caché de Eloquent para evitar datos obsoletos
+        // Esto resuelve el bug donde después de registrar una salida,
+        // el siguiente escaneo devolvía la entrada ya cerrada del caché
+        \App\Models\PoolEntry::clearBootedModels();
+
         $query = \App\Models\PoolEntry::query()
             ->where('unit_id', $resident->unit_id)
             ->where('resident_id', $resident->id)
@@ -727,6 +780,19 @@ class Scanner extends Component
 
         $entry = $query->latest('entered_at')->first();
 
+        // Si encontramos una entrada, recargarla desde BD y verificar que esté realmente abierta
+        if ($entry) {
+            $entry->refresh(); // Forzar recarga desde BD
+            // Doble verificación: si tiene exited_at, no es una entrada válida
+            if ($entry->exited_at !== null) {
+                \Log::warning('⚠️ Entrada encontrada pero ya cerrada (caché obsoleto)', [
+                    'entry_id' => $entry->id,
+                    'exited_at' => $entry->exited_at,
+                ]);
+                $entry = null;
+            }
+        }
+
         \Log::info('🔍 Búsqueda de entrada abierta para residente', [
             'resident_id' => $resident->id,
             'resident_name' => $resident->name,
@@ -736,6 +802,7 @@ class Scanner extends Component
             'entry_id' => $entry?->id,
             'entry_pool_id' => $entry?->pool_id,
             'entry_entered_at' => $entry?->entered_at?->toDateTimeString(),
+            'entry_exited_at' => $entry?->exited_at?->toDateTimeString(),
         ]);
 
         return $entry;
@@ -749,6 +816,11 @@ class Scanner extends Component
 
             return null;
         }
+
+        // IMPORTANTE: Limpiar caché de Eloquent para evitar datos obsoletos
+        // Esto resuelve el bug donde después de registrar una salida,
+        // el siguiente escaneo devolvía la entrada ya cerrada del caché
+        \App\Models\PoolEntry::clearBootedModels();
 
         $query = \App\Models\PoolEntry::query()
             ->where('unit_id', $unitId)
@@ -764,6 +836,19 @@ class Scanner extends Component
 
         $entry = $query->latest('entered_at')->first();
 
+        // Si encontramos una entrada, recargarla desde BD y verificar que esté realmente abierta
+        if ($entry) {
+            $entry->refresh(); // Forzar recarga desde BD
+            // Doble verificación: si tiene exited_at, no es una entrada válida
+            if ($entry->exited_at !== null) {
+                \Log::warning('⚠️ Entrada encontrada pero ya cerrada (caché obsoleto)', [
+                    'entry_id' => $entry->id,
+                    'exited_at' => $entry->exited_at,
+                ]);
+                $entry = null;
+            }
+        }
+
         \Log::info('🔍 Búsqueda de entrada abierta para usuario', [
             'user_id' => $user->id,
             'user_name' => $user->name,
@@ -773,6 +858,7 @@ class Scanner extends Component
             'entry_id' => $entry?->id,
             'entry_pool_id' => $entry?->pool_id,
             'entry_entered_at' => $entry?->entered_at?->toDateTimeString(),
+            'entry_exited_at' => $entry?->exited_at?->toDateTimeString(),
         ]);
 
         return $entry;
@@ -1079,8 +1165,16 @@ class Scanner extends Component
 
     public function render()
     {
-        // Solo mostrar la pileta del turno activo
-        $pool = $this->activeShift ? Pool::find($this->activeShift->pool_id) : null;
+        // Para bañeros: mostrar la pileta del turno activo
+        // Para admins: mostrar la pileta seleccionada o todas las piletas disponibles
+        if ($this->activeShift) {
+            $pool = Pool::find($this->activeShift->pool_id);
+        } elseif (auth()->user()->isAdmin()) {
+            // Si es admin y hay poolId seleccionado, usar esa pileta
+            $pool = $this->poolId ? Pool::find($this->poolId) : null;
+        } else {
+            $pool = null;
+        }
 
         // Si hay un usuario escaneado, recargar la unit en scannedResident
         if ($this->scannedUserId && $this->scannedResident) {
@@ -1144,12 +1238,16 @@ class Scanner extends Component
             }
         }
 
+        // Para admins, obtener todas las piletas disponibles
+        $allPools = auth()->user()->isAdmin() ? Pool::all() : collect();
+
         return view('livewire.banero.pools.scanner', [
             'pool' => $pool,
+            'allPools' => $allPools,
             'pass' => $this->pass,
             'limitsInfo' => $limitsInfo,
             'availableResidents' => $availableResidents,
-        ])->layout('components.layouts.banero', ['title' => 'Escanear QR']);
+        ])->layout(auth()->user()->isAdmin() ? 'components.layouts.app' : 'components.layouts.banero', ['title' => 'Escanear QR']);
     }
 
     protected function calculateLimitsInfo(): array
