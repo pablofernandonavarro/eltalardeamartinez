@@ -1,13 +1,29 @@
 <div class="max-w-6xl mx-auto">
-    {{-- Notificación flotante (JavaScript puro) --}}
+    {{-- Notificación flotante MEJORADA - Pantalla completa semi-transparente --}}
     <div id="scanner-notification"
          style="display: none;"
-         class="fixed top-4 right-4 z-50 max-w-md w-full transition-all duration-300">
-        <div id="notification-content" class="text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3">
-            <div id="notification-message" class="flex-1 font-bold text-lg"></div>
-            <button onclick="hideNotification()" class="text-white hover:text-gray-200 text-2xl font-bold">&times;</button>
+         class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div id="notification-content"
+             class="max-w-2xl w-11/12 mx-auto text-center p-12 rounded-3xl shadow-2xl transform scale-95 transition-all duration-300"
+             style="animation: pulse-scale 0.6s ease-out;">
+            <div id="notification-icon" class="text-8xl mb-6">✅</div>
+            <div id="notification-message" class="text-white font-bold text-4xl mb-4"></div>
+            <div id="notification-subtitle" class="text-white/80 text-2xl"></div>
         </div>
     </div>
+
+    <style>
+        @keyframes pulse-scale {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
 
     <div class="mb-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
@@ -31,8 +47,18 @@
         @endif
 
         <div class="flex items-center gap-2">
-            <button 
-                type="button" 
+            {{-- Botón de prueba de notificaciones --}}
+            <button
+                type="button"
+                onclick="window.showNotification('✅ ENTRADA registrada: Juan Pérez', 'success', 2500)"
+                class="px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-lg transition-colors"
+                title="Probar notificación"
+            >
+                🔔 Test
+            </button>
+
+            <button
+                type="button"
                 wire:click="resetScanner"
                 @click="
                     console.log('🔄 Botón Nuevo clickeado');
@@ -606,79 +632,101 @@
             // Funciones para notificaciones
             let notificationTimeout = null;
 
-            window.showNotification = function(message, type = 'success', duration = 3000) {
+            window.showNotification = function(message, type = 'success', duration = 2500) {
                 console.log('🔔 showNotification() llamada', {message, type, duration});
 
                 const notification = document.getElementById('scanner-notification');
                 const content = document.getElementById('notification-content');
                 const messageEl = document.getElementById('notification-message');
+                const iconEl = document.getElementById('notification-icon');
+                const subtitleEl = document.getElementById('notification-subtitle');
 
-                console.log('📍 Elementos encontrados:', {
-                    notification: !!notification,
-                    content: !!content,
-                    messageEl: !!messageEl
-                });
-
-                if (!notification || !content || !messageEl) {
-                    console.error('⚠️ Elementos de notificación no encontrados');
-                    console.log('Elementos en DOM:', {
-                        notification: document.getElementById('scanner-notification'),
-                        content: document.getElementById('notification-content'),
-                        messageEl: document.getElementById('notification-message')
-                    });
+                if (!notification || !content || !messageEl || !iconEl || !subtitleEl) {
+                    console.error('⚠️ Elementos de notificación no encontrados - usando alert');
+                    alert(message);
                     return;
                 }
 
-                // Establecer el mensaje
-                messageEl.textContent = message;
-                console.log('✅ Mensaje establecido:', messageEl.textContent);
-
-                // Establecer el color según el tipo
-                content.className = 'text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3';
-                if (type === 'success') {
-                    content.classList.add('bg-green-500');
-                } else if (type === 'error') {
-                    content.classList.add('bg-red-500');
-                } else if (type === 'warning') {
-                    content.classList.add('bg-yellow-500');
-                } else {
-                    content.classList.add('bg-blue-500');
+                // Vibración (si está disponible)
+                if (navigator.vibrate) {
+                    navigator.vibrate(type === 'success' ? [100, 50, 100] : [200]);
                 }
 
-                console.log('✅ Clases aplicadas:', content.className);
+                // Sonido de beep (opcional)
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
 
-                // Mostrar la notificación
-                notification.style.display = 'block';
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateY(-10px)';
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
 
-                console.log('✅ Estilos iniciales aplicados');
+                    oscillator.frequency.value = type === 'success' ? 800 : 400;
+                    oscillator.type = 'sine';
+
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                } catch (e) {
+                    console.log('No se pudo reproducir sonido:', e);
+                }
+
+                // Configurar contenido según tipo
+                if (type === 'success') {
+                    iconEl.textContent = '✅';
+                    content.style.backgroundColor = '#10b981'; // green-500
+                    if (message.includes('ENTRADA')) {
+                        subtitleEl.textContent = 'Ingreso registrado correctamente';
+                    } else if (message.includes('SALIDA')) {
+                        subtitleEl.textContent = 'Salida registrada correctamente';
+                    }
+                } else if (type === 'error') {
+                    iconEl.textContent = '❌';
+                    content.style.backgroundColor = '#ef4444'; // red-500
+                    subtitleEl.textContent = 'Ha ocurrido un error';
+                } else if (type === 'warning') {
+                    iconEl.textContent = '⚠️';
+                    content.style.backgroundColor = '#f59e0b'; // yellow-500
+                    subtitleEl.textContent = 'Atención';
+                }
+
+                messageEl.textContent = message;
+
+                // Mostrar con animación
+                notification.style.display = 'flex';
+                content.style.animation = 'none';
 
                 setTimeout(() => {
-                    notification.style.opacity = '1';
-                    notification.style.transform = 'translateY(0)';
-                    console.log('✅ Animación de entrada ejecutada');
+                    content.style.animation = 'pulse-scale 0.6s ease-out';
                 }, 10);
 
-                // Ocultar automáticamente
+                // Auto-ocultar
                 clearTimeout(notificationTimeout);
                 notificationTimeout = setTimeout(() => {
-                    console.log('⏰ Ocultando notificación automáticamente');
                     hideNotification();
                 }, duration);
 
-                console.log('📢 Notificación mostrada exitosamente:', message);
+                // Permitir cerrar con click
+                notification.onclick = () => hideNotification();
+
+                console.log('✅ Notificación mostrada:', message);
             };
 
             window.hideNotification = function() {
                 const notification = document.getElementById('scanner-notification');
-                if (!notification) return;
+                const content = document.getElementById('notification-content');
+                if (!notification || !content) return;
 
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateY(-10px)';
+                content.style.animation = 'none';
+                content.style.transform = 'scale(0.8)';
+                content.style.opacity = '0';
 
                 setTimeout(() => {
                     notification.style.display = 'none';
+                    content.style.transform = 'scale(1)';
+                    content.style.opacity = '1';
                 }, 300);
             };
 
