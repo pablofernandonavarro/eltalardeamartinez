@@ -1,29 +1,4 @@
 <div class="max-w-6xl mx-auto">
-    {{-- Notificación flotante MEJORADA - Pantalla completa semi-transparente --}}
-    <div id="scanner-notification"
-         style="display: none;"
-         class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div id="notification-content"
-             class="max-w-2xl w-11/12 mx-auto text-center p-12 rounded-3xl shadow-2xl transform scale-95 transition-all duration-300"
-             style="animation: pulse-scale 0.6s ease-out;">
-            <div id="notification-icon" class="text-8xl mb-6">✅</div>
-            <div id="notification-message" class="text-white font-bold text-4xl mb-4"></div>
-            <div id="notification-subtitle" class="text-white/80 text-2xl"></div>
-        </div>
-    </div>
-
-    <style>
-        @keyframes pulse-scale {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-    </style>
 
     <div class="mb-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
@@ -47,33 +22,10 @@
         @endif
 
         <div class="flex items-center gap-2">
-            {{-- Botón de prueba de notificaciones --}}
-            <button
-                type="button"
-                onclick="window.showNotification('✅ ENTRADA registrada: Juan Pérez', 'success', 2500)"
-                class="px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-lg transition-colors"
-                title="Probar notificación"
-            >
-                🔔 Test
-            </button>
-
             <button
                 type="button"
                 wire:click="resetScanner"
-                @click="
-                    console.log('🔄 Botón Nuevo clickeado');
-                    $wire.resetScanner().then(() => {
-                        console.log('✅ Scanner reseteado, reiniciando cámara...');
-                        setTimeout(() => {
-                            if (window.__baneroStartQrScanner) {
-                                console.log('🎥 Llamando a startQrScanner...');
-                                window.__baneroStartQrScanner();
-                            } else {
-                                console.error('❌ window.__baneroStartQrScanner no disponible');
-                            }
-                        }, 300);
-                    });
-                "
+                @click="$wire.resetScanner().then(() => setTimeout(() => window.__baneroStartQrScanner?.(), 300))"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
                 Nuevo
@@ -624,156 +576,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script>
         (() => {
-            // Importante: con wire:navigate, este script puede ejecutarse múltiples veces.
-            // Usamos un guard global para no redeclarar funciones (evita SyntaxError).
             if (window.__baneroQrScannerSetup) return;
             window.__baneroQrScannerSetup = true;
 
-            // Funciones para notificaciones
-            let notificationTimeout = null;
-
-            window.showNotification = function(message, type = 'success', duration = 2500) {
-                console.log('🔔 showNotification() llamada', {message, type, duration});
-
-                const notification = document.getElementById('scanner-notification');
-                const content = document.getElementById('notification-content');
-                const messageEl = document.getElementById('notification-message');
-                const iconEl = document.getElementById('notification-icon');
-                const subtitleEl = document.getElementById('notification-subtitle');
-
-                if (!notification || !content || !messageEl || !iconEl || !subtitleEl) {
-                    console.error('⚠️ Elementos de notificación no encontrados - usando alert');
-                    alert(message);
-                    return;
-                }
-
-                // Vibración (si está disponible)
-                if (navigator.vibrate) {
-                    navigator.vibrate(type === 'success' ? [100, 50, 100] : [200]);
-                }
-
-                // Sonido de beep (opcional)
-                try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-
-                    oscillator.frequency.value = type === 'success' ? 800 : 400;
-                    oscillator.type = 'sine';
-
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.1);
-                } catch (e) {
-                    console.log('No se pudo reproducir sonido:', e);
-                }
-
-                // Configurar contenido según tipo
-                if (type === 'success') {
-                    iconEl.textContent = '✅';
-                    content.style.backgroundColor = '#10b981'; // green-500
-                    if (message.includes('ENTRADA')) {
-                        subtitleEl.textContent = 'Ingreso registrado correctamente';
-                    } else if (message.includes('SALIDA')) {
-                        subtitleEl.textContent = 'Salida registrada correctamente';
-                    }
-                } else if (type === 'error') {
-                    iconEl.textContent = '❌';
-                    content.style.backgroundColor = '#ef4444'; // red-500
-                    subtitleEl.textContent = 'Ha ocurrido un error';
-                } else if (type === 'warning') {
-                    iconEl.textContent = '⚠️';
-                    content.style.backgroundColor = '#f59e0b'; // yellow-500
-                    subtitleEl.textContent = 'Atención';
-                }
-
-                messageEl.textContent = message;
-
-                // Mostrar con animación
-                notification.style.display = 'flex';
-                content.style.animation = 'none';
-
-                setTimeout(() => {
-                    content.style.animation = 'pulse-scale 0.6s ease-out';
-                }, 10);
-
-                // Auto-ocultar
-                clearTimeout(notificationTimeout);
-                notificationTimeout = setTimeout(() => {
-                    hideNotification();
-                }, duration);
-
-                // Permitir cerrar con click
-                notification.onclick = () => hideNotification();
-
-                console.log('✅ Notificación mostrada:', message);
-            };
-
-            window.hideNotification = function() {
-                const notification = document.getElementById('scanner-notification');
-                const content = document.getElementById('notification-content');
-                if (!notification || !content) return;
-
-                content.style.animation = 'none';
-                content.style.transform = 'scale(0.8)';
-                content.style.opacity = '0';
-
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                    content.style.transform = 'scale(1)';
-                    content.style.opacity = '1';
-                }, 300);
-            };
-
             const stopQrScanner = async () => {
                 if (!window.__qrInstance) return;
-
-                console.log('🛑 Deteniendo scanner...');
                 try {
                     await window.__qrInstance.stop();
-                    console.log('✅ Scanner detenido');
-                } catch (e) {
-                    console.log('⚠️ Error al detener:', e.message);
-                }
-                try {
                     await window.__qrInstance.clear();
-                    console.log('✅ Scanner limpiado');
-                } catch (e) {
-                    console.log('⚠️ Error al limpiar:', e.message);
-                }
+                } catch (e) {}
                 window.__qrInstance = null;
-
-                // Limpiar el elemento del DOM
                 const el = document.getElementById('qr-reader');
-                if (el) {
-                    el.innerHTML = '';
-                    console.log('✅ Elemento DOM limpiado');
-                }
+                if (el) el.innerHTML = '';
             };
 
             const startQrScanner = async () => {
-                console.log('🚀 startQrScanner() llamado');
                 const el = document.getElementById('qr-reader');
-                if (!el) {
-                    console.log('❌ Elemento qr-reader no encontrado');
-                    return;
-                }
+                if (!el) return;
 
                 if (typeof Html5Qrcode === 'undefined') {
-                    console.log('⏳ Html5Qrcode no cargado, reintentando...');
                     setTimeout(startQrScanner, 200);
                     return;
                 }
 
-                console.log('🛑 Deteniendo scanner anterior si existe...');
                 await stopQrScanner();
 
-                console.log('🎥 Iniciando nueva instancia de scanner...');
                 const qr = new Html5Qrcode('qr-reader');
                 window.__qrInstance = qr;
 
@@ -781,187 +608,33 @@
                     { facingMode: 'environment' },
                     { fps: 10, qrbox: 250 },
                     async (decodedText) => {
-                        console.log('📦 QR escaneado:', decodedText);
+                        try { await qr.stop(); } catch (e) {}
 
-                        // Detener cámara
-                        try { await qr.stop(); } catch (e) { console.error('Error deteniendo cámara:', e); }
-
-                        // Llamar al método del componente usando Livewire.find()
-                        console.log('📤 Llamando a loadPassFromScan...');
                         try {
-                            // Obtener el componente Livewire dinámicamente
-                            const componentId = document.getElementById('qr-reader').closest('[wire\\:id]')?.getAttribute('wire:id');
-                            if (componentId) {
-                                const component = Livewire.find(componentId);
-                                if (component) {
-                                    // Marcar que estamos esperando una notificación
-                                    window.__waitingForNotification = true;
-                                    window.__scannedToken = decodedText;
-
-                                    await component.call('loadPassFromScan', decodedText);
-                                    console.log('✅ Token procesado correctamente');
-                                } else {
-                                    console.error('❌ Componente Livewire no encontrado');
-                                }
-                            } else {
-                                console.error('❌ No se pudo obtener el ID del componente');
+                            const componentId = el.closest('[wire\\:id]')?.getAttribute('wire:id');
+                            const component = componentId ? Livewire.find(componentId) : null;
+                            if (component) {
+                                await component.call('loadPassFromScan', decodedText);
                             }
                         } catch (err) {
-                            console.error('❌ Error procesando token:', err);
+                            console.error('Error procesando QR:', err);
                         }
                     },
-                    (errorMessage) => {
-                        // Error durante el escaneo (se ejecuta continuamente, no loggeamos)
-                    }
+                    () => {}
                 ).catch((err) => {
-                    console.error('❌ Error al iniciar scanner:', err);
+                    console.error('Error al iniciar scanner:', err);
                 });
             };
 
-            // Exponer para poder reiniciar desde eventos sin redeclarar
             window.__baneroStartQrScanner = startQrScanner;
 
-            // Esperar a que Livewire esté completamente inicializado
             document.addEventListener('livewire:init', () => {
-                console.log('✅ Livewire inicializado, arrancando scanner...');
-                // Dar un pequeño delay para asegurar que todo esté listo
-                setTimeout(() => {
-                    startQrScanner();
-                }, 500);
+                setTimeout(startQrScanner, 500);
+                Livewire.on('restart-camera', () => setTimeout(startQrScanner, 300));
             });
 
-            document.addEventListener('livewire:navigated', () => {
-                console.log('✅ Navegación completada, arrancando scanner...');
-                setTimeout(() => {
-                    startQrScanner();
-                }, 300);
-            });
-
-            // Al navegar a otra pantalla, frenamos la cámara para evitar "Element not found"
-            document.addEventListener('livewire:navigating', () => {
-                stopQrScanner();
-            });
-
-            document.addEventListener('banero-scanner-reset', () => {
-                console.log('🔄 Evento banero-scanner-reset recibido, reiniciando scanner...');
-                startQrScanner();
-            });
-            
-            document.addEventListener('restart-qr-scanner', () => {
-                console.log('📷 Evento restart-qr-scanner recibido, reiniciando...');
-                startQrScanner();
-            });
-            
-            // Escuchar evento de Livewire para reiniciar cámara
-            Livewire.on('restart-camera', () => {
-                console.log('📷 Evento restart-camera recibido desde Livewire, reiniciando...');
-                setTimeout(() => {
-                    startQrScanner();
-                }, 300);
-            });
-            
-            // También escuchar como evento de window para compatibilidad
-            window.addEventListener('restart-camera', () => {
-                console.log('📷 Evento restart-camera recibido desde window, reiniciando...');
-                setTimeout(() => {
-                    startQrScanner();
-                }, 300);
-            });
-            
-            // Escuchar cuando Livewire termina cualquier request
-            window.addEventListener('livewire:commit', ({ detail }) => {
-                console.log('🔍 Livewire commit detectado');
-                // Esperar un poco y verificar si no hay QR cargado pero la cámara está detenida
-                setTimeout(() => {
-                    const hasData = document.querySelector('[wire\\:submit="confirm"]') || 
-                                   document.querySelector('[wire\\:click="checkout"]');
-                    const hasError = document.querySelector('.text-red-600, .text-red-400');
-                    const hasMessage = document.querySelector('[x-data*="message"]');
-                    
-                    // Si no hay datos cargados, no hay errores visibles, y la cámara está detenida, reiniciar
-                    if (!hasData && !hasError && !window.__qrInstance) {
-                        console.log('📷 No hay datos ni cámara activa, reiniciando automáticamente...');
-                        startQrScanner();
-                    } else {
-                        console.log('ℹ️ Estado: hasData=', !!hasData, ', hasError=', !!hasError, ', cameraActive=', !!window.__qrInstance);
-                    }
-                }, 800);
-            });
-            
-            // Escuchar eventos específicos de Livewire usando el hook (TODO EN UNO)
-            document.addEventListener('livewire:init', () => {
-                console.log('🎬 Livewire:init - Configurando listeners');
-
-                // Listener para restart-camera
-                Livewire.on('restart-camera', () => {
-                    console.log('📷 Evento restart-camera recibido desde Livewire hook, reiniciando...');
-                    setTimeout(() => {
-                        startQrScanner();
-                    }, 300);
-                });
-
-                // Listener para notificaciones
-                Livewire.on('show-notification', (event) => {
-                    const detail = Array.isArray(event) ? event[0] : event;
-                    console.log('🔔 Evento show-notification recibido desde Livewire.on():', detail);
-
-                    // Mostrar notificación visual
-                    if (window.showNotification) {
-                        window.showNotification(detail.message, detail.type, detail.duration);
-                    }
-
-                    // Marcar que ya mostramos la notificación
-                    window.__waitingForNotification = false;
-
-                    // Reproducir sonido de beep
-                    try {
-                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        const oscillator = audioContext.createOscillator();
-                        const gainNode = audioContext.createGain();
-
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioContext.destination);
-
-                        // Configurar el beep
-                        oscillator.frequency.value = detail.type === 'success' ? 800 : 400;
-                        oscillator.type = 'sine';
-
-                        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-                        oscillator.start(audioContext.currentTime);
-                        oscillator.stop(audioContext.currentTime + 0.2);
-                    } catch (err) {
-                        console.log('⚠️ Error al reproducir sonido:', err);
-                    }
-                });
-
-                // Listener para debug de todos los commits
-                window.addEventListener('livewire:commit', (event) => {
-                    console.log('📦 livewire:commit event:', event.detail);
-
-                    // Si hay efectos JS, ejecutarlos manualmente (para móviles)
-                    const effects = event.detail?.component?.effects;
-                    if (effects) {
-                        console.log('🎪 Effects:', effects);
-
-                        // Ejecutar JavaScript si existe
-                        if (effects.js && Array.isArray(effects.js)) {
-                            console.log('🎬 Ejecutando JS effects:', effects.js);
-                            effects.js.forEach(jsCode => {
-                                try {
-                                    console.log('Ejecutando:', jsCode);
-                                    eval(jsCode);
-                                } catch (e) {
-                                    console.error('❌ Error ejecutando JS:', e, jsCode);
-                                }
-                            });
-                        }
-                    }
-                });
-
-                console.log('✅ Todos los listeners de Livewire configurados');
-            });
+            document.addEventListener('livewire:navigated', () => setTimeout(startQrScanner, 300));
+            document.addEventListener('livewire:navigating', stopQrScanner);
 
             // Generar QR de salida cuando se abre el modal
             function renderExitQR() {
