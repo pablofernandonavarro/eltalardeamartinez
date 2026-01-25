@@ -726,8 +726,58 @@
                             if (componentId) {
                                 const component = Livewire.find(componentId);
                                 if (component) {
+                                    // Guardar el estado actual para detectar cambios
+                                    const stateBefore = {
+                                        action: component.$wire.action,
+                                        scannedResident: component.$wire.scannedResident,
+                                        scannedUserId: component.$wire.scannedUserId
+                                    };
+
                                     await component.call('loadPassFromScan', decodedText);
                                     console.log('✅ Token procesado correctamente');
+
+                                    // Pequeño delay para que Livewire actualice el estado
+                                    setTimeout(() => {
+                                        const stateAfter = {
+                                            action: component.$wire.action,
+                                            scannedResident: component.$wire.scannedResident,
+                                            scannedUserId: component.$wire.scannedUserId
+                                        };
+
+                                        console.log('Estado antes:', stateBefore);
+                                        console.log('Estado después:', stateAfter);
+
+                                        // Si se limpió el estado, significa que se procesó correctamente (entrada o salida)
+                                        if (!stateAfter.scannedResident && !stateAfter.scannedUserId &&
+                                            (stateBefore.scannedResident || stateBefore.scannedUserId)) {
+
+                                            const personName = stateBefore.scannedResident?.name || 'Usuario';
+                                            const wasExit = stateBefore.action === 'exit';
+
+                                            if (wasExit) {
+                                                window.showNotification(`✅ SALIDA registrada: ${personName}`, 'success', 3000);
+                                            } else {
+                                                window.showNotification(`✅ ENTRADA registrada: ${personName}`, 'success', 3000);
+                                            }
+
+                                            // Reproducir beep
+                                            try {
+                                                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                                                const oscillator = audioContext.createOscillator();
+                                                const gainNode = audioContext.createGain();
+                                                oscillator.connect(gainNode);
+                                                gainNode.connect(audioContext.destination);
+                                                oscillator.frequency.value = 800;
+                                                oscillator.type = 'sine';
+                                                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                                                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                                                oscillator.start(audioContext.currentTime);
+                                                oscillator.stop(audioContext.currentTime + 0.2);
+                                            } catch (err) {
+                                                console.log('⚠️ Error al reproducir sonido:', err);
+                                            }
+                                        }
+                                    }, 500);
                                 } else {
                                     console.error('❌ Componente Livewire no encontrado');
                                 }
