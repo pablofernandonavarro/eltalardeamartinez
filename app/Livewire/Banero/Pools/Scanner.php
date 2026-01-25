@@ -1326,8 +1326,21 @@ class Scanner extends Component
             ->distinct('pool_entry_guests.pool_guest_id')
             ->count('pool_entry_guests.pool_guest_id');
 
-        $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
-        $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
+        // Contar invitados únicos usados en DÍAS DE SEMANA este mes
+        $usedWeekdaysThisMonth = \DB::table('pool_entry_guests')
+            ->join('pool_entries', 'pool_entries.id', '=', 'pool_entry_guests.pool_entry_id')
+            ->where('pool_entries.unit_id', $unit->id)
+            ->where('pool_entries.pool_id', $pool->id)
+            ->whereBetween('pool_entries.entered_at', [$monthStart, $monthEnd])
+            ->whereRaw('DAYOFWEEK(pool_entries.entered_at) NOT IN (1, 7)') // Lunes a Viernes
+            ->distinct('pool_entry_guests.pool_guest_id')
+            ->count('pool_entry_guests.pool_guest_id');
+
+        // Límites mensuales según tipo de día
+        $maxGuestsWeekdayMonth = PoolSetting::get('max_guests_month', 5);
+        $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend_month', 3);
+        $availableWeekdayMonth = max(0, $maxGuestsWeekdayMonth - $usedWeekdaysThisMonth);
+        $availableWeekendMonth = max(0, $maxGuestsWeekendMonth - $usedWeekendsThisMonth);
 
         // Contar cuántos fines de semana quedan este mes (desde hoy)
         $remainingWeekends = 0;
@@ -1346,10 +1359,14 @@ class Scanner extends Component
             'max_guests_today' => $maxGuestsToday,
             'used_today' => $usedToday,
             'available_today' => $availableToday,
-            'max_guests_month' => $maxGuestsMonth,
-            'used_this_month' => $usedThisMonth,
+            // Límites de días de semana
+            'max_guests_weekday_month' => $maxGuestsWeekdayMonth,
+            'used_weekdays_month' => $usedWeekdaysThisMonth,
+            'available_weekday_month' => $availableWeekdayMonth,
+            // Límites de fines de semana
+            'max_guests_weekend_month' => $maxGuestsWeekendMonth,
             'used_weekends_month' => $usedWeekendsThisMonth,
-            'available_month' => $availableMonth,
+            'available_weekend_month' => $availableWeekendMonth,
             'remaining_weekends' => $remainingWeekends,
         ];
     }

@@ -45,31 +45,50 @@ class RegisterEntry extends Component
             // Validar límite diario
             $enteredAtDate = \Carbon\Carbon::parse($this->enteredAt);
             $isWeekend = $enteredAtDate->isWeekend();
-            $maxGuestsToday = $isWeekend 
+            $maxGuestsToday = $isWeekend
                 ? PoolSetting::get('max_guests_weekend', 2)
                 : PoolSetting::get('max_guests_weekday', 4);
-            
+
             if ($this->guestsCount > $maxGuestsToday) {
                 $dayType = $isWeekend ? 'fines de semana/feriados' : 'días de semana';
                 $this->addError('guestsCount', "Máximo {$maxGuestsToday} invitados permitidos en {$dayType}.");
                 return;
             }
-            
-            // Validar límite mensual
+
+            // Validar límite mensual según tipo de día
             $monthStart = $enteredAtDate->copy()->startOfMonth();
             $monthEnd = $enteredAtDate->copy()->endOfMonth();
-            
-            $usedThisMonth = \App\Models\PoolEntry::forUnit($unit->id)
-                ->where('pool_id', $pool->id)
-                ->whereBetween('entered_at', [$monthStart, $monthEnd])
-                ->sum('guests_count');
-            
-            $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
-            $availableMonth = max(0, $maxGuestsMonth - $usedThisMonth);
-            
-            if ($this->guestsCount > $availableMonth) {
-                $this->addError('guestsCount', "Límite mensual excedido: {$usedThisMonth}/{$maxGuestsMonth} invitados usados. Disponible: {$availableMonth}.");
-                return;
+
+            if ($isWeekend) {
+                // Validar límite mensual de fines de semana
+                $usedWeekendsMonth = \App\Models\PoolEntry::forUnit($unit->id)
+                    ->where('pool_id', $pool->id)
+                    ->whereBetween('entered_at', [$monthStart, $monthEnd])
+                    ->whereRaw('DAYOFWEEK(entered_at) IN (1, 7)') // Sábado y Domingo
+                    ->sum('guests_count');
+
+                $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend_month', 3);
+                $availableWeekendMonth = max(0, $maxGuestsWeekendMonth - $usedWeekendsMonth);
+
+                if ($this->guestsCount > $availableWeekendMonth) {
+                    $this->addError('guestsCount', "Límite mensual de fines de semana excedido: {$usedWeekendsMonth}/{$maxGuestsWeekendMonth} invitados usados. Disponible: {$availableWeekendMonth}.");
+                    return;
+                }
+            } else {
+                // Validar límite mensual de días de semana
+                $usedWeekdaysMonth = \App\Models\PoolEntry::forUnit($unit->id)
+                    ->where('pool_id', $pool->id)
+                    ->whereBetween('entered_at', [$monthStart, $monthEnd])
+                    ->whereRaw('DAYOFWEEK(entered_at) NOT IN (1, 7)') // Lunes a Viernes
+                    ->sum('guests_count');
+
+                $maxGuestsMonth = PoolSetting::get('max_guests_month', 5);
+                $availableMonth = max(0, $maxGuestsMonth - $usedWeekdaysMonth);
+
+                if ($this->guestsCount > $availableMonth) {
+                    $this->addError('guestsCount', "Límite mensual de días de semana excedido: {$usedWeekdaysMonth}/{$maxGuestsMonth} invitados usados. Disponible: {$availableMonth}.");
+                    return;
+                }
             }
 
             $poolAccessService->registerEntry($pool, $unit, $user, $this->guestsCount, $this->enteredAt);

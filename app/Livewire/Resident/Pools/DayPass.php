@@ -341,16 +341,18 @@ class DayPass extends Component
             ->selectRaw('COUNT(DISTINCT pool_entry_guests.pool_guest_id) as total')
             ->value('total');
 
+        // Obtener límites diarios según tipo de día
+        $maxGuestsWeekdayDay = PoolSetting::get('max_guests_weekday', 4);
+        $maxGuestsWeekendDay = PoolSetting::get('max_guests_weekend', 2);
+
         // Obtener límites mensuales para ambos tipos de día
-        $maxGuestsWeekdayMonth = PoolSetting::get('max_guests_weekday', 4);
-        $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend', 2);
+        $maxGuestsWeekdayMonth = PoolSetting::get('max_guests_month', 5); // General mensual
+        $maxGuestsWeekendMonth = PoolSetting::get('max_guests_weekend_month', 3); // Específico fines de semana
         $availableWeekdayMonth = max(0, $maxGuestsWeekdayMonth - $usedWeekdaysMonth);
         $availableWeekendMonth = max(0, $maxGuestsWeekendMonth - $usedWeekendsMonth);
-        
+
         // Obtener límite diario según tipo de día
-        $maxGuestsToday = $isWeekend 
-            ? PoolSetting::get('max_guests_weekend_day', 2)
-            : PoolSetting::get('max_guests_weekday_day', 4);
+        $maxGuestsToday = $isWeekend ? $maxGuestsWeekendDay : $maxGuestsWeekdayDay;
 
         $hasQuota = $isWeekend ? ($availableWeekendMonth > 0) : ($availableWeekdayMonth > 0);
 
