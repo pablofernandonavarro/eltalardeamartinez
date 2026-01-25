@@ -840,8 +840,11 @@
                 }, 800);
             });
             
-            // Escuchar eventos específicos de Livewire usando el hook
+            // Escuchar eventos específicos de Livewire usando el hook (TODO EN UNO)
             document.addEventListener('livewire:init', () => {
+                console.log('🎬 Livewire:init - Configurando listeners');
+
+                // Listener para restart-camera
                 Livewire.on('restart-camera', () => {
                     console.log('📷 Evento restart-camera recibido desde Livewire hook, reiniciando...');
                     setTimeout(() => {
@@ -849,7 +852,7 @@
                     }, 300);
                 });
 
-                // Escuchar evento de notificación desde Livewire
+                // Listener para notificaciones
                 Livewire.on('show-notification', (event) => {
                     const detail = Array.isArray(event) ? event[0] : event;
                     console.log('🔔 Evento show-notification recibido desde Livewire.on():', detail);
@@ -884,10 +887,8 @@
                         console.log('⚠️ Error al reproducir sonido:', err);
                     }
                 });
-            });
 
-            // Escuchar TODOS los eventos de Livewire para debug
-            document.addEventListener('livewire:init', () => {
+                // Listener para debug de todos los commits
                 window.addEventListener('livewire:commit', (event) => {
                     console.log('📦 livewire:commit event:', event.detail);
 
@@ -896,6 +897,8 @@
                         console.log('🎪 Eventos dispatched:', event.detail.component.effects.dispatches);
                     }
                 });
+
+                console.log('✅ Todos los listeners de Livewire configurados');
             });
 
             // Generar QR de salida cuando se abre el modal
