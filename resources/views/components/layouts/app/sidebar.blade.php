@@ -36,6 +36,12 @@
                 <flux:navlist.item icon="cog" :href="route('admin.pools.settings')" :current="request()->routeIs('admin.pools.settings')" wire:navigate>{{ __('Configuración de Límites') }}</flux:navlist.item>
                 <flux:navlist.item icon="user-circle" :href="route('admin.baneros.index')" :current="request()->routeIs('admin.baneros.*')" wire:navigate>{{ __('Bañeros y Turnos') }}</flux:navlist.item>
             </flux:navlist.group>
+
+            <flux:navlist.group :heading="__('SUM - Salón')" expandable class="grid">
+                <flux:navlist.item icon="calendar" :href="route('admin.sum.reservations.index')" :current="request()->routeIs('admin.sum.reservations.*')" wire:navigate>{{ __('Reservas') }}</flux:navlist.item>
+                <flux:navlist.item icon="banknotes" :href="route('admin.sum.payments.index')" :current="request()->routeIs('admin.sum.payments.*')" wire:navigate>{{ __('Pagos y Facturas') }}</flux:navlist.item>
+                <flux:navlist.item icon="cog" :href="route('admin.sum.settings')" :current="request()->routeIs('admin.sum.settings')" wire:navigate>{{ __('Configuración') }}</flux:navlist.item>
+            </flux:navlist.group>
             </flux:navlist>
 
             <flux:spacer />

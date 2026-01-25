@@ -112,3 +112,20 @@ Route::prefix('amenities')->name('amenities.')->group(function () {
 Route::prefix('baneros')->name('baneros.')->group(function () {
     Route::get('/', BanerosIndex::class)->name('index');
 });
+
+// SUM - Salón de Usos Múltiples
+use App\Livewire\Admin\Sum\Reservations\Index as SumReservationsIndex;
+use App\Livewire\Admin\Sum\Payments\Index as SumPaymentsIndex;
+use App\Livewire\Admin\Sum\Settings as SumSettings;
+
+Route::prefix('sum')->name('sum.')->group(function () {
+    Route::prefix('reservations')->name('reservations.')->group(function () {
+        Route::get('/', SumReservationsIndex::class)->name('index');
+    });
+
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('/', SumPaymentsIndex::class)->name('index');
+    });
+
+    Route::get('/settings', SumSettings::class)->name('settings');
+});
