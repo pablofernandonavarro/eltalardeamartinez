@@ -1,40 +1,11 @@
 <div class="max-w-6xl mx-auto">
-    {{-- Notificación flotante --}}
-    <div
-        x-data="{
-            show: false,
-            message: '',
-            type: 'success',
-            hideTimeout: null
-        }"
-        @show-notification.window="
-            show = true;
-            message = $event.detail.message || $event.detail[0].message;
-            type = $event.detail.type || $event.detail[0].type || 'success';
-            clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(() => { show = false }, $event.detail.duration || $event.detail[0].duration || 3000);
-        "
-        x-show="show"
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 transform translate-y-2"
-        x-transition:enter-end="opacity-100 transform translate-y-0"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 transform translate-y-0"
-        x-transition:leave-end="opacity-0 transform translate-y-2"
-        style="display: none;"
-        class="fixed top-4 right-4 z-50 max-w-md w-full"
-    >
-        <div
-            :class="{
-                'bg-green-500': type === 'success',
-                'bg-red-500': type === 'error',
-                'bg-yellow-500': type === 'warning',
-                'bg-blue-500': type === 'info'
-            }"
-            class="text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-pulse"
-        >
-            <div class="flex-1 font-bold text-lg" x-text="message"></div>
-            <button @click="show = false" class="text-white hover:text-gray-200 text-2xl font-bold">&times;</button>
+    {{-- Notificación flotante (JavaScript puro) --}}
+    <div id="scanner-notification"
+         style="display: none;"
+         class="fixed top-4 right-4 z-50 max-w-md w-full transition-all duration-300">
+        <div id="notification-content" class="text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3">
+            <div id="notification-message" class="flex-1 font-bold text-lg"></div>
+            <button onclick="hideNotification()" class="text-white hover:text-gray-200 text-2xl font-bold">&times;</button>
         </div>
     </div>
 
@@ -632,24 +603,83 @@
             if (window.__baneroQrScannerSetup) return;
             window.__baneroQrScannerSetup = true;
 
+            // Funciones para notificaciones
+            let notificationTimeout = null;
+
+            window.showNotification = function(message, type = 'success', duration = 3000) {
+                const notification = document.getElementById('scanner-notification');
+                const content = document.getElementById('notification-content');
+                const messageEl = document.getElementById('notification-message');
+
+                if (!notification || !content || !messageEl) {
+                    console.log('⚠️ Elementos de notificación no encontrados');
+                    return;
+                }
+
+                // Establecer el mensaje
+                messageEl.textContent = message;
+
+                // Establecer el color según el tipo
+                content.className = 'text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3';
+                if (type === 'success') {
+                    content.classList.add('bg-green-500');
+                } else if (type === 'error') {
+                    content.classList.add('bg-red-500');
+                } else if (type === 'warning') {
+                    content.classList.add('bg-yellow-500');
+                } else {
+                    content.classList.add('bg-blue-500');
+                }
+
+                // Mostrar la notificación
+                notification.style.display = 'block';
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateY(-10px)';
+
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                    notification.style.transform = 'translateY(0)';
+                }, 10);
+
+                // Ocultar automáticamente
+                clearTimeout(notificationTimeout);
+                notificationTimeout = setTimeout(() => {
+                    hideNotification();
+                }, duration);
+
+                console.log('📢 Notificación mostrada:', message);
+            };
+
+            window.hideNotification = function() {
+                const notification = document.getElementById('scanner-notification');
+                if (!notification) return;
+
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateY(-10px)';
+
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 300);
+            };
+
             const stopQrScanner = async () => {
                 if (!window.__qrInstance) return;
 
                 console.log('🛑 Deteniendo scanner...');
-                try { 
-                    await window.__qrInstance.stop(); 
+                try {
+                    await window.__qrInstance.stop();
                     console.log('✅ Scanner detenido');
-                } catch (e) { 
+                } catch (e) {
                     console.log('⚠️ Error al detener:', e.message);
                 }
-                try { 
-                    await window.__qrInstance.clear(); 
+                try {
+                    await window.__qrInstance.clear();
                     console.log('✅ Scanner limpiado');
-                } catch (e) { 
+                } catch (e) {
                     console.log('⚠️ Error al limpiar:', e.message);
                 }
                 window.__qrInstance = null;
-                
+
                 // Limpiar el elemento del DOM
                 const el = document.getElementById('qr-reader');
                 if (el) {
@@ -795,28 +825,37 @@
                     }, 300);
                 });
 
-                // Escuchar evento de notificación para reproducir sonido
+                // Escuchar evento de notificación desde Livewire
                 Livewire.on('show-notification', (event) => {
                     const detail = Array.isArray(event) ? event[0] : event;
-                    console.log('🔔 Notificación:', detail);
+                    console.log('🔔 Evento de notificación recibido:', detail);
+
+                    // Mostrar notificación visual
+                    if (window.showNotification) {
+                        window.showNotification(detail.message, detail.type, detail.duration);
+                    }
 
                     // Reproducir sonido de beep
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
+                    try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
 
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
 
-                    // Configurar el beep
-                    oscillator.frequency.value = detail.type === 'success' ? 800 : 400; // Más alto para éxito
-                    oscillator.type = 'sine';
+                        // Configurar el beep
+                        oscillator.frequency.value = detail.type === 'success' ? 800 : 400;
+                        oscillator.type = 'sine';
 
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
 
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.2);
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.2);
+                    } catch (err) {
+                        console.log('⚠️ Error al reproducir sonido:', err);
+                    }
                 });
             });
 
