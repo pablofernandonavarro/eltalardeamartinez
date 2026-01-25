@@ -633,6 +633,13 @@
                     return;
                 }
 
+                // Verificar que Livewire esté disponible
+                if (typeof Livewire === 'undefined' || typeof @this === 'undefined') {
+                    console.log('⏳ Livewire no cargado, reintentando...');
+                    setTimeout(startQrScanner, 200);
+                    return;
+                }
+
                 console.log('🛑 Deteniendo scanner anterior si existe...');
                 await stopQrScanner();
 
@@ -640,24 +647,26 @@
                 const qr = new Html5Qrcode('qr-reader');
                 window.__qrInstance = qr;
 
+                // Guardar referencia al componente Livewire
+                const component = @this;
+
                 qr.start(
                     { facingMode: 'environment' },
                     { fps: 10, qrbox: 250 },
                     async (decodedText) => {
                         console.log('📦 QR escaneado:', decodedText);
-                        
+
                         // Detener cámara
                         try { await qr.stop(); } catch (e) { console.error('Error deteniendo cámara:', e); }
 
-                        // Llamar al método del componente
+                        // Llamar al método del componente usando la referencia guardada
                         console.log('📤 Llamando a loadPassFromScan...');
-                        @this.call('loadPassFromScan', decodedText)
-                            .then(() => {
-                                console.log('✅ Token procesado correctamente');
-                            })
-                            .catch((err) => {
-                                console.error('❌ Error procesando token:', err);
-                            });
+                        try {
+                            await component.call('loadPassFromScan', decodedText);
+                            console.log('✅ Token procesado correctamente');
+                        } catch (err) {
+                            console.error('❌ Error procesando token:', err);
+                        }
                     },
                     (errorMessage) => {
                         // Error durante el escaneo (se ejecuta continuamente, no loggeamos)
