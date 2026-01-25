@@ -395,16 +395,8 @@ class Scanner extends Component
                     // El checkout ya limpia todo el estado mediante resetScanner()
                     \Log::info('✅ Checkout automático completado exitosamente, estado limpio para siguiente escaneo');
 
-                    // Notificación para checkout automático de residente
-                    $this->js("
-                        console.log('🔔 Ejecutando notificación de SALIDA AUTOMÁTICA (residente) desde backend');
-                        if (typeof window.showNotification === 'function') {
-                            window.showNotification('✅ SALIDA registrada: {$personName}', 'success', 3000);
-                        } else {
-                            console.error('❌ window.showNotification no está definida');
-                            alert('✅ SALIDA registrada: {$personName}');
-                        }
-                    ");
+                    // Alerta simple de salida
+                    $this->js("alert('Usuario salió: {$personName}');");
                 } catch (\Exception $e) {
                     \Log::error('❌ Error en checkout automático', [
                         'error' => $e->getMessage(),
@@ -481,16 +473,8 @@ class Scanner extends Component
                     // El checkout ya limpia todo el estado mediante resetScanner()
                     \Log::info('✅ Checkout automático completado, estado limpio para siguiente escaneo');
 
-                    // Notificación para checkout automático de usuario
-                    $this->js("
-                        console.log('🔔 Ejecutando notificación de SALIDA AUTOMÁTICA (usuario) desde backend');
-                        if (typeof window.showNotification === 'function') {
-                            window.showNotification('✅ SALIDA registrada: {$personName}', 'success', 3000);
-                        } else {
-                            console.error('❌ window.showNotification no está definida');
-                            alert('✅ SALIDA registrada: {$personName}');
-                        }
-                    ");
+                    // Alerta simple de salida
+                    $this->js("alert('Usuario salió: {$personName}');");
                 } catch (\Exception $e) {
                     \Log::error('❌ Error en checkout automático para usuario', [
                         'error' => $e->getMessage(),
@@ -971,17 +955,9 @@ class Scanner extends Component
             // Notificar a otros componentes
             $this->dispatch('entry-registered')->to(Inside::class);
 
-            // Usar JavaScript directo para mostrar notificación
+            // Alerta simple de entrada
             $personName = $this->scannedResident->name;
-            $this->js("
-                console.log('🔔 Ejecutando notificación de ENTRADA desde backend');
-                if (typeof window.showNotification === 'function') {
-                    window.showNotification('✅ ENTRADA registrada: {$personName}', 'success', 3000);
-                } else {
-                    console.error('❌ window.showNotification no está definida');
-                    alert('✅ ENTRADA registrada: {$personName}');
-                }
-            ");
+            $this->js("alert('Usuario ingresó: {$personName}');");
 
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
@@ -1067,17 +1043,9 @@ class Scanner extends Component
             // Notificar a otros componentes
             $this->dispatch('entry-registered')->to(Inside::class);
 
-            // Usar JavaScript directo para mostrar notificación
+            // Alerta simple de entrada
             $personName = $user->name;
-            $this->js("
-                console.log('🔔 Ejecutando notificación de ENTRADA (usuario) desde backend');
-                if (typeof window.showNotification === 'function') {
-                    window.showNotification('✅ ENTRADA registrada: {$personName}', 'success', 3000);
-                } else {
-                    console.error('❌ window.showNotification no está definida');
-                    alert('✅ ENTRADA registrada: {$personName}');
-                }
-            ");
+            $this->js("alert('Usuario ingresó: {$personName}');");
 
             // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
@@ -1191,16 +1159,8 @@ class Scanner extends Component
         // Determinar nombre de la persona
         $personName = $entry->resident ? $entry->resident->name : ($entry->user ? $entry->user->name : 'Usuario');
 
-        // Usar JavaScript directo para mostrar notificación
-        $this->js("
-            console.log('🔔 Ejecutando notificación de SALIDA desde backend');
-            if (typeof window.showNotification === 'function') {
-                window.showNotification('✅ SALIDA registrada: {$personName}', 'success', 3000);
-            } else {
-                console.error('❌ window.showNotification no está definida');
-                alert('✅ SALIDA registrada: {$personName}');
-            }
-        ");
+        // Alerta simple de salida
+        $this->js("alert('Usuario salió: {$personName}');");
 
         $this->dispatch('restart-camera')->self();
 
