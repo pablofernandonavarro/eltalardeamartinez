@@ -892,9 +892,23 @@
                 window.addEventListener('livewire:commit', (event) => {
                     console.log('📦 livewire:commit event:', event.detail);
 
-                    // Si hay eventos en la respuesta, logearlos
-                    if (event.detail && event.detail.component && event.detail.component.effects && event.detail.component.effects.dispatches) {
-                        console.log('🎪 Eventos dispatched:', event.detail.component.effects.dispatches);
+                    // Si hay efectos JS, ejecutarlos manualmente (para móviles)
+                    const effects = event.detail?.component?.effects;
+                    if (effects) {
+                        console.log('🎪 Effects:', effects);
+
+                        // Ejecutar JavaScript si existe
+                        if (effects.js && Array.isArray(effects.js)) {
+                            console.log('🎬 Ejecutando JS effects:', effects.js);
+                            effects.js.forEach(jsCode => {
+                                try {
+                                    console.log('Ejecutando:', jsCode);
+                                    eval(jsCode);
+                                } catch (e) {
+                                    console.error('❌ Error ejecutando JS:', e, jsCode);
+                                }
+                            });
+                        }
                     }
                 });
 
