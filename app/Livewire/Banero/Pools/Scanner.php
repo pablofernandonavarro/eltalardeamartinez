@@ -390,9 +390,21 @@ class Scanner extends Component
                 ]);
 
                 try {
+                    $personName = $resident->name;
                     $this->checkout();
                     // El checkout ya limpia todo el estado mediante resetScanner()
                     \Log::info('✅ Checkout automático completado exitosamente, estado limpio para siguiente escaneo');
+
+                    // Notificación para checkout automático de residente
+                    $this->js("
+                        console.log('🔔 Ejecutando notificación de SALIDA AUTOMÁTICA (residente) desde backend');
+                        if (typeof window.showNotification === 'function') {
+                            window.showNotification('✅ SALIDA registrada: {$personName}', 'success', 3000);
+                        } else {
+                            console.error('❌ window.showNotification no está definida');
+                            alert('✅ SALIDA registrada: {$personName}');
+                        }
+                    ");
                 } catch (\Exception $e) {
                     \Log::error('❌ Error en checkout automático', [
                         'error' => $e->getMessage(),
@@ -464,9 +476,21 @@ class Scanner extends Component
                 ]);
 
                 try {
+                    $personName = $user->name;
                     $this->checkout();
                     // El checkout ya limpia todo el estado mediante resetScanner()
                     \Log::info('✅ Checkout automático completado, estado limpio para siguiente escaneo');
+
+                    // Notificación para checkout automático de usuario
+                    $this->js("
+                        console.log('🔔 Ejecutando notificación de SALIDA AUTOMÁTICA (usuario) desde backend');
+                        if (typeof window.showNotification === 'function') {
+                            window.showNotification('✅ SALIDA registrada: {$personName}', 'success', 3000);
+                        } else {
+                            console.error('❌ window.showNotification no está definida');
+                            alert('✅ SALIDA registrada: {$personName}');
+                        }
+                    ");
                 } catch (\Exception $e) {
                     \Log::error('❌ Error en checkout automático para usuario', [
                         'error' => $e->getMessage(),
