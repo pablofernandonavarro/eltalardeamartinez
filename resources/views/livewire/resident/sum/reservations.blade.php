@@ -1,4 +1,7 @@
-<div class="p-4 lg:p-6" x-data="calendarApp()" x-init="initCalendar()">
+<div class="p-4 lg:p-6" 
+     x-data="calendarApp()" 
+     x-init="$nextTick(() => initCalendar())"
+     wire:key="reservations-{{ $unitId }}">
     <div class="mx-auto max-w-7xl">
         {{-- Header --}}
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -163,8 +166,11 @@
                                 <p class="text-sm text-zinc-400">
                                     {{ $reservation->time_range }}
                                 </p>
+                                <p class="mt-1 text-lg font-bold text-green-400">
+                                    ${{ number_format($reservation->total_amount, 0, ',', '.') }}
+                                </p>
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-col items-end gap-2">
                                 @php
                                     $statusColors = [
                                         'pending' => 'bg-amber-900/50 text-amber-200',
@@ -440,9 +446,6 @@
 
     <script>
         function calendarApp() {
-            // Get Livewire component reference at script level
-            const wire = @this;
-
             return {
                 calendar: null,
                 events: @json($calendarEvents),
@@ -453,12 +456,24 @@
 
                 initCalendar() {
                     const calendarEl = document.getElementById('fullcalendar');
-                    if (!calendarEl) return;
+                    if (!calendarEl) {
+                        // Retry if element not ready
+                        setTimeout(() => this.initCalendar(), 100);
+                        return;
+                    }
+
+                    // If calendar already exists, destroy it first
+                    if (this.calendar) {
+                        this.calendar.destroy();
+                    }
 
                     const self = this;
                     const now = new Date();
                     const maxDate = new Date();
                     maxDate.setDate(maxDate.getDate() + this.maxDaysAdvance);
+
+                    // Get Livewire component instance
+                    const component = @this;
 
                     this.calendar = new FullCalendar.Calendar(calendarEl, {
                         initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
@@ -503,7 +518,7 @@
                         eventClick: function(info) {
                             const props = info.event.extendedProps;
                             if (props.isOwn) {
-                                wire.eventClicked(props.reservationId);
+                                component.call('eventClicked', props.reservationId);
                             }
                         },
                         select: function(info) {
@@ -513,7 +528,7 @@
                             const startTime = info.start.toTimeString().slice(0, 5);
                             const endTime = info.end.toTimeString().slice(0, 5);
 
-                            wire.dateSelected(startDate, startTime, endTime);
+                            component.call('dateSelected', startDate, startTime, endTime);
 
                             self.calendar.unselect();
                         },
@@ -548,17 +563,37 @@
                     this.calendar.render();
 
                     // Listen for refresh event from Livewire
-                    Livewire.on('refreshCalendar', (data) => {
-                        const eventsJson = data.events || data[0]?.events || '[]';
-                        const newEvents = typeof eventsJson === 'string' ? JSON.parse(eventsJson) : eventsJson;
-                        this.events = newEvents;
+                    document.addEventListener('livewire:init', () => {
+                        Livewire.on('refreshCalendar', (data) => {
+                            let newEvents = [];
+                            
+                            // Handle different data formats from Livewire 3
+                            if (Array.isArray(data)) {
+                                // If data is directly an array
+                                newEvents = data;
+                            } else if (data.events) {
+                                // If data has events property
+                                newEvents = Array.isArray(data.events) ? data.events : JSON.parse(data.events);
+                            } else if (typeof data === 'string') {
+                                // If data is a JSON string
+                                newEvents = JSON.parse(data);
+                            } else if (data[0]?.events) {
+                                // Nested events property
+                                newEvents = Array.isArray(data[0].events) ? data[0].events : JSON.parse(data[0].events);
+                            }
 
-                        // Remove all existing events
-                        this.calendar.getEvents().forEach(event => event.remove());
+                            // Update events array
+                            self.events = newEvents;
 
-                        // Add new events
-                        newEvents.forEach(event => {
-                            this.calendar.addEvent(event);
+                            // Remove all existing events
+                            self.calendar.getEvents().forEach(event => event.remove());
+
+                            // Add new events
+                            if (Array.isArray(newEvents) && newEvents.length > 0) {
+                                newEvents.forEach(event => {
+                                    self.calendar.addEvent(event);
+                                });
+                            }
                         });
                     });
                 }
