@@ -87,5 +87,10 @@ Route::middleware(['auth', 'approved'])->group(function () {
 
         // Route::get('/expenses', \App\Livewire\Resident\Expenses\Index::class)->name('expenses.index');
         // Route::get('/pools', \App\Livewire\Resident\Pools\Index::class)->name('pools.index');
+
+        // SUM - Salon de Usos Multiples
+        Route::prefix('sum')->name('sum.')->group(function () {
+            Route::get('/reservations', \App\Livewire\Resident\Sum\Reservations::class)->name('reservations');
+        });
     });
 });

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Sum;
 
+use App\Models\SumSetting;
 use Livewire\Component;
 
 class Settings extends Component
@@ -15,7 +16,12 @@ class Settings extends Component
 
     public function mount(): void
     {
-        // TODO: Cargar desde base de datos
+        $this->pricePerHour = SumSetting::get('price_per_hour', 500);
+        $this->openTime = SumSetting::get('open_time', '09:00');
+        $this->closeTime = SumSetting::get('close_time', '23:00');
+        $this->maxDaysAdvance = SumSetting::get('max_days_advance', 30);
+        $this->minHoursNotice = SumSetting::get('min_hours_notice', 24);
+        $this->requiresApproval = SumSetting::get('requires_approval', false);
     }
 
     public function save(): void
@@ -28,14 +34,21 @@ class Settings extends Component
             'minHoursNotice' => 'required|integer|min:0|max:168',
         ]);
 
-        // TODO: Guardar en base de datos
+        SumSetting::set('price_per_hour', $this->pricePerHour);
+        SumSetting::set('open_time', $this->openTime);
+        SumSetting::set('close_time', $this->closeTime);
+        SumSetting::set('max_days_advance', $this->maxDaysAdvance);
+        SumSetting::set('min_hours_notice', $this->minHoursNotice);
+        SumSetting::set('requires_approval', $this->requiresApproval ? 'true' : 'false');
 
-        session()->flash('message', '✅ Configuración guardada correctamente.');
+        SumSetting::clearCache();
+
+        session()->flash('message', 'Configuracion guardada correctamente.');
     }
 
     public function render()
     {
         return view('livewire.admin.sum.settings')
-            ->layout('components.layouts.app', ['title' => 'Configuración del SUM']);
+            ->layout('components.layouts.app', ['title' => 'Configuracion del SUM']);
     }
 }

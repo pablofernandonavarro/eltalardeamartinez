@@ -31,6 +31,12 @@
                             {{ __('Utilizados') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
+
+                    {{-- SUM - Salon de Usos Multiples --}}
+                    <flux:navlist.item icon="calendar-days" :href="route('resident.sum.reservations')" :current="request()->routeIs('resident.sum.*')" wire:navigate>
+                        {{ __('Reservar SUM') }}
+                    </flux:navlist.item>
+
                     {{-- <flux:navlist.item icon="currency-dollar" :href="route('resident.expenses.index')" :current="request()->routeIs('resident.expenses.*')" wire:navigate>{{ __('Mis Expensas') }}</flux:navlist.item>
                     <flux:navlist.item icon="beaker" :href="route('resident.pools.index')" :current="request()->routeIs('resident.pools.*')" wire:navigate>{{ __('Piletas') }}</flux:navlist.item> --}}
                 </flux:navlist.group>
