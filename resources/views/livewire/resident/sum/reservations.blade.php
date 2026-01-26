@@ -1,14 +1,14 @@
-<div class="p-4 lg:p-6">
+<div class="p-4 lg:p-6" x-data="calendarApp()" x-init="initCalendar()">
     <div class="mx-auto max-w-7xl">
         {{-- Header --}}
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-zinc-900 dark:text-white">Reservar SUM</h1>
-                <p class="text-sm text-zinc-600 dark:text-zinc-400">Salon de Usos Multiples</p>
+                <p class="text-sm text-zinc-600 dark:text-zinc-400">Salon de Usos Multiples - Haz clic en un horario libre para reservar</p>
             </div>
 
             {{-- Unit selector inline --}}
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
                 @if ($unitUsers->count() > 1)
                     <select wire:model.live="unitId"
                         class="rounded-lg border-zinc-300 bg-white text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
@@ -30,7 +30,7 @@
                             <svg class="mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
-                            Responsable
+                            Puede reservar
                         </span>
                     @else
                         <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
@@ -66,183 +66,30 @@
             </div>
         @endif
 
-        {{-- Main Calendar Container --}}
+        {{-- Legend --}}
+        <div class="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
+            <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Leyenda:</span>
+            <div class="flex items-center gap-2">
+                <span class="h-4 w-4 rounded bg-blue-500"></span>
+                <span class="text-sm text-zinc-600 dark:text-zinc-400">Mis reservas</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="h-4 w-4 rounded bg-amber-500"></span>
+                <span class="text-sm text-zinc-600 dark:text-zinc-400">Otras reservas (ocupado)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="h-4 w-4 rounded border-2 border-dashed border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800"></span>
+                <span class="text-sm text-zinc-600 dark:text-zinc-400">Disponible</span>
+            </div>
+        </div>
+
+        {{-- FullCalendar Container --}}
         <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-            {{-- Calendar Header --}}
-            <div class="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800/50">
-                <button wire:click="previousMonth" class="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                    <span class="hidden sm:inline">Anterior</span>
-                </button>
-
-                <h2 class="text-lg font-bold text-zinc-900 dark:text-white">
-                    {{ $monthName }} {{ $currentYear }}
-                </h2>
-
-                <button wire:click="nextMonth" class="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700">
-                    <span class="hidden sm:inline">Siguiente</span>
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
-            </div>
-
-            {{-- Calendar Grid --}}
-            <div class="p-2 sm:p-4">
-                {{-- Day Headers --}}
-                <div class="grid grid-cols-7 border-b border-zinc-200 dark:border-zinc-700">
-                    @foreach (['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'] as $dayName)
-                        <div class="py-3 text-center text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                            {{ $dayName }}
-                        </div>
-                    @endforeach
-                </div>
-
-                {{-- Calendar Days --}}
-                <div class="grid grid-cols-7">
-                    @foreach ($calendarDays as $index => $day)
-                        @php
-                            $isFirstRow = $index < 7;
-                            $isLastInRow = ($index + 1) % 7 === 0;
-                        @endphp
-                        <div
-                            wire:click="selectDate('{{ $day['date'] }}')"
-                            @class([
-                                'relative min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] border-b border-r border-zinc-100 dark:border-zinc-800 p-1 sm:p-2 transition-colors cursor-pointer',
-                                'border-r-0' => $isLastInRow,
-                                'hover:bg-blue-50 dark:hover:bg-blue-900/20' => $day['isSelectable'],
-                                'bg-zinc-50 dark:bg-zinc-800/30' => !$day['isCurrentMonth'],
-                                'cursor-not-allowed' => !$day['isSelectable'],
-                                'bg-blue-50 dark:bg-blue-900/30 ring-2 ring-inset ring-blue-500' => $selectedDate === $day['date'],
-                            ])
-                        >
-                            {{-- Day Number --}}
-                            <div class="flex items-start justify-between">
-                                <span @class([
-                                    'flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-xs sm:text-sm font-medium',
-                                    'text-zinc-400 dark:text-zinc-600' => !$day['isCurrentMonth'],
-                                    'text-zinc-900 dark:text-white' => $day['isCurrentMonth'] && !$day['isToday'],
-                                    'bg-blue-600 text-white' => $day['isToday'],
-                                ])>
-                                    {{ $day['day'] }}
-                                </span>
-
-                                @if ($day['isPast'])
-                                    <span class="text-[10px] text-zinc-400 dark:text-zinc-600">pasado</span>
-                                @elseif ($day['isTooFar'])
-                                    <span class="text-[10px] text-zinc-400 dark:text-zinc-600">+{{ $maxDaysAdvance }}d</span>
-                                @endif
-                            </div>
-
-                            {{-- Reservations indicator --}}
-                            @if ($day['reservationCount'] > 0)
-                                <div class="mt-1">
-                                    <div class="flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 dark:bg-amber-900/50">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                                        <span class="text-[10px] font-medium text-amber-700 dark:text-amber-300">
-                                            {{ $day['reservationCount'] }} {{ $day['reservationCount'] === 1 ? 'reserva' : 'reservas' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            {{-- Selected Date Panel --}}
-            @if ($selectedDate)
-                <div class="border-t border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">
-                                {{ \Carbon\Carbon::parse($selectedDate)->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
-                            </h3>
-                            <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                                @if ($selectedDateReservations->isEmpty())
-                                    Sin reservas - Disponible todo el dia
-                                @else
-                                    {{ $selectedDateReservations->count() }} {{ $selectedDateReservations->count() === 1 ? 'reserva' : 'reservas' }} para este dia
-                                @endif
-                            </p>
-                        </div>
-
-                        @if ($isResponsible)
-                            @php
-                                $selectedDateObj = \Carbon\Carbon::parse($selectedDate);
-                                $canReserve = !$selectedDateObj->isPast() && $selectedDateObj->lte(now()->addDays($maxDaysAdvance));
-                            @endphp
-                            @if ($canReserve)
-                                <button wire:click="openCreateModal"
-                                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Nueva Reserva
-                                </button>
-                            @endif
-                        @endif
-                    </div>
-
-                    {{-- Reservations List --}}
-                    @if ($selectedDateReservations->isNotEmpty())
-                        <div class="mt-4 space-y-2">
-                            @foreach ($selectedDateReservations as $reservation)
-                                <div class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                                            <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p class="font-semibold text-zinc-900 dark:text-white">
-                                                {{ $reservation->time_range }}
-                                            </p>
-                                            <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                                                {{ $reservation->unit->building->name ?? '' }} - {{ $reservation->unit->number }}
-                                                @if ($reservation->user_id === auth()->id())
-                                                    <span class="ml-1 text-blue-600 dark:text-blue-400">(tu reserva)</span>
-                                                @endif
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        @php
-                                            $statusColors = [
-                                                'pending' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
-                                                'approved' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200',
-                                                'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200',
-                                                'cancelled' => 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200',
-                                                'completed' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
-                                            ];
-                                        @endphp
-                                        <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $statusColors[$reservation->status] ?? $statusColors['pending'] }}">
-                                            {{ $reservation->status_label }}
-                                        </span>
-
-                                        @if ($reservation->user_id === auth()->id() && in_array($reservation->status, ['pending', 'approved']))
-                                            <button wire:click="openCancelModal({{ $reservation->id }})"
-                                                class="rounded p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-            @endif
+            <div id="fullcalendar" class="p-2 sm:p-4" wire:ignore></div>
         </div>
 
         {{-- Bottom Info Cards --}}
         <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {{-- Price Card --}}
             <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-center gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50">
@@ -257,7 +104,6 @@
                 </div>
             </div>
 
-            {{-- Hours Card --}}
             <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-center gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
@@ -272,7 +118,6 @@
                 </div>
             </div>
 
-            {{-- Advance Card --}}
             <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-center gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/50">
@@ -287,7 +132,6 @@
                 </div>
             </div>
 
-            {{-- Notice Card --}}
             <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-center gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
@@ -363,7 +207,9 @@
                         <div class="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
                             <p class="text-sm text-blue-600 dark:text-blue-400">Fecha seleccionada</p>
                             <p class="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                                {{ \Carbon\Carbon::parse($selectedDate)->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
+                                @if($selectedDate)
+                                    {{ \Carbon\Carbon::parse($selectedDate)->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
+                                @endif
                             </p>
                         </div>
 
@@ -498,4 +344,215 @@
             </div>
         </div>
     @endif
+
+    {{-- FullCalendar CSS --}}
+    @push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <style>
+        .fc {
+            --fc-border-color: rgb(228 228 231);
+            --fc-button-bg-color: #3b82f6;
+            --fc-button-border-color: #3b82f6;
+            --fc-button-hover-bg-color: #2563eb;
+            --fc-button-hover-border-color: #2563eb;
+            --fc-button-active-bg-color: #1d4ed8;
+            --fc-today-bg-color: rgba(59, 130, 246, 0.1);
+            --fc-event-border-color: transparent;
+            --fc-page-bg-color: transparent;
+        }
+        .dark .fc {
+            --fc-border-color: rgb(63 63 70);
+            --fc-page-bg-color: transparent;
+            --fc-neutral-bg-color: rgb(39 39 42);
+            --fc-list-event-hover-bg-color: rgb(63 63 70);
+        }
+        .fc .fc-toolbar-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .dark .fc .fc-toolbar-title,
+        .dark .fc .fc-col-header-cell-cushion,
+        .dark .fc .fc-daygrid-day-number,
+        .dark .fc .fc-timegrid-axis-cushion,
+        .dark .fc .fc-timegrid-slot-label-cushion {
+            color: white;
+        }
+        .fc .fc-button {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+        }
+        .fc .fc-timegrid-slot {
+            height: 3rem;
+        }
+        .fc .fc-timegrid-slot-minor {
+            border-top-style: none;
+        }
+        .fc-event {
+            cursor: pointer;
+            border-radius: 0.375rem;
+            padding: 2px 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .fc .fc-timegrid-col.fc-day-today {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        .fc-direction-ltr .fc-timegrid-slot-label-frame {
+            text-align: center;
+        }
+        .fc .fc-scrollgrid {
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        @media (max-width: 640px) {
+            .fc .fc-toolbar {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .fc .fc-toolbar-title {
+                font-size: 1rem;
+            }
+            .fc .fc-button {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+    @endpush
+
+    {{-- FullCalendar JS --}}
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
+    @endpush
+
+    <script>
+        function calendarApp() {
+            return {
+                calendar: null,
+                events: @json($calendarEvents),
+                isResponsible: @json($isResponsible),
+                openTime: '{{ $openTime }}',
+                closeTime: '{{ $closeTime }}',
+                maxDaysAdvance: {{ $maxDaysAdvance }},
+
+                initCalendar() {
+                    const calendarEl = document.getElementById('fullcalendar');
+                    if (!calendarEl) return;
+
+                    const self = this;
+                    const now = new Date();
+                    const maxDate = new Date();
+                    maxDate.setDate(maxDate.getDate() + this.maxDaysAdvance);
+
+                    this.calendar = new FullCalendar.Calendar(calendarEl, {
+                        initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
+                        locale: 'es',
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'timeGridDay,timeGridWeek,dayGridMonth'
+                        },
+                        buttonText: {
+                            today: 'Hoy',
+                            day: 'Dia',
+                            week: 'Semana',
+                            month: 'Mes'
+                        },
+                        slotMinTime: this.openTime + ':00',
+                        slotMaxTime: this.closeTime + ':00',
+                        slotDuration: '01:00:00',
+                        slotLabelInterval: '01:00:00',
+                        slotLabelFormat: {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        },
+                        allDaySlot: false,
+                        nowIndicator: true,
+                        selectable: this.isResponsible,
+                        selectMirror: true,
+                        selectOverlap: false,
+                        selectAllow: function(selectInfo) {
+                            // Don't allow selection in the past
+                            if (selectInfo.start < now) return false;
+                            // Don't allow selection beyond max days
+                            if (selectInfo.start > maxDate) return false;
+                            return true;
+                        },
+                        validRange: {
+                            start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+                            end: maxDate
+                        },
+                        events: this.events,
+                        eventClick: function(info) {
+                            const props = info.event.extendedProps;
+                            if (props.isOwn) {
+                                @this.dispatch('eventClicked', { reservationId: props.reservationId });
+                            }
+                        },
+                        select: function(info) {
+                            if (!self.isResponsible) return;
+
+                            const startDate = info.start.toISOString().split('T')[0];
+                            const startTime = info.start.toTimeString().slice(0, 5);
+                            const endTime = info.end.toTimeString().slice(0, 5);
+
+                            @this.dispatch('dateSelected', {
+                                date: startDate,
+                                startTime: startTime,
+                                endTime: endTime
+                            });
+
+                            self.calendar.unselect();
+                        },
+                        dateClick: function(info) {
+                            if (!self.isResponsible) return;
+                            if (info.date < now) return;
+                            if (info.date > maxDate) return;
+
+                            // If in month view, switch to day view
+                            if (self.calendar.view.type === 'dayGridMonth') {
+                                self.calendar.changeView('timeGridDay', info.dateStr);
+                            }
+                        },
+                        eventDidMount: function(info) {
+                            // Add tooltip
+                            const props = info.event.extendedProps;
+                            info.el.title = props.isOwn
+                                ? 'Mi reserva - Clic para cancelar'
+                                : 'Reservado: ' + props.unitName;
+                        },
+                        height: 'auto',
+                        expandRows: true,
+                        stickyHeaderDates: true,
+                        dayMaxEvents: true,
+                        windowResize: function(view) {
+                            if (window.innerWidth < 768) {
+                                self.calendar.changeView('timeGridDay');
+                            }
+                        }
+                    });
+
+                    this.calendar.render();
+
+                    // Listen for refresh event from Livewire
+                    Livewire.on('refreshCalendar', (data) => {
+                        const newEvents = data.events || data[0]?.events || [];
+                        this.events = newEvents;
+
+                        // Remove all existing events
+                        this.calendar.getEvents().forEach(event => event.remove());
+
+                        // Add new events
+                        newEvents.forEach(event => {
+                            this.calendar.addEvent(event);
+                        });
+                    });
+                }
+            }
+        }
+    </script>
 </div>

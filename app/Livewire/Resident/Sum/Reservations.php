@@ -5,6 +5,7 @@ namespace App\Livewire\Resident\Sum;
 use App\Models\SumReservation;
 use App\Models\SumSetting;
 use Carbon\Carbon;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Reservations extends Component
@@ -12,10 +13,10 @@ class Reservations extends Component
     public ?int $unitId = null;
     public bool $isResponsible = false;
 
-    // Calendar navigation
-    public int $currentMonth;
-    public int $currentYear;
+    // Selected date/time from calendar
     public ?string $selectedDate = null;
+    public ?string $selectedStartTime = null;
+    public ?string $selectedEndTime = null;
 
     // Reservation modal
     public bool $showCreateModal = false;
@@ -46,9 +47,6 @@ class Reservations extends Component
             $this->checkResponsible();
         }
 
-        $this->currentMonth = now()->month;
-        $this->currentYear = now()->year;
-
         // Load settings
         $this->pricePerHour = SumSetting::get('price_per_hour', 500);
         $this->openTime = SumSetting::get('open_time', '09:00');
@@ -61,6 +59,12 @@ class Reservations extends Component
     public function updatedUnitId(): void
     {
         $this->checkResponsible();
+        $this->dispatchCalendarRefresh();
+    }
+
+    protected function dispatchCalendarRefresh(): void
+    {
+        $this->dispatch('refreshCalendar', events: $this->calendarEvents);
     }
 
     protected function checkResponsible(): void
@@ -78,25 +82,38 @@ class Reservations extends Component
             ->exists();
     }
 
-    public function previousMonth(): void
-    {
-        $date = Carbon::create($this->currentYear, $this->currentMonth, 1)->subMonth();
-        $this->currentMonth = $date->month;
-        $this->currentYear = $date->year;
-        $this->selectedDate = null;
-    }
-
-    public function nextMonth(): void
-    {
-        $date = Carbon::create($this->currentYear, $this->currentMonth, 1)->addMonth();
-        $this->currentMonth = $date->month;
-        $this->currentYear = $date->year;
-        $this->selectedDate = null;
-    }
-
-    public function selectDate(string $date): void
+    #[On('dateSelected')]
+    public function dateSelected(string $date, ?string $startTime = null, ?string $endTime = null): void
     {
         $this->selectedDate = $date;
+        $this->selectedStartTime = $startTime;
+        $this->selectedEndTime = $endTime;
+
+        if ($this->isResponsible && $startTime) {
+            $this->openCreateModalWithTime($date, $startTime, $endTime);
+        }
+    }
+
+    public function openCreateModalWithTime(string $date, string $startTime, ?string $endTime = null): void
+    {
+        if (! $this->isResponsible) {
+            return;
+        }
+
+        $this->selectedDate = $date;
+        $this->startTime = $startTime;
+        $this->endTime = $endTime ?? '';
+        $this->notes = '';
+        $this->showCreateModal = true;
+    }
+
+    #[On('eventClicked')]
+    public function eventClicked(int $reservationId): void
+    {
+        $reservation = SumReservation::find($reservationId);
+        if ($reservation && $reservation->user_id === auth()->id()) {
+            $this->openCancelModal($reservationId);
+        }
     }
 
     public function openCreateModal(): void
@@ -105,8 +122,8 @@ class Reservations extends Component
             return;
         }
 
-        $this->startTime = $this->openTime;
-        $this->endTime = '';
+        $this->startTime = $this->selectedStartTime ?? $this->openTime;
+        $this->endTime = $this->selectedEndTime ?? '';
         $this->notes = '';
         $this->showCreateModal = true;
     }
@@ -194,6 +211,8 @@ class Reservations extends Component
         ]);
 
         $this->closeCreateModal();
+        $this->dispatchCalendarRefresh();
+
         $message = $this->requiresApproval
             ? 'Reserva creada. Pendiente de aprobacion.'
             : 'Reserva confirmada exitosamente.';
@@ -234,61 +253,51 @@ class Reservations extends Component
         ]);
 
         $this->closeCancelModal();
+        $this->dispatchCalendarRefresh();
         session()->flash('message', 'Reserva cancelada exitosamente.');
     }
 
-    public function getCalendarDaysProperty(): array
+    public function getCalendarEventsProperty(): array
     {
-        $firstOfMonth = Carbon::create($this->currentYear, $this->currentMonth, 1);
-        $lastOfMonth = $firstOfMonth->copy()->endOfMonth();
+        $events = [];
 
-        $startDate = $firstOfMonth->copy()->startOfWeek(Carbon::SUNDAY);
-        $endDate = $lastOfMonth->copy()->endOfWeek(Carbon::SATURDAY);
-
-        $days = [];
-        $current = $startDate->copy();
-
-        while ($current->lte($endDate)) {
-            $dateStr = $current->format('Y-m-d');
-            $isCurrentMonth = $current->month === $this->currentMonth;
-            $isPast = $current->lt(now()->startOfDay());
-            $isTooFar = $current->gt(now()->addDays($this->maxDaysAdvance));
-
-            // Count reservations for this day
-            $reservationCount = SumReservation::query()
-                ->active()
-                ->whereDate('date', $dateStr)
-                ->count();
-
-            $days[] = [
-                'date' => $dateStr,
-                'day' => $current->day,
-                'isCurrentMonth' => $isCurrentMonth,
-                'isToday' => $current->isToday(),
-                'isPast' => $isPast,
-                'isTooFar' => $isTooFar,
-                'isSelectable' => $isCurrentMonth && ! $isPast && ! $isTooFar,
-                'reservationCount' => $reservationCount,
-            ];
-
-            $current->addDay();
-        }
-
-        return $days;
-    }
-
-    public function getSelectedDateReservationsProperty()
-    {
-        if (! $this->selectedDate) {
-            return collect();
-        }
-
-        return SumReservation::query()
+        // Get all active reservations for the next 60 days
+        $reservations = SumReservation::query()
             ->with(['unit.building', 'user'])
             ->active()
-            ->whereDate('date', $this->selectedDate)
-            ->orderBy('start_time')
+            ->where('date', '>=', now()->subDays(7)->toDateString())
+            ->where('date', '<=', now()->addDays(60)->toDateString())
             ->get();
+
+        foreach ($reservations as $reservation) {
+            $isOwn = $reservation->user_id === auth()->id();
+            $startTime = is_string($reservation->start_time)
+                ? $reservation->start_time
+                : $reservation->start_time->format('H:i:s');
+            $endTime = is_string($reservation->end_time)
+                ? $reservation->end_time
+                : $reservation->end_time->format('H:i:s');
+
+            $events[] = [
+                'id' => $reservation->id,
+                'title' => $isOwn
+                    ? 'Mi reserva'
+                    : ($reservation->unit->building->name ?? 'UF').' - '.$reservation->unit->number,
+                'start' => $reservation->date->format('Y-m-d').'T'.$startTime,
+                'end' => $reservation->date->format('Y-m-d').'T'.$endTime,
+                'backgroundColor' => $isOwn ? '#3b82f6' : '#f59e0b',
+                'borderColor' => $isOwn ? '#2563eb' : '#d97706',
+                'textColor' => '#ffffff',
+                'extendedProps' => [
+                    'reservationId' => $reservation->id,
+                    'isOwn' => $isOwn,
+                    'status' => $reservation->status,
+                    'unitName' => ($reservation->unit->building->name ?? '').' - '.$reservation->unit->number,
+                ],
+            ];
+        }
+
+        return $events;
     }
 
     public function getMyUpcomingReservationsProperty()
@@ -302,7 +311,9 @@ class Reservations extends Component
             ->where('user_id', auth()->id())
             ->where('unit_id', $this->unitId)
             ->active()
-            ->upcoming()
+            ->where('date', '>=', now()->toDateString())
+            ->orderBy('date')
+            ->orderBy('start_time')
             ->limit(5)
             ->get();
     }
@@ -351,13 +362,9 @@ class Reservations extends Component
         $user = auth()->user();
         $unitUsers = $user->currentUnitUsers()->with(['unit.building'])->get();
 
-        $monthName = Carbon::create($this->currentYear, $this->currentMonth, 1)->locale('es')->monthName;
-
         return view('livewire.resident.sum.reservations', [
             'unitUsers' => $unitUsers,
-            'monthName' => ucfirst($monthName),
-            'calendarDays' => $this->calendarDays,
-            'selectedDateReservations' => $this->selectedDateReservations,
+            'calendarEvents' => $this->calendarEvents,
             'myUpcomingReservations' => $this->myUpcomingReservations,
             'availableTimeSlots' => $this->availableTimeSlots,
             'calculatedAmount' => $this->calculatedAmount,
