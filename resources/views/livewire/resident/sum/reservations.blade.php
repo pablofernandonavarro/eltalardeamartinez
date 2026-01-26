@@ -1,4 +1,4 @@
-<div class="p-6">
+<div class="p-4 lg:p-6">
     <div class="mx-auto max-w-7xl">
         {{-- Header --}}
         <div class="mb-6">
@@ -19,9 +19,9 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:gap-6">
             {{-- Left Column: Unit selector + My reservations --}}
-            <div class="space-y-6">
+            <div class="space-y-4 lg:space-y-6">
                 {{-- Unit Selector --}}
                 <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                     <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -150,7 +150,7 @@
 
             {{-- Center/Right: Calendar + Day detail --}}
             <div class="lg:col-span-3">
-                <div class="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                <div class="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
                     {{-- Calendar header --}}
                     <div class="flex items-center justify-between border-b border-zinc-200 p-4 dark:border-zinc-700">
                         <button wire:click="previousMonth"
@@ -177,21 +177,21 @@
                     {{-- Calendar grid --}}
                     <div class="p-4">
                         {{-- Day headers --}}
-                        <div class="mb-2 grid grid-cols-7 gap-1">
+                        <div class="mb-2 grid grid-cols-7 gap-1 text-center">
                             @foreach (['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'] as $dayName)
-                                <div class="py-2 text-center text-xs font-medium text-zinc-500">
+                                <div class="py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                                     {{ $dayName }}
                                 </div>
                             @endforeach
                         </div>
 
                         {{-- Days --}}
-                        <div class="grid grid-cols-7 gap-1">
+                        <div class="grid grid-cols-7 gap-1 auto-rows-fr">
                             @foreach ($calendarDays as $day)
                                 <button
                                     wire:click="selectDate('{{ $day['date'] }}')"
                                     @class([
-                                        'relative rounded-lg p-2 text-center transition-colors min-h-[60px]',
+                                        'relative flex flex-col items-center justify-center rounded-lg p-2 text-center transition-colors min-h-[60px]',
                                         'hover:bg-zinc-100 dark:hover:bg-zinc-800' => $day['isSelectable'],
                                         'cursor-not-allowed opacity-50' => !$day['isSelectable'],
                                         'bg-blue-100 dark:bg-blue-900/50' => $selectedDate === $day['date'],
@@ -201,10 +201,10 @@
                                     ])
                                     @if(!$day['isSelectable']) disabled @endif
                                 >
-                                    <span class="text-sm">{{ $day['day'] }}</span>
+                                    <span class="text-sm font-medium">{{ $day['day'] }}</span>
                                     @if ($day['reservationCount'] > 0)
-                                        <div class="mt-1 flex justify-center">
-                                            <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                        <div class="mt-1">
+                                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500"></span>
                                         </div>
                                     @endif
                                 </button>

@@ -8,7 +8,9 @@
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
             <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
-                <x-app-logo />
+                <div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full">
+                    <x-app-logo-icon class="h-full w-full" />
+                </div>
             </a>
 
             <flux:navlist variant="outline">
