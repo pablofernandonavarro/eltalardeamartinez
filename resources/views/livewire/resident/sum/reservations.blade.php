@@ -432,6 +432,7 @@
         function calendarApp() {
             return {
                 calendar: null,
+                wire: null,
                 events: @json($calendarEvents),
                 isResponsible: @json($isResponsible),
                 openTime: '{{ $openTime }}',
@@ -442,6 +443,8 @@
                     const calendarEl = document.getElementById('fullcalendar');
                     if (!calendarEl) return;
 
+                    // Get $wire reference from Alpine
+                    this.wire = this.$wire;
                     const self = this;
                     const now = new Date();
                     const maxDate = new Date();
@@ -490,7 +493,7 @@
                         eventClick: function(info) {
                             const props = info.event.extendedProps;
                             if (props.isOwn) {
-                                @this.dispatch('eventClicked', { reservationId: props.reservationId });
+                                self.wire.dispatch('eventClicked', { reservationId: props.reservationId });
                             }
                         },
                         select: function(info) {
@@ -500,7 +503,7 @@
                             const startTime = info.start.toTimeString().slice(0, 5);
                             const endTime = info.end.toTimeString().slice(0, 5);
 
-                            @this.dispatch('dateSelected', {
+                            self.wire.dispatch('dateSelected', {
                                 date: startDate,
                                 startTime: startTime,
                                 endTime: endTime
