@@ -540,7 +540,8 @@
 
                     // Listen for refresh event from Livewire
                     Livewire.on('refreshCalendar', (data) => {
-                        const newEvents = data.events || data[0]?.events || [];
+                        const eventsJson = data.events || data[0]?.events || '[]';
+                        const newEvents = typeof eventsJson === 'string' ? JSON.parse(eventsJson) : eventsJson;
                         this.events = newEvents;
 
                         // Remove all existing events
