@@ -5,7 +5,6 @@ namespace App\Livewire\Resident\Sum;
 use App\Models\SumReservation;
 use App\Models\SumSetting;
 use Carbon\Carbon;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Reservations extends Component
@@ -82,7 +81,6 @@ class Reservations extends Component
             ->exists();
     }
 
-    #[On('dateSelected')]
     public function dateSelected(string $date, ?string $startTime = null, ?string $endTime = null): void
     {
         $this->selectedDate = $date;
@@ -107,7 +105,6 @@ class Reservations extends Component
         $this->showCreateModal = true;
     }
 
-    #[On('eventClicked')]
     public function eventClicked(int $reservationId): void
     {
         $reservation = SumReservation::find($reservationId);

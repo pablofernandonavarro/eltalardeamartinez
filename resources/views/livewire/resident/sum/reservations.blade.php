@@ -488,7 +488,7 @@
                         eventClick: function(info) {
                             const props = info.event.extendedProps;
                             if (props.isOwn) {
-                                self.wire.dispatch('eventClicked', { reservationId: props.reservationId });
+                                self.wire.eventClicked(props.reservationId);
                             }
                         },
                         select: function(info) {
@@ -498,11 +498,7 @@
                             const startTime = info.start.toTimeString().slice(0, 5);
                             const endTime = info.end.toTimeString().slice(0, 5);
 
-                            self.wire.dispatch('dateSelected', {
-                                date: startDate,
-                                startTime: startTime,
-                                endTime: endTime
-                            });
+                            self.wire.dateSelected(startDate, startTime, endTime);
 
                             self.calendar.unselect();
                         },
