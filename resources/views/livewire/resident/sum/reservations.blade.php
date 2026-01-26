@@ -346,8 +346,6 @@
     @endif
 
     {{-- FullCalendar CSS --}}
-    @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
     <style>
         .fc {
             --fc-border-color: rgb(228 228 231);
@@ -420,13 +418,10 @@
             }
         }
     </style>
-    @endpush
 
-    {{-- FullCalendar JS --}}
-    @push('scripts')
+    {{-- FullCalendar JS - loaded directly --}}
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
-    @endpush
 
     <script>
         function calendarApp() {
