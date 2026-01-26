@@ -85,7 +85,17 @@
 
         {{-- FullCalendar Container --}}
         <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-            <div id="fullcalendar" class="p-2 sm:p-4" wire:ignore></div>
+            <div id="fullcalendar" class="min-h-[400px] p-2 sm:p-4" wire:ignore>
+                <div class="flex h-[400px] items-center justify-center">
+                    <div class="text-center">
+                        <svg class="mx-auto h-8 w-8 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Cargando calendario...</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- Bottom Info Cards --}}
@@ -360,9 +370,10 @@
         }
         .dark .fc {
             --fc-border-color: rgb(63 63 70);
-            --fc-page-bg-color: transparent;
+            --fc-page-bg-color: rgb(24 24 27);
             --fc-neutral-bg-color: rgb(39 39 42);
             --fc-list-event-hover-bg-color: rgb(63 63 70);
+            --fc-today-bg-color: rgba(59, 130, 246, 0.15);
         }
         .fc .fc-toolbar-title {
             font-size: 1.25rem;
@@ -372,8 +383,25 @@
         .dark .fc .fc-col-header-cell-cushion,
         .dark .fc .fc-daygrid-day-number,
         .dark .fc .fc-timegrid-axis-cushion,
-        .dark .fc .fc-timegrid-slot-label-cushion {
+        .dark .fc .fc-timegrid-slot-label-cushion,
+        .dark .fc .fc-list-day-cushion,
+        .dark .fc .fc-list-event-time,
+        .dark .fc .fc-list-event-title {
             color: white;
+        }
+        .dark .fc .fc-scrollgrid,
+        .dark .fc .fc-scrollgrid-section > td {
+            background-color: rgb(24 24 27);
+        }
+        .dark .fc .fc-timegrid-slot,
+        .dark .fc .fc-daygrid-day {
+            background-color: rgb(24 24 27);
+        }
+        .dark .fc .fc-col-header-cell {
+            background-color: rgb(39 39 42);
+        }
+        .dark .fc .fc-timegrid-axis {
+            background-color: rgb(39 39 42);
         }
         .fc .fc-button {
             padding: 0.5rem 1rem;
