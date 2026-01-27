@@ -577,13 +577,14 @@
                     });
 
                     try {
+                        console.log('Creating calendar with headerToolbar...');
                         this.calendar = new FullCalendar.Calendar(calendarEl, {
                             initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
                             locale: 'es',
                             headerToolbar: {
-                                left: 'prev,next today',
+                                start: 'prev,next today',
                                 center: 'title',
-                                right: 'timeGridDay,timeGridWeek,dayGridMonth'
+                                end: 'timeGridDay,timeGridWeek,dayGridMonth'
                             },
                             buttonText: {
                                 today: 'Hoy',
