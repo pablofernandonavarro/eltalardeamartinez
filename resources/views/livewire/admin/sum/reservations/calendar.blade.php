@@ -333,6 +333,8 @@
                 nowIndicator: true,
                 selectable: false,
                 events: function(info, successCallback, failureCallback) {
+                    console.log('Fetching events from:', info.startStr, 'to:', info.endStr);
+                    
                     fetch(`/api/sum/reservations/events?start=${info.startStr}&end=${info.endStr}`, {
                         headers: {
                             'Accept': 'application/json',
@@ -342,17 +344,20 @@
                         credentials: 'same-origin'
                     })
                     .then(response => {
+                        console.log('Response status:', response.status);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Events loaded:', data);
+                        console.log('Events loaded successfully:', data.length, 'events');
+                        console.log('Events data:', data);
                         successCallback(Array.isArray(data) ? data : []);
                     })
                     .catch(error => {
                         console.error('Error loading events:', error);
+                        alert('Error cargando las reservas. Por favor, revisa la consola del navegador.');
                         failureCallback(error);
                     });
                 },

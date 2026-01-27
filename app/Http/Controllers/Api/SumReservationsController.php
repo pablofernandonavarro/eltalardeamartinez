@@ -17,10 +17,18 @@ class SumReservationsController extends Controller
         $start = $request->input('start');
         $end = $request->input('end');
 
+        // Si no se proporcionan fechas, usar un rango por defecto
+        if (! $start) {
+            $start = now()->subDays(7)->toDateString();
+        }
+        if (! $end) {
+            $end = now()->addDays(60)->toDateString();
+        }
+
         $reservations = SumReservation::query()
             ->with(['unit.building', 'user'])
-            ->when($start, fn ($q) => $q->where('date', '>=', $start))
-            ->when($end, fn ($q) => $q->where('date', '<=', $end))
+            ->where('date', '>=', $start)
+            ->where('date', '<=', $end)
             ->get();
 
         $events = $reservations->map(function ($reservation) {
