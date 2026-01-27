@@ -21,14 +21,24 @@
 
             {{-- Flash messages --}}
             @if (session()->has('message'))
-                <div class="mb-4 rounded-lg bg-green-100 p-4 text-green-800 dark:bg-green-900/50 dark:text-green-200">
-                    {{ session('message') }}
+                <div class="mb-4 rounded-lg border border-green-600 bg-green-50 p-4 text-green-900 dark:border-green-500 dark:bg-green-900/30 dark:text-green-100">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="font-medium">{{ session('message') }}</span>
+                    </div>
                 </div>
             @endif
 
             @if (session()->has('error'))
-                <div class="mb-4 rounded-lg bg-red-100 p-4 text-red-800 dark:bg-red-900/50 dark:text-red-200">
-                    {{ session('error') }}
+                <div class="mb-4 rounded-lg border border-red-600 bg-red-50 p-4 text-red-900 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="font-medium">{{ session('error') }}</span>
+                    </div>
                 </div>
             @endif
 
