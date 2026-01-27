@@ -334,10 +334,18 @@ class Reservations extends Component
         $start = Carbon::parse($this->openTime);
         $end = Carbon::parse($this->closeTime);
 
+        // Si el horario de cierre es menor que el de apertura, significa que cruza medianoche
+        if ($end->lt($start)) {
+            $end->addDay();
+        }
+
         while ($start->lt($end)) {
             $slots[] = $start->format('H:i');
             $start->addHour();
         }
+
+        // Agregar el horario de cierre como última opción
+        $slots[] = $this->closeTime;
 
         return $slots;
     }
