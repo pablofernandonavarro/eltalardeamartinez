@@ -125,10 +125,10 @@
                                 <td class="whitespace-nowrap px-6 py-4">
                                     @php
                                         $statusClasses = [
-                                            'pending' => 'border border-yellow-600 bg-yellow-100 text-yellow-800 dark:border-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-100',
-                                            'approved' => 'border border-green-600 bg-green-100 text-green-800 dark:border-green-500 dark:bg-green-900/30 dark:text-green-100',
-                                            'rejected' => 'border border-red-600 bg-red-100 text-red-800 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100',
-                                            'cancelled' => 'border border-zinc-400 bg-zinc-100 text-zinc-800 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-200',
+                                            'pending' => 'border border-yellow-600 bg-yellow-200 text-yellow-900 dark:border-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-100',
+                                            'approved' => 'border border-green-600 bg-green-200 text-green-900 dark:border-green-500 dark:bg-green-900/30 dark:text-green-100',
+                                            'rejected' => 'border border-red-600 bg-red-200 text-red-900 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100',
+                                            'cancelled' => 'border border-zinc-500 bg-zinc-200 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-200',
                                         ];
                                     @endphp
                                     <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold leading-5 {{ $statusClasses[$reservation->status] ?? '' }}">
@@ -191,10 +191,10 @@
                         <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Estado:</span>
                         @php
                             $statusClasses = [
-                                'pending' => 'border border-yellow-600 bg-yellow-100 text-yellow-800 dark:border-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-100',
-                                'approved' => 'border border-green-600 bg-green-100 text-green-800 dark:border-green-500 dark:bg-green-900/30 dark:text-green-100',
-                                'rejected' => 'border border-red-600 bg-red-100 text-red-800 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100',
-                                'cancelled' => 'border border-zinc-400 bg-zinc-100 text-zinc-800 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-200',
+                                'pending' => 'border border-yellow-600 bg-yellow-200 text-yellow-900 dark:border-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-100',
+                                'approved' => 'border border-green-600 bg-green-200 text-green-900 dark:border-green-500 dark:bg-green-900/30 dark:text-green-100',
+                                'rejected' => 'border border-red-600 bg-red-200 text-red-900 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100',
+                                'cancelled' => 'border border-zinc-500 bg-zinc-200 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-200',
                             ];
                         @endphp
                         <span class="rounded-full px-3 py-1 text-sm font-semibold {{ $statusClasses[$selectedReservation->status] ?? '' }}">
