@@ -262,16 +262,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
 
     <script>
-        document.addEventListener('livewire:navigated', function () {
+        function initSumCalendar() {
             // Wait for FullCalendar to be loaded
             if (typeof FullCalendar === 'undefined') {
-                console.warn('FullCalendar not loaded yet');
+                console.log('Waiting for FullCalendar to load...');
+                setTimeout(initSumCalendar, 100);
                 return;
             }
 
             const calendarEl = document.getElementById('fullcalendar');
             if (!calendarEl) {
                 console.warn('Calendar element not found');
+                setTimeout(initSumCalendar, 100);
+                return;
+            }
+
+            // Check if calendar is already initialized
+            if (calendarEl.classList.contains('fc')) {
+                console.log('Calendar already initialized');
                 return;
             }
 
@@ -339,6 +347,12 @@
 
             calendar.render();
             console.log('Calendar rendered successfully');
-        });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initSumCalendar);
+
+        // Initialize on Livewire navigation
+        document.addEventListener('livewire:navigated', initSumCalendar);
     </script>
 </div>
