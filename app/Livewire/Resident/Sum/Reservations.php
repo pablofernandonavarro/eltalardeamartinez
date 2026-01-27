@@ -350,6 +350,32 @@ class Reservations extends Component
         return $slots;
     }
 
+    public function getAvailableEndTimeSlotsProperty(): array
+    {
+        if (! $this->startTime) {
+            return [];
+        }
+
+        $slots = [];
+        $start = Carbon::parse($this->startTime);
+        $end = Carbon::parse($this->closeTime);
+
+        // Si el horario de cierre es menor que el de inicio, significa que cruza medianoche
+        if ($end->hour < $start->hour || ($end->hour === $start->hour && $end->minute <= $start->minute)) {
+            $end->addDay();
+        }
+
+        // Avanzar una hora desde el inicio
+        $start->addHour();
+
+        while ($start->lte($end)) {
+            $slots[] = $start->format('H:i');
+            $start->addHour();
+        }
+
+        return $slots;
+    }
+
     public function getCalculatedAmountProperty(): float
     {
         if (! $this->startTime || ! $this->endTime || $this->startTime >= $this->endTime) {
@@ -385,6 +411,7 @@ class Reservations extends Component
             'calendarEvents' => $this->getCalendarEventsProperty(),
             'myUpcomingReservations' => $this->myUpcomingReservations,
             'availableTimeSlots' => $this->availableTimeSlots,
+            'availableEndTimeSlots' => $this->availableEndTimeSlots,
             'calculatedAmount' => $this->calculatedAmount,
             'calculatedHours' => $this->calculatedHours,
         ])->layout('components.layouts.resident', ['title' => 'Reservar SUM']);

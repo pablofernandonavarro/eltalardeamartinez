@@ -252,14 +252,9 @@
                                 <select wire:model.live="endTime"
                                     class="w-full rounded-lg border-zinc-300 bg-white text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
                                     <option value="">Seleccionar</option>
-                                    @foreach ($availableTimeSlots as $slot)
-                                        @if ($slot > $startTime)
-                                            <option value="{{ $slot }}">{{ $slot }}</option>
-                                        @endif
+                                    @foreach ($availableEndTimeSlots as $slot)
+                                        <option value="{{ $slot }}">{{ $slot }}</option>
                                     @endforeach
-                                    @if ($closeTime > $startTime)
-                                        <option value="{{ $closeTime }}">{{ $closeTime }}</option>
-                                    @endif
                                 </select>
                                 @error('endTime')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
