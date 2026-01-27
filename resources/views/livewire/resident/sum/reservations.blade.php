@@ -526,6 +526,24 @@
                     const maxDate = new Date();
                     maxDate.setDate(maxDate.getDate() + this.maxDaysAdvance);
 
+                    // Handle overnight closing times
+                    let slotMaxTime = this.closeTime + ':00';
+                    const openHour = parseInt(this.openTime.split(':')[0]);
+                    const closeHour = parseInt(this.closeTime.split(':')[0]);
+
+                    // If closing time is before opening time, it means it goes to next day
+                    if (closeHour < openHour) {
+                        // Convert to 24+ hour format (e.g., 02:00 becomes 26:00)
+                        const adjustedHour = closeHour + 24;
+                        const closeMinute = this.closeTime.split(':')[1];
+                        slotMaxTime = adjustedHour + ':' + closeMinute + ':00';
+                    }
+
+                    console.log('Slot times:', {
+                        slotMinTime: this.openTime + ':00',
+                        slotMaxTime: slotMaxTime
+                    });
+
                     try {
                         this.calendar = new FullCalendar.Calendar(calendarEl, {
                             initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
@@ -542,7 +560,7 @@
                                 month: 'Mes'
                             },
                             slotMinTime: this.openTime + ':00',
-                            slotMaxTime: this.closeTime + ':00',
+                            slotMaxTime: slotMaxTime,
                             slotDuration: '01:00:00',
                             slotLabelInterval: '01:00:00',
                             slotLabelFormat: {
