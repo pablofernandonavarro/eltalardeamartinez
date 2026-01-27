@@ -325,13 +325,26 @@ class Reservations extends Component
                 ? $reservation->end_time
                 : $reservation->end_time->format('H:i:s');
 
+            // Calcular fechas de inicio y fin
+            $startDate = $reservation->date->format('Y-m-d');
+            $endDate = $reservation->date->format('Y-m-d');
+
+            // Si la hora de fin es menor que la de inicio, cruza medianoche
+            $startHour = (int) substr($startTime, 0, 2);
+            $endHour = (int) substr($endTime, 0, 2);
+
+            if ($endHour < $startHour || ($endHour === $startHour && substr($endTime, 3, 2) < substr($startTime, 3, 2))) {
+                // Agregar un día a la fecha de fin
+                $endDate = $reservation->date->copy()->addDay()->format('Y-m-d');
+            }
+
             $events[] = [
                 'id' => $reservation->id,
                 'title' => $isOwn
                     ? 'Mi reserva'
                     : ($reservation->unit->building->name ?? 'UF').' - '.$reservation->unit->number,
-                'start' => $reservation->date->format('Y-m-d').'T'.$startTime,
-                'end' => $reservation->date->format('Y-m-d').'T'.$endTime,
+                'start' => $startDate.'T'.$startTime,
+                'end' => $endDate.'T'.$endTime,
                 'backgroundColor' => $isOwn ? '#3b82f6' : '#f59e0b',
                 'borderColor' => $isOwn ? '#2563eb' : '#d97706',
                 'textColor' => '#ffffff',
