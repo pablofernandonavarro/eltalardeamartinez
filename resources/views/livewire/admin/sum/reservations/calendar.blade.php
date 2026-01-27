@@ -312,12 +312,21 @@
                     fetch(`/api/sum/reservations/events?start=${info.startStr}&end=${info.endStr}`, {
                         headers: {
                             'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                         },
                         credentials: 'same-origin'
                     })
-                    .then(response => response.json())
-                    .then(data => successCallback(data))
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Events loaded:', data);
+                        successCallback(Array.isArray(data) ? data : []);
+                    })
                     .catch(error => {
                         console.error('Error loading events:', error);
                         failureCallback(error);
