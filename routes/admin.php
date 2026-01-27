@@ -115,12 +115,14 @@ Route::prefix('baneros')->name('baneros.')->group(function () {
 
 // SUM - Salón de Usos Múltiples
 use App\Livewire\Admin\Sum\Reservations\Index as SumReservationsIndex;
+use App\Livewire\Admin\Sum\Reservations\Calendar as SumReservationsCalendar;
 use App\Livewire\Admin\Sum\Payments\Index as SumPaymentsIndex;
 use App\Livewire\Admin\Sum\Settings as SumSettings;
 
 Route::prefix('sum')->name('sum.')->group(function () {
     Route::prefix('reservations')->name('reservations.')->group(function () {
         Route::get('/', SumReservationsIndex::class)->name('index');
+        Route::get('/calendar', SumReservationsCalendar::class)->name('calendar');
     });
 
     Route::prefix('payments')->name('payments.')->group(function () {

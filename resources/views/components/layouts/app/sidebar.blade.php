@@ -38,7 +38,8 @@
             </flux:navlist.group>
 
             <flux:navlist.group :heading="__('SUM - Salón')" expandable class="grid">
-                <flux:navlist.item icon="calendar" :href="route('admin.sum.reservations.index')" :current="request()->routeIs('admin.sum.reservations.*')" wire:navigate>{{ __('Reservas') }}</flux:navlist.item>
+                <flux:navlist.item icon="calendar" :href="route('admin.sum.reservations.calendar')" :current="request()->routeIs('admin.sum.reservations.calendar')" wire:navigate>{{ __('Calendario de Reservas') }}</flux:navlist.item>
+                <flux:navlist.item icon="list-bullet" :href="route('admin.sum.reservations.index')" :current="request()->routeIs('admin.sum.reservations.index')" wire:navigate>{{ __('Lista de Reservas') }}</flux:navlist.item>
                 <flux:navlist.item icon="banknotes" :href="route('admin.sum.payments.index')" :current="request()->routeIs('admin.sum.payments.*')" wire:navigate>{{ __('Pagos y Facturas') }}</flux:navlist.item>
                 <flux:navlist.item icon="cog" :href="route('admin.sum.settings')" :current="request()->routeIs('admin.sum.settings')" wire:navigate>{{ __('Configuración') }}</flux:navlist.item>
             </flux:navlist.group>
