@@ -24,11 +24,29 @@ class SumReservationsController extends Controller
             ->get();
 
         $events = $reservations->map(function ($reservation) {
+            $startTime = is_string($reservation->start_time)
+                ? $reservation->start_time
+                : $reservation->start_time->format('H:i:s');
+            $endTime = is_string($reservation->end_time)
+                ? $reservation->end_time
+                : $reservation->end_time->format('H:i:s');
+
+            // Calcular fechas de inicio y fin
+            $startDate = $reservation->date->format('Y-m-d');
+            $endDate = $reservation->date->format('Y-m-d');
+
+            // Si la hora de fin es menor que la de inicio, cruza medianoche
+            $startHour = (int) substr($startTime, 0, 2);
+            $endHour = (int) substr($endTime, 0, 2);
+
+            if ($endHour < $startHour || ($endHour === $startHour && substr($endTime, 3, 2) < substr($startTime, 3, 2))) {
+                // Agregar un día a la fecha de fin
+                $endDate = $reservation->date->copy()->addDay()->format('Y-m-d');
+            }
+
             // Combinar fecha con hora de inicio y fin
-            $startDateTime = $reservation->date->format('Y-m-d').' '.
-                (is_string($reservation->start_time) ? $reservation->start_time : $reservation->start_time->format('H:i:s'));
-            $endDateTime = $reservation->date->format('Y-m-d').' '.
-                (is_string($reservation->end_time) ? $reservation->end_time : $reservation->end_time->format('H:i:s'));
+            $startDateTime = $startDate.'T'.$startTime;
+            $endDateTime = $endDate.'T'.$endTime;
 
             // Color según estado
             $color = match ($reservation->status) {
