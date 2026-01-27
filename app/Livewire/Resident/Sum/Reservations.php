@@ -76,7 +76,7 @@ class Reservations extends Component
 
     protected function dispatchCalendarRefresh(): void
     {
-        $this->dispatch('refresh-calendar', events: $this->calendarEvents)->self();
+        $this->dispatch('refresh-calendar', events: $this->getCalendarEventsProperty());
     }
 
     protected function checkResponsible(): void
