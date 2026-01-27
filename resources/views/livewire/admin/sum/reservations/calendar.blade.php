@@ -283,6 +283,30 @@
                 return;
             }
 
+            // Get times from Livewire component
+            const openTime = '{{ $openTime }}';
+            const closeTime = '{{ $closeTime }}';
+
+            // Handle overnight closing times
+            let slotMaxTime = closeTime + ':00';
+            const openHour = parseInt(openTime.split(':')[0]);
+            const closeHour = parseInt(closeTime.split(':')[0]);
+
+            // If closing time is before opening time, it means it goes to next day
+            if (closeHour < openHour) {
+                // Convert to 24+ hour format (e.g., 02:00 becomes 26:00)
+                const adjustedHour = closeHour + 24;
+                const closeMinute = closeTime.split(':')[1];
+                slotMaxTime = adjustedHour + ':' + closeMinute + ':00';
+            }
+
+            console.log('Slot times:', {
+                slotMinTime: openTime + ':00',
+                slotMaxTime: slotMaxTime,
+                openTime: openTime,
+                closeTime: closeTime
+            });
+
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
                 locale: 'es',
@@ -296,8 +320,8 @@
                     timeGridWeek: { buttonText: 'Semana' },
                     timeGridDay: { buttonText: 'Día' }
                 },
-                slotMinTime: '08:00:00',
-                slotMaxTime: '23:00:00',
+                slotMinTime: openTime + ':00',
+                slotMaxTime: slotMaxTime,
                 slotDuration: '01:00:00',
                 slotLabelInterval: '01:00:00',
                 slotLabelFormat: {

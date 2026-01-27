@@ -123,6 +123,7 @@ Route::prefix('sum')->name('sum.')->group(function () {
     Route::prefix('reservations')->name('reservations.')->group(function () {
         Route::get('/', SumReservationsIndex::class)->name('index');
         Route::get('/calendar', SumReservationsCalendar::class)->name('calendar');
+        Route::get('/events', [\App\Http\Controllers\Api\SumReservationsController::class, 'events'])->name('events');
     });
 
     Route::prefix('payments')->name('payments.')->group(function () {
