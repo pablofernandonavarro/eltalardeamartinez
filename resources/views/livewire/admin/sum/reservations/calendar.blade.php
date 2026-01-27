@@ -266,14 +266,32 @@
     </style>
 
     {{-- FullCalendar JS - loaded directly --}}
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js" 
+            onerror="console.error('Failed to load FullCalendar from CDN');">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js" 
+            onerror="console.warn('Failed to load Spanish locale for FullCalendar');">
+    </script>
 
     <script>
+        let calendarInitRetries = 0;
+        const MAX_CALENDAR_RETRIES = 50; // 5 segundos máximo
+
         function initSumCalendar() {
             // Wait for FullCalendar to be loaded
             if (typeof FullCalendar === 'undefined') {
-                console.log('Waiting for FullCalendar to load...');
+                calendarInitRetries++;
+                
+                if (calendarInitRetries > MAX_CALENDAR_RETRIES) {
+                    console.error('FullCalendar failed to load after', MAX_CALENDAR_RETRIES, 'retries');
+                    const calendarEl = document.getElementById('fullcalendar');
+                    if (calendarEl) {
+                        calendarEl.innerHTML = '<div class="p-8 text-center"><div class="bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded"><strong>Error:</strong> No se pudo cargar el calendario. Por favor, verifica tu conexión a internet y recarga la página.</div></div>';
+                    }
+                    return;
+                }
+                
+                console.log('Waiting for FullCalendar to load... (intento', calendarInitRetries, 'de', MAX_CALENDAR_RETRIES, ')');
                 setTimeout(initSumCalendar, 100);
                 return;
             }
@@ -290,6 +308,9 @@
                 console.log('Calendar already initialized');
                 return;
             }
+            
+            // Reset retry counter on successful init
+            calendarInitRetries = 0;
 
             // Get times from Livewire component
             const openTime = '{{ $openTime }}';

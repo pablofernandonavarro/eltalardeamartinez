@@ -532,13 +532,24 @@
                     });
                 },
 
-                loadCalendar() {
-                    console.log('Loading FullCalendar...');
+                loadCalendar(retryCount = 0) {
+                    const MAX_RETRIES = 50; // 5 segundos máximo
+                    console.log('Loading FullCalendar... (intento', retryCount + 1, 'de', MAX_RETRIES, ')');
 
                     // Wait for FullCalendar to be loaded
                     if (typeof FullCalendar === 'undefined') {
+                        if (retryCount >= MAX_RETRIES) {
+                            console.error('FullCalendar failed to load after', MAX_RETRIES, 'retries');
+                            const calendarEl = document.getElementById('fullcalendar');
+                            if (calendarEl) {
+                                calendarEl.innerHTML = '<div class="p-8 text-center"><div class="bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded"><strong>Error:</strong> No se pudo cargar el calendario. Por favor, verifica tu conexión a internet y recarga la página.</div></div>';
+                            }
+                            this.loading = false;
+                            return;
+                        }
+                        
                         console.warn('FullCalendar not loaded yet, retrying...');
-                        setTimeout(() => this.loadCalendar(), 100);
+                        setTimeout(() => this.loadCalendar(retryCount + 1), 100);
                         return;
                     }
 
