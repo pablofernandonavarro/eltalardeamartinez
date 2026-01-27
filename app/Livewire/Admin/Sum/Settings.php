@@ -34,6 +34,12 @@ class Settings extends Component
             'minHoursNotice' => 'required|integer|min:0|max:168',
         ]);
 
+        // Validar que el horario de cierre sea diferente al de apertura
+        if ($this->openTime === $this->closeTime) {
+            $this->addError('closeTime', 'El horario de cierre debe ser diferente al de apertura.');
+            return;
+        }
+
         SumSetting::set('price_per_hour', $this->pricePerHour);
         SumSetting::set('open_time', $this->openTime);
         SumSetting::set('close_time', $this->closeTime);
