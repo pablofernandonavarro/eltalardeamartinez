@@ -101,7 +101,7 @@
                     </thead>
                     <tbody class="divide-y divide-zinc-200 bg-white dark:divide-zinc-700 dark:bg-zinc-900">
                         @forelse ($reservations as $reservation)
-                            <tr class="transition-colors hover:bg-zinc-200/80 dark:hover:bg-zinc-800/50">
+                            <tr class="transition-colors hover:bg-gray-200 dark:hover:bg-zinc-800/50">
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">#{{ $reservation->id }}</td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="font-medium text-zinc-900 dark:text-white">{{ $reservation->user->name }}</div>
