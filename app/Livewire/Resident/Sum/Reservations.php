@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Resident\Sum;
 
+use App\Models\SumPayment;
 use App\Models\SumReservation;
 use App\Models\SumSetting;
 use Carbon\Carbon;
@@ -242,7 +243,7 @@ class Reservations extends Component
 
         $status = $this->requiresApproval ? 'pending' : 'approved';
 
-        SumReservation::create([
+        $reservation = SumReservation::create([
             'unit_id' => $this->unitId,
             'user_id' => auth()->id(),
             'date' => $this->selectedDate,
@@ -256,6 +257,15 @@ class Reservations extends Component
             'approved_at' => $this->requiresApproval ? null : now(),
             'approved_by' => $this->requiresApproval ? null : auth()->id(),
         ]);
+
+        // Si no requiere aprobación, crear el pago automáticamente
+        if (! $this->requiresApproval) {
+            SumPayment::create([
+                'reservation_id' => $reservation->id,
+                'amount' => $reservation->total_amount,
+                'status' => 'pending',
+            ]);
+        }
 
         $this->closeCreateModal();
         $this->dispatchCalendarRefresh();

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Sum\Reservations;
 
+use App\Models\SumPayment;
 use App\Models\SumReservation;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -88,7 +89,14 @@ class Index extends Component
             'approved_at' => now(),
         ]);
 
-        session()->flash('message', 'Reserva aprobada exitosamente.');
+        // Crear el pago pendiente automáticamente
+        SumPayment::create([
+            'reservation_id' => $reservation->id,
+            'amount' => $reservation->total_amount,
+            'status' => 'pending',
+        ]);
+
+        session()->flash('message', 'Reserva aprobada exitosamente. Se ha generado el pago pendiente.');
         $this->closeDetailsModal();
     }
 
