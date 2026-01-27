@@ -29,6 +29,7 @@ class SumReservationsController extends Controller
             ->with(['unit.building', 'user'])
             ->where('date', '>=', $start)
             ->where('date', '<=', $end)
+            ->whereIn('status', ['pending', 'approved', 'completed'])
             ->get();
 
         $events = $reservations->map(function ($reservation) {
