@@ -481,6 +481,14 @@
                         this.openTime = window.sumCalendarConfig.openTime || '09:00';
                         this.closeTime = window.sumCalendarConfig.closeTime || '23:00';
                         this.maxDaysAdvance = window.sumCalendarConfig.maxDaysAdvance || 30;
+
+                        console.log('Calendar config loaded:', {
+                            eventsCount: this.events.length,
+                            isResponsible: this.isResponsible,
+                            openTime: this.openTime,
+                            closeTime: this.closeTime,
+                            events: this.events
+                        });
                     }
 
                     this.$nextTick(() => {
