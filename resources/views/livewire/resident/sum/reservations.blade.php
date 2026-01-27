@@ -455,9 +455,14 @@
                 maxDaysAdvance: {{ $maxDaysAdvance }},
 
                 initCalendar() {
+                    // Wait for FullCalendar to be loaded
+                    if (typeof FullCalendar === 'undefined') {
+                        setTimeout(() => this.initCalendar(), 100);
+                        return;
+                    }
+
                     const calendarEl = document.getElementById('fullcalendar');
                     if (!calendarEl) {
-                        // Retry if element not ready
                         setTimeout(() => this.initCalendar(), 100);
                         return;
                     }
@@ -563,38 +568,34 @@
                     this.calendar.render();
 
                     // Listen for refresh event from Livewire
-                    document.addEventListener('livewire:init', () => {
-                        Livewire.on('refreshCalendar', (data) => {
-                            let newEvents = [];
-                            
-                            // Handle different data formats from Livewire 3
-                            if (Array.isArray(data)) {
-                                // If data is directly an array
-                                newEvents = data;
-                            } else if (data.events) {
-                                // If data has events property
-                                newEvents = Array.isArray(data.events) ? data.events : JSON.parse(data.events);
-                            } else if (typeof data === 'string') {
-                                // If data is a JSON string
-                                newEvents = JSON.parse(data);
-                            } else if (data[0]?.events) {
-                                // Nested events property
-                                newEvents = Array.isArray(data[0].events) ? data[0].events : JSON.parse(data[0].events);
-                            }
+                    Livewire.on('refreshCalendar', (data) => {
+                        if (!self.calendar) return;
 
-                            // Update events array
-                            self.events = newEvents;
+                        let newEvents = [];
 
-                            // Remove all existing events
-                            self.calendar.getEvents().forEach(event => event.remove());
+                        // Handle different data formats from Livewire 3
+                        if (Array.isArray(data)) {
+                            newEvents = data;
+                        } else if (data.events) {
+                            newEvents = Array.isArray(data.events) ? data.events : JSON.parse(data.events);
+                        } else if (typeof data === 'string') {
+                            newEvents = JSON.parse(data);
+                        } else if (data[0]?.events) {
+                            newEvents = Array.isArray(data[0].events) ? data[0].events : JSON.parse(data[0].events);
+                        }
 
-                            // Add new events
-                            if (Array.isArray(newEvents) && newEvents.length > 0) {
-                                newEvents.forEach(event => {
-                                    self.calendar.addEvent(event);
-                                });
-                            }
-                        });
+                        // Update events array
+                        self.events = newEvents;
+
+                        // Remove all existing events
+                        self.calendar.getEvents().forEach(event => event.remove());
+
+                        // Add new events
+                        if (Array.isArray(newEvents) && newEvents.length > 0) {
+                            newEvents.forEach(event => {
+                                self.calendar.addEvent(event);
+                            });
+                        }
                     });
                 }
             }
