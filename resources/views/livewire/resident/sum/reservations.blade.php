@@ -164,7 +164,7 @@
         </div>
 
         {{-- My Upcoming Reservations --}}
-        @if ($isResponsible && $myUpcomingReservations->isNotEmpty())
+        @if ($myUpcomingReservations->isNotEmpty())
             <div class="mt-6">
                 <h3 class="mb-4 text-lg font-semibold text-white">Mis proximas reservas</h3>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
