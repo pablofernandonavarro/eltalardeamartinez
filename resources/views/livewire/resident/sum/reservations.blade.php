@@ -1,7 +1,9 @@
 <div class="p-4 lg:p-6" 
-     x-data="calendarApp()" 
-     x-init="$nextTick(() => initCalendar())"
-     wire:key="reservations-{{ $unitId }}">
+     x-data="calendarApp(@json($calendarEvents), @json($isResponsible), '{{ $openTime }}', '{{ $closeTime }}', {{ $maxDaysAdvance }})" 
+     x-init="init()"
+     wire:key="reservations-{{ $unitId }}"
+     @refresh-calendar.window="refreshEvents($event.detail.events || $event.detail[0]?.events || [])"
+     x-on:livewire:navigated.window="if (calendar) calendar.render()">
     <div class="mx-auto max-w-7xl">
         {{-- Header --}}
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -89,7 +91,7 @@
         {{-- FullCalendar Container --}}
         <div class="overflow-hidden rounded-xl border border-zinc-700">
             <div id="fullcalendar" class="min-h-[400px] p-2 sm:p-4" wire:ignore>
-                <div class="flex h-[400px] items-center justify-center">
+                <div x-show="loading" class="flex h-[400px] items-center justify-center">
                     <div class="text-center">
                         <svg class="mx-auto h-8 w-8 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -441,162 +443,187 @@
     </style>
 
     {{-- FullCalendar JS - loaded directly --}}
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js" 
+            onerror="console.error('Failed to load FullCalendar'); this.parentElement.innerHTML += '<div class=\'p-4 bg-red-500 text-white rounded\'>Error: No se pudo cargar FullCalendar. Verifique su conexión a internet.</div>';">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js" 
+            onerror="console.warn('Failed to load Spanish locale for FullCalendar');">
+    </script>
 
     <script>
-        function calendarApp() {
+        function calendarApp(initialEvents, isResponsible, openTime, closeTime, maxDaysAdvance) {
             return {
                 calendar: null,
-                events: @json($calendarEvents),
-                isResponsible: @json($isResponsible),
-                openTime: '{{ $openTime }}',
-                closeTime: '{{ $closeTime }}',
-                maxDaysAdvance: {{ $maxDaysAdvance }},
+                events: initialEvents || [],
+                isResponsible: isResponsible,
+                openTime: openTime,
+                closeTime: closeTime,
+                maxDaysAdvance: maxDaysAdvance,
+                loading: true,
+
+                init() {
+                    console.log('Initializing calendar app...');
+                    this.$nextTick(() => {
+                        this.initCalendar();
+                    });
+                },
 
                 initCalendar() {
+                    console.log('Loading FullCalendar...');
+                    
                     // Wait for FullCalendar to be loaded
                     if (typeof FullCalendar === 'undefined') {
+                        console.warn('FullCalendar not loaded yet, retrying...');
                         setTimeout(() => this.initCalendar(), 100);
                         return;
                     }
 
                     const calendarEl = document.getElementById('fullcalendar');
                     if (!calendarEl) {
+                        console.warn('Calendar element not found, retrying...');
                         setTimeout(() => this.initCalendar(), 100);
                         return;
                     }
 
                     // If calendar already exists, destroy it first
                     if (this.calendar) {
+                        console.log('Destroying existing calendar...');
                         this.calendar.destroy();
                     }
+
+                    console.log('Creating calendar with', this.events.length, 'events');
 
                     const self = this;
                     const now = new Date();
                     const maxDate = new Date();
                     maxDate.setDate(maxDate.getDate() + this.maxDaysAdvance);
 
-                    // Get Livewire component instance
-                    const component = @this;
+                    try {
+                        this.calendar = new FullCalendar.Calendar(calendarEl, {
+                            initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
+                            locale: 'es',
+                            headerToolbar: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'timeGridDay,timeGridWeek,dayGridMonth'
+                            },
+                            buttonText: {
+                                today: 'Hoy',
+                                day: 'Dia',
+                                week: 'Semana',
+                                month: 'Mes'
+                            },
+                            slotMinTime: this.openTime + ':00',
+                            slotMaxTime: this.closeTime + ':00',
+                            slotDuration: '01:00:00',
+                            slotLabelInterval: '01:00:00',
+                            slotLabelFormat: {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            },
+                            allDaySlot: false,
+                            nowIndicator: true,
+                            selectable: this.isResponsible,
+                            selectMirror: true,
+                            selectOverlap: false,
+                            selectAllow: function(selectInfo) {
+                                // Don't allow selection in the past
+                                if (selectInfo.start < now) return false;
+                                // Don't allow selection beyond max days
+                                if (selectInfo.start > maxDate) return false;
+                                return true;
+                            },
+                            validRange: {
+                                start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+                                end: maxDate
+                            },
+                            events: this.events,
+                            eventClick: function(info) {
+                                const props = info.event.extendedProps;
+                                if (props.isOwn) {
+                                    self.$wire.call('eventClicked', props.reservationId);
+                                }
+                            },
+                            select: function(info) {
+                                if (!self.isResponsible) return;
 
-                    this.calendar = new FullCalendar.Calendar(calendarEl, {
-                        initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
-                        locale: 'es',
-                        headerToolbar: {
-                            left: 'prev,next today',
-                            center: 'title',
-                            right: 'timeGridDay,timeGridWeek,dayGridMonth'
-                        },
-                        buttonText: {
-                            today: 'Hoy',
-                            day: 'Dia',
-                            week: 'Semana',
-                            month: 'Mes'
-                        },
-                        slotMinTime: this.openTime + ':00',
-                        slotMaxTime: this.closeTime + ':00',
-                        slotDuration: '01:00:00',
-                        slotLabelInterval: '01:00:00',
-                        slotLabelFormat: {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false
-                        },
-                        allDaySlot: false,
-                        nowIndicator: true,
-                        selectable: this.isResponsible,
-                        selectMirror: true,
-                        selectOverlap: false,
-                        selectAllow: function(selectInfo) {
-                            // Don't allow selection in the past
-                            if (selectInfo.start < now) return false;
-                            // Don't allow selection beyond max days
-                            if (selectInfo.start > maxDate) return false;
-                            return true;
-                        },
-                        validRange: {
-                            start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-                            end: maxDate
-                        },
-                        events: this.events,
-                        eventClick: function(info) {
-                            const props = info.event.extendedProps;
-                            if (props.isOwn) {
-                                component.call('eventClicked', props.reservationId);
+                                const startDate = info.start.toISOString().split('T')[0];
+                                const startTime = info.start.toTimeString().slice(0, 5);
+                                const endTime = info.end.toTimeString().slice(0, 5);
+
+                                self.$wire.call('dateSelected', startDate, startTime, endTime);
+
+                                self.calendar.unselect();
+                            },
+                            dateClick: function(info) {
+                                if (!self.isResponsible) return;
+                                if (info.date < now) return;
+                                if (info.date > maxDate) return;
+
+                                // If in month view, switch to day view
+                                if (self.calendar.view.type === 'dayGridMonth') {
+                                    self.calendar.changeView('timeGridDay', info.dateStr);
+                                }
+                            },
+                            eventDidMount: function(info) {
+                                // Add tooltip
+                                const props = info.event.extendedProps;
+                                info.el.title = props.isOwn
+                                    ? 'Mi reserva - Clic para cancelar'
+                                    : 'Reservado: ' + props.unitName;
+                            },
+                            height: 'auto',
+                            expandRows: true,
+                            stickyHeaderDates: true,
+                            dayMaxEvents: true,
+                            windowResize: function(view) {
+                                if (window.innerWidth < 768) {
+                                    self.calendar.changeView('timeGridDay');
+                                }
                             }
-                        },
-                        select: function(info) {
-                            if (!self.isResponsible) return;
+                        });
 
-                            const startDate = info.start.toISOString().split('T')[0];
-                            const startTime = info.start.toTimeString().slice(0, 5);
-                            const endTime = info.end.toTimeString().slice(0, 5);
+                        this.calendar.render();
+                        this.loading = false;
+                        console.log('Calendar rendered successfully');
+                    } catch (error) {
+                        console.error('Error initializing calendar:', error);
+                        this.loading = false;
+                    }
+                },
 
-                            component.call('dateSelected', startDate, startTime, endTime);
+                refreshEvents(newEventsData) {
+                    if (!this.calendar) {
+                        console.warn('Calendar not initialized yet');
+                        return;
+                    }
 
-                            self.calendar.unselect();
-                        },
-                        dateClick: function(info) {
-                            if (!self.isResponsible) return;
-                            if (info.date < now) return;
-                            if (info.date > maxDate) return;
+                    console.log('Refreshing calendar events...', newEventsData);
 
-                            // If in month view, switch to day view
-                            if (self.calendar.view.type === 'dayGridMonth') {
-                                self.calendar.changeView('timeGridDay', info.dateStr);
-                            }
-                        },
-                        eventDidMount: function(info) {
-                            // Add tooltip
-                            const props = info.event.extendedProps;
-                            info.el.title = props.isOwn
-                                ? 'Mi reserva - Clic para cancelar'
-                                : 'Reservado: ' + props.unitName;
-                        },
-                        height: 'auto',
-                        expandRows: true,
-                        stickyHeaderDates: true,
-                        dayMaxEvents: true,
-                        windowResize: function(view) {
-                            if (window.innerWidth < 768) {
-                                self.calendar.changeView('timeGridDay');
-                            }
-                        }
-                    });
+                    let newEvents = [];
 
-                    this.calendar.render();
+                    // Handle different data formats
+                    if (Array.isArray(newEventsData)) {
+                        newEvents = newEventsData;
+                    } else if (newEventsData?.events) {
+                        newEvents = Array.isArray(newEventsData.events) ? newEventsData.events : [];
+                    }
 
-                    // Listen for refresh event from Livewire
-                    Livewire.on('refreshCalendar', (data) => {
-                        if (!self.calendar) return;
+                    // Update events array
+                    this.events = newEvents;
 
-                        let newEvents = [];
+                    // Remove all existing events
+                    this.calendar.getEvents().forEach(event => event.remove());
 
-                        // Handle different data formats from Livewire 3
-                        if (Array.isArray(data)) {
-                            newEvents = data;
-                        } else if (data.events) {
-                            newEvents = Array.isArray(data.events) ? data.events : JSON.parse(data.events);
-                        } else if (typeof data === 'string') {
-                            newEvents = JSON.parse(data);
-                        } else if (data[0]?.events) {
-                            newEvents = Array.isArray(data[0].events) ? data[0].events : JSON.parse(data[0].events);
-                        }
+                    // Add new events
+                    if (Array.isArray(newEvents) && newEvents.length > 0) {
+                        newEvents.forEach(event => {
+                            this.calendar.addEvent(event);
+                        });
+                    }
 
-                        // Update events array
-                        self.events = newEvents;
-
-                        // Remove all existing events
-                        self.calendar.getEvents().forEach(event => event.remove());
-
-                        // Add new events
-                        if (Array.isArray(newEvents) && newEvents.length > 0) {
-                            newEvents.forEach(event => {
-                                self.calendar.addEvent(event);
-                            });
-                        }
-                    });
+                    console.log('Calendar events refreshed:', newEvents.length, 'events');
                 }
             }
         }

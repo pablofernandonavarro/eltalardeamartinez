@@ -1,18 +1,43 @@
 <div class="p-4 lg:p-6">
     <div class="mx-auto max-w-7xl">
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+            {{-- Header --}}
             <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <h2 class="text-2xl font-bold text-zinc-900 dark:text-white">Reservas del SUM</h2>
-                <button class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
-                    Nueva Reserva
-                </button>
+                <div class="flex gap-2">
+                    @if($status || $dateFrom || $dateTo || $search)
+                        <button wire:click="clearFilters" 
+                            class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800">
+                            Limpiar Filtros
+                        </button>
+                    @endif
+                    <a href="{{ route('admin.sum.settings') }}" 
+                        class="rounded-lg bg-zinc-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700" 
+                        wire:navigate>
+                        Configuración
+                    </a>
+                </div>
             </div>
 
-            <!-- Filtros -->
+            {{-- Flash messages --}}
+            @if (session()->has('message'))
+                <div class="mb-4 rounded-lg bg-green-100 p-4 text-green-800 dark:bg-green-900/50 dark:text-green-200">
+                    {{ session('message') }}
+                </div>
+            @endif
+
+            @if (session()->has('error'))
+                <div class="mb-4 rounded-lg bg-red-100 p-4 text-red-800 dark:bg-red-900/50 dark:text-red-200">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            {{-- Filtros --}}
             <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
                 <div>
                     <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Estado</label>
-                    <select class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    <select wire:model.live="status" 
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
                         <option value="">Todos</option>
                         <option value="pending">Pendiente</option>
                         <option value="approved">Aprobada</option>
@@ -23,21 +48,25 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha Desde</label>
-                    <input type="date" class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    <input type="date" wire:model.live="dateFrom" 
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div>
                     <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha Hasta</label>
-                    <input type="date" class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    <input type="date" wire:model.live="dateTo" 
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div>
                     <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Buscar</label>
-                    <input type="text" placeholder="Nombre o Unidad" class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    <input type="text" wire:model.live.debounce.300ms="search" 
+                        placeholder="Nombre o Unidad" 
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
 
-            <!-- Tabla de Reservas -->
+            {{-- Tabla de Reservas --}}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
                     <thead class="bg-zinc-50 dark:bg-zinc-800">
@@ -54,49 +83,227 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-zinc-200 bg-white dark:divide-zinc-700 dark:bg-zinc-900">
-                        <!-- Ejemplo de fila (esto se reemplazará con datos reales de Livewire) -->
-                        <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">#001</td>
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">Juan Pérez</td>
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">A-101</td>
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">25/01/2026</td>
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">14:00 - 18:00</td>
-                            <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">4 hrs</td>
-                            <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-zinc-900 dark:text-white">$2,000</td>
-                            <td class="whitespace-nowrap px-6 py-4">
-                                <span class="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold leading-5 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200">
-                                    Pendiente
-                                </span>
-                            </td>
-                            <td class="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                                <button class="mr-3 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Ver</button>
-                                <button class="mr-3 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">Aprobar</button>
-                                <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Rechazar</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="9" class="px-6 py-4 text-center text-zinc-500 dark:text-zinc-400">
-                                No hay reservas registradas
-                            </td>
-                        </tr>
+                        @forelse ($reservations as $reservation)
+                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">#{{ $reservation->id }}</td>
+                                <td class="px-6 py-4 text-sm">
+                                    <div class="font-medium text-zinc-900 dark:text-white">{{ $reservation->user->name }}</div>
+                                    <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $reservation->user->email }}</div>
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">
+                                    {{ $reservation->unit->building->name ?? 'UF' }} - {{ $reservation->unit->number }}
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">
+                                    {{ $reservation->date->format('d/m/Y') }}
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">
+                                    {{ $reservation->time_range }}
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">
+                                    {{ $reservation->total_hours }} hrs
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-zinc-900 dark:text-white">
+                                    ${{ number_format($reservation->total_amount, 0, ',', '.') }}
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    @php
+                                        $statusClasses = [
+                                            'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
+                                            'approved' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200',
+                                            'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200',
+                                            'cancelled' => 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300',
+                                        ];
+                                    @endphp
+                                    <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold leading-5 {{ $statusClasses[$reservation->status] ?? '' }}">
+                                        {{ $reservation->status_label }}
+                                    </span>
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                                    <button wire:click="viewDetails({{ $reservation->id }})" 
+                                        class="mr-3 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                        Ver
+                                    </button>
+                                    @if($reservation->status === 'pending')
+                                        <button wire:click="approveReservation({{ $reservation->id }})" 
+                                            class="mr-3 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                                            wire:confirm="¿Está seguro que desea aprobar esta reserva?">
+                                            Aprobar
+                                        </button>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400">
+                                    <svg class="mx-auto h-12 w-12 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <p class="mt-2">No hay reservas registradas</p>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
 
-            <!-- Paginación -->
-            <div class="mt-6 flex items-center justify-between">
-                <div class="text-sm text-zinc-700 dark:text-zinc-300">
-                    Mostrando <span class="font-medium">1</span> a <span class="font-medium">10</span> de <span class="font-medium">0</span> resultados
+            {{-- Paginación --}}
+            @if($reservations->hasPages())
+                <div class="mt-6">
+                    {{ $reservations->links() }}
                 </div>
-                <div class="flex gap-2">
-                    <button class="rounded-lg border border-zinc-300 px-3 py-1 text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800" disabled>
-                        Anterior
+            @endif
+        </div>
+    </div>
+
+    {{-- Details Modal --}}
+    @if ($showDetailsModal && $selectedReservation)
+        <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4" wire:click.self="closeDetailsModal">
+            <div class="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
+                <div class="mb-6 flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-zinc-900 dark:text-white">Detalles de Reserva #{{ $selectedReservation->id }}</h3>
+                    <button wire:click="closeDetailsModal" class="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
-                    <button class="rounded-lg border border-zinc-300 px-3 py-1 text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800" disabled>
-                        Siguiente
+                </div>
+
+                <div class="space-y-4">
+                    {{-- Status Badge --}}
+                    <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Estado:</span>
+                        @php
+                            $statusClasses = [
+                                'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
+                                'approved' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200',
+                                'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200',
+                                'cancelled' => 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300',
+                            ];
+                        @endphp
+                        <span class="rounded-full px-3 py-1 text-sm font-semibold {{ $statusClasses[$selectedReservation->status] ?? '' }}">
+                            {{ $selectedReservation->status_label }}
+                        </span>
+                    </div>
+
+                    {{-- Resident Info --}}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Residente</p>
+                            <p class="mt-1 font-medium text-zinc-900 dark:text-white">{{ $selectedReservation->user->name }}</p>
+                            <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ $selectedReservation->user->email }}</p>
+                        </div>
+                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Unidad</p>
+                            <p class="mt-1 font-medium text-zinc-900 dark:text-white">
+                                {{ $selectedReservation->unit->building->name ?? 'UF' }} - {{ $selectedReservation->unit->number }}
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- Date & Time --}}
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Fecha</p>
+                            <p class="mt-1 font-medium text-zinc-900 dark:text-white">{{ $selectedReservation->date->format('d/m/Y') }}</p>
+                        </div>
+                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Horario</p>
+                            <p class="mt-1 font-medium text-zinc-900 dark:text-white">{{ $selectedReservation->time_range }}</p>
+                        </div>
+                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Duración</p>
+                            <p class="mt-1 font-medium text-zinc-900 dark:text-white">{{ $selectedReservation->total_hours }} hrs</p>
+                        </div>
+                    </div>
+
+                    {{-- Payment Info --}}
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Precio por hora</p>
+                            <p class="mt-1 font-medium text-zinc-900 dark:text-white">${{ number_format($selectedReservation->price_per_hour, 0, ',', '.') }}</p>
+                        </div>
+                        <div class="col-span-2 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-700 dark:bg-green-900/20">
+                            <p class="text-xs text-green-600 dark:text-green-400">Total a pagar</p>
+                            <p class="mt-1 text-2xl font-bold text-green-700 dark:text-green-300">${{ number_format($selectedReservation->total_amount, 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Notes --}}
+                    @if($selectedReservation->notes)
+                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Notas</p>
+                            <p class="mt-1 text-sm text-zinc-900 dark:text-white">{{ $selectedReservation->notes }}</p>
+                        </div>
+                    @endif
+
+                    {{-- Approval/Rejection Info --}}
+                    @if($selectedReservation->status === 'approved' && $selectedReservation->approved_at)
+                        <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-700 dark:bg-green-900/20">
+                            <p class="text-sm text-green-800 dark:text-green-200">
+                                <strong>Aprobada por:</strong> {{ $selectedReservation->approvedBy->name ?? 'Sistema' }}<br>
+                                <strong>Fecha:</strong> {{ $selectedReservation->approved_at->format('d/m/Y H:i') }}
+                            </p>
+                        </div>
+                    @endif
+
+                    @if($selectedReservation->status === 'rejected' && $selectedReservation->rejected_at)
+                        <div class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900/20">
+                            <p class="text-sm text-red-800 dark:text-red-200">
+                                <strong>Rechazada por:</strong> {{ $selectedReservation->rejectedBy->name ?? 'Sistema' }}<br>
+                                <strong>Fecha:</strong> {{ $selectedReservation->rejected_at->format('d/m/Y H:i') }}<br>
+                                @if($selectedReservation->rejection_reason)
+                                    <strong>Motivo:</strong> {{ $selectedReservation->rejection_reason }}
+                                @endif
+                            </p>
+                        </div>
+                    @endif
+
+                    @if($selectedReservation->status === 'cancelled' && $selectedReservation->cancelled_at)
+                        <div class="rounded-lg border border-zinc-300 bg-zinc-100 p-4 dark:border-zinc-600 dark:bg-zinc-800">
+                            <p class="text-sm text-zinc-800 dark:text-zinc-200">
+                                <strong>Cancelada por:</strong> {{ $selectedReservation->cancelledBy->name ?? 'Usuario' }}<br>
+                                <strong>Fecha:</strong> {{ $selectedReservation->cancelled_at->format('d/m/Y H:i') }}<br>
+                                @if($selectedReservation->cancellation_reason)
+                                    <strong>Motivo:</strong> {{ $selectedReservation->cancellation_reason }}
+                                @endif
+                            </p>
+                        </div>
+                    @endif
+
+                    {{-- Rejection Form (if pending) --}}
+                    @if($selectedReservation->status === 'pending')
+                        <div class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900/20">
+                            <label class="mb-2 block text-sm font-medium text-red-800 dark:text-red-200">
+                                Motivo de rechazo (requerido para rechazar)
+                            </label>
+                            <textarea wire:model="rejectionReason" rows="2"
+                                class="w-full rounded-lg border-red-300 text-sm dark:border-red-600 dark:bg-red-950/50 dark:text-white"
+                                placeholder="Indique el motivo del rechazo..."></textarea>
+                            @error('rejectionReason')
+                                <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    @endif
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                    <button type="button" wire:click="closeDetailsModal"
+                        class="flex-1 rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800">
+                        Cerrar
                     </button>
+                    @if($selectedReservation->status === 'pending')
+                        <button type="button" wire:click="approveReservation({{ $selectedReservation->id }})"
+                            wire:confirm="¿Está seguro que desea aprobar esta reserva?"
+                            class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
+                            Aprobar
+                        </button>
+                        <button type="button" wire:click="rejectReservation"
+                            class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
+                            Rechazar
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
-    </div>
+    @endif
 </div>

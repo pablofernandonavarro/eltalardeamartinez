@@ -25,6 +25,9 @@ class SumReservation extends Model
         'admin_notes',
         'approved_by',
         'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
         'cancelled_by',
         'cancelled_at',
         'cancellation_reason',
@@ -40,6 +43,7 @@ class SumReservation extends Model
             'price_per_hour' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
     }
@@ -66,6 +70,14 @@ class SumReservation extends Model
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Get the admin who rejected this reservation.
+     */
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 
     /**

@@ -10,30 +10,43 @@ use Livewire\Component;
 class Reservations extends Component
 {
     public ?int $unitId = null;
+
     public bool $isResponsible = false;
 
     // Selected date/time from calendar
     public ?string $selectedDate = null;
+
     public ?string $selectedStartTime = null;
+
     public ?string $selectedEndTime = null;
 
     // Reservation modal
     public bool $showCreateModal = false;
+
     public string $startTime = '';
+
     public string $endTime = '';
+
     public string $notes = '';
 
     // Cancel modal
     public bool $showCancelModal = false;
+
     public ?int $cancelReservationId = null;
+
     public string $cancellationReason = '';
 
     // Settings
     public int $pricePerHour;
+
     public string $openTime;
+
     public string $closeTime;
+
     public int $maxDaysAdvance;
+
     public int $minHoursNotice;
+
     public bool $requiresApproval;
 
     public function mount(): void
@@ -63,7 +76,7 @@ class Reservations extends Component
 
     protected function dispatchCalendarRefresh(): void
     {
-        $this->dispatch('refreshCalendar', events: $this->calendarEvents);
+        $this->dispatch('refresh-calendar', events: $this->calendarEvents)->self();
     }
 
     protected function checkResponsible(): void
