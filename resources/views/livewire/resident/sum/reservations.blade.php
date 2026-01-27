@@ -1,8 +1,7 @@
 <div class="p-4 lg:p-6"
      x-data="calendarApp()"
-     x-init="initCalendar()"
+     x-init="initCalendar(); setupEventListeners()"
      wire:key="reservations-{{ $unitId }}"
-     @refresh-calendar.window="refreshEvents($event.detail.events || ($event.detail[0] && $event.detail[0].events) || [])"
      x-on:livewire:navigated.window="if (calendar) { calendar.render(); }">
 
     <script>
@@ -470,6 +469,17 @@
                 closeTime: '23:00',
                 maxDaysAdvance: 30,
                 loading: true,
+
+                setupEventListeners() {
+                    const self = this;
+
+                    // Listen for Livewire refresh-calendar event
+                    this.$wire.$on('refresh-calendar', (data) => {
+                        console.log('Received refresh-calendar event:', data);
+                        const events = data.events || data[0]?.events || [];
+                        self.refreshEvents(events);
+                    });
+                },
 
                 initCalendar() {
                     console.log('Initializing calendar app...');
