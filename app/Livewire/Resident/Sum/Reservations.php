@@ -155,21 +155,52 @@ class Reservations extends Component
         $this->validate([
             'selectedDate' => 'required|date|after_or_equal:today',
             'startTime' => 'required',
-            'endTime' => 'required|after:startTime',
+            'endTime' => 'required',
             'notes' => 'nullable|string|max:500',
         ], [
             'selectedDate.required' => 'Debe seleccionar una fecha.',
             'selectedDate.after_or_equal' => 'No puede reservar fechas pasadas.',
             'startTime.required' => 'Debe seleccionar hora de inicio.',
             'endTime.required' => 'Debe seleccionar hora de fin.',
-            'endTime.after' => 'La hora de fin debe ser posterior a la hora de inicio.',
         ]);
 
-        // Validate time range
-        if ($this->startTime < $this->openTime || $this->endTime > $this->closeTime) {
-            $this->addError('startTime', "El horario permitido es de {$this->openTime} a {$this->closeTime}.");
+        // Validar que la hora de fin sea posterior a la de inicio (considerando medianoche)
+        $startTime = Carbon::parse($this->startTime);
+        $endTime = Carbon::parse($this->endTime);
 
+        // Si la hora de fin es menor, significa que cruza medianoche
+        if ($endTime->lte($startTime)) {
+            $endTime->addDay();
+        }
+
+        // Verificar que haya al menos 1 hora de diferencia
+        if ($endTime->lte($startTime)) {
+            $this->addError('endTime', 'La hora de fin debe ser posterior a la hora de inicio.');
             return;
+        }
+
+        // Validate time range (considerando turnos nocturnos)
+        if ($this->startTime < $this->openTime) {
+            $this->addError('startTime', "La hora de inicio debe ser igual o posterior a {$this->openTime}.");
+            return;
+        }
+
+        // Validar hora de cierre considerando medianoche
+        $closeHour = Carbon::parse($this->closeTime);
+        $openHour = Carbon::parse($this->openTime);
+        if ($closeHour->lt($openHour)) {
+            // El cierre es del día siguiente, solo validar que endTime no exceda el closeTime
+            // considerando que puede ser del mismo día o del siguiente
+            if ($this->endTime > $this->closeTime && $this->endTime < $this->openTime) {
+                $this->addError('endTime', "La hora de fin no puede estar entre {$this->closeTime} y {$this->openTime}.");
+                return;
+            }
+        } else {
+            // El cierre es del mismo día
+            if ($this->endTime > $this->closeTime || $this->endTime < $this->openTime) {
+                $this->addError('endTime', "El horario permitido es de {$this->openTime} a {$this->closeTime}.");
+                return;
+            }
         }
 
         // Validate max days advance
@@ -200,6 +231,12 @@ class Reservations extends Component
         // Calculate hours and amount
         $start = Carbon::parse($this->startTime);
         $end = Carbon::parse($this->endTime);
+
+        // Si la hora de fin es menor que la de inicio, cruza medianoche
+        if ($end->lte($start)) {
+            $end->addDay();
+        }
+
         $totalHours = $end->diffInMinutes($start) / 60;
         $totalAmount = $totalHours * $this->pricePerHour;
 
@@ -378,12 +415,18 @@ class Reservations extends Component
 
     public function getCalculatedAmountProperty(): float
     {
-        if (! $this->startTime || ! $this->endTime || $this->startTime >= $this->endTime) {
+        if (! $this->startTime || ! $this->endTime) {
             return 0;
         }
 
         $start = Carbon::parse($this->startTime);
         $end = Carbon::parse($this->endTime);
+
+        // Si la hora de fin es menor o igual, cruza medianoche
+        if ($end->lte($start)) {
+            $end->addDay();
+        }
+
         $hours = $end->diffInMinutes($start) / 60;
 
         return $hours * $this->pricePerHour;
@@ -391,12 +434,17 @@ class Reservations extends Component
 
     public function getCalculatedHoursProperty(): float
     {
-        if (! $this->startTime || ! $this->endTime || $this->startTime >= $this->endTime) {
+        if (! $this->startTime || ! $this->endTime) {
             return 0;
         }
 
         $start = Carbon::parse($this->startTime);
         $end = Carbon::parse($this->endTime);
+
+        // Si la hora de fin es menor o igual, cruza medianoche
+        if ($end->lte($start)) {
+            $end->addDay();
+        }
 
         return $end->diffInMinutes($start) / 60;
     }
