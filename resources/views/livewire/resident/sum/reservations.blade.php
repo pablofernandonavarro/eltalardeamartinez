@@ -1,9 +1,19 @@
 <div class="p-4 lg:p-6"
-     x-data="calendarApp(@json($calendarEvents), @json($isResponsible), '{{ $openTime }}', '{{ $closeTime }}', {{ $maxDaysAdvance }})"
-     x-init="init()"
+     x-data="calendarApp()"
+     x-init="initCalendar()"
      wire:key="reservations-{{ $unitId }}"
      @refresh-calendar.window="refreshEvents($event.detail.events || ($event.detail[0] && $event.detail[0].events) || [])"
      x-on:livewire:navigated.window="if (calendar) { calendar.render(); }">
+
+    <script>
+        window.sumCalendarConfig = {
+            events: @json($calendarEvents),
+            isResponsible: @json($isResponsible),
+            openTime: '{{ $openTime }}',
+            closeTime: '{{ $closeTime }}',
+            maxDaysAdvance: {{ $maxDaysAdvance }}
+        };
+    </script>
     <div class="mx-auto max-w-7xl">
         {{-- Header --}}
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -451,37 +461,47 @@
     </script>
 
     <script>
-        function calendarApp(initialEvents, isResponsible, openTime, closeTime, maxDaysAdvance) {
+        function calendarApp() {
             return {
                 calendar: null,
-                events: initialEvents || [],
-                isResponsible: isResponsible,
-                openTime: openTime,
-                closeTime: closeTime,
-                maxDaysAdvance: maxDaysAdvance,
+                events: [],
+                isResponsible: false,
+                openTime: '09:00',
+                closeTime: '23:00',
+                maxDaysAdvance: 30,
                 loading: true,
 
-                init() {
+                initCalendar() {
                     console.log('Initializing calendar app...');
+
+                    // Load config from window
+                    if (window.sumCalendarConfig) {
+                        this.events = window.sumCalendarConfig.events || [];
+                        this.isResponsible = window.sumCalendarConfig.isResponsible || false;
+                        this.openTime = window.sumCalendarConfig.openTime || '09:00';
+                        this.closeTime = window.sumCalendarConfig.closeTime || '23:00';
+                        this.maxDaysAdvance = window.sumCalendarConfig.maxDaysAdvance || 30;
+                    }
+
                     this.$nextTick(() => {
-                        this.initCalendar();
+                        this.loadCalendar();
                     });
                 },
 
-                initCalendar() {
+                loadCalendar() {
                     console.log('Loading FullCalendar...');
-                    
+
                     // Wait for FullCalendar to be loaded
                     if (typeof FullCalendar === 'undefined') {
                         console.warn('FullCalendar not loaded yet, retrying...');
-                        setTimeout(() => this.initCalendar(), 100);
+                        setTimeout(() => this.loadCalendar(), 100);
                         return;
                     }
 
                     const calendarEl = document.getElementById('fullcalendar');
                     if (!calendarEl) {
                         console.warn('Calendar element not found, retrying...');
-                        setTimeout(() => this.initCalendar(), 100);
+                        setTimeout(() => this.loadCalendar(), 100);
                         return;
                     }
 
