@@ -582,15 +582,14 @@
                             initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
                             locale: 'es',
                             headerToolbar: {
-                                start: 'prev,next today',
+                                left: 'prev,next today',
                                 center: 'title',
-                                end: 'timeGridDay,timeGridWeek,dayGridMonth'
+                                right: 'dayGridMonth,timeGridWeek,timeGridDay'
                             },
-                            buttonText: {
-                                today: 'Hoy',
-                                day: 'Dia',
-                                week: 'Semana',
-                                month: 'Mes'
+                            views: {
+                                dayGridMonth: { buttonText: 'Mes' },
+                                timeGridWeek: { buttonText: 'Semana' },
+                                timeGridDay: { buttonText: 'Día' }
                             },
                             slotMinTime: this.openTime + ':00',
                             slotMaxTime: slotMaxTime,
@@ -666,6 +665,17 @@
                         this.calendar.render();
                         this.loading = false;
                         console.log('Calendar rendered successfully');
+
+                        // Debug toolbar
+                        setTimeout(() => {
+                            const toolbar = calendarEl.querySelector('.fc-header-toolbar');
+                            console.log('Toolbar element:', toolbar);
+                            if (toolbar) {
+                                console.log('Toolbar HTML:', toolbar.innerHTML);
+                            } else {
+                                console.error('Toolbar not found in DOM!');
+                            }
+                        }, 500);
                     } catch (error) {
                         console.error('Error initializing calendar:', error);
                         this.loading = false;
