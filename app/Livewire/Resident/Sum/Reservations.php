@@ -374,7 +374,7 @@ class Reservations extends Component
 
         return view('livewire.resident.sum.reservations', [
             'unitUsers' => $unitUsers,
-            'calendarEvents' => $this->calendarEvents,
+            'calendarEvents' => $this->getCalendarEventsProperty(),
             'myUpcomingReservations' => $this->myUpcomingReservations,
             'availableTimeSlots' => $this->availableTimeSlots,
             'calculatedAmount' => $this->calculatedAmount,

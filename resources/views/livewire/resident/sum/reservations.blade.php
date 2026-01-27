@@ -1,9 +1,9 @@
-<div class="p-4 lg:p-6" 
-     x-data="calendarApp(@json($calendarEvents), @json($isResponsible), '{{ $openTime }}', '{{ $closeTime }}', {{ $maxDaysAdvance }})" 
+<div class="p-4 lg:p-6"
+     x-data="calendarApp(@json($calendarEvents), @json($isResponsible), '{{ $openTime }}', '{{ $closeTime }}', {{ $maxDaysAdvance }})"
      x-init="init()"
      wire:key="reservations-{{ $unitId }}"
-     @refresh-calendar.window="refreshEvents($event.detail.events || $event.detail[0]?.events || [])"
-     x-on:livewire:navigated.window="if (calendar) calendar.render()">
+     @refresh-calendar.window="refreshEvents($event.detail.events || ($event.detail[0] && $event.detail[0].events) || [])"
+     x-on:livewire:navigated.window="if (calendar) { calendar.render(); }">
     <div class="mx-auto max-w-7xl">
         {{-- Header --}}
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
