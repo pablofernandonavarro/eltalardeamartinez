@@ -57,14 +57,38 @@ class SumReservationsController extends Controller
             $startDateTime = $startDate.'T'.$startTime;
             $endDateTime = $endDate.'T'.$endTime;
 
-            // Color según estado
-            $color = match ($reservation->status) {
-                'pending' => '#f59e0b', // amber
-                'approved' => '#10b981', // green
-                'rejected' => '#ef4444', // red
-                'cancelled' => '#71717a', // zinc
-                'completed' => '#3b82f6', // blue
-                default => '#71717a',
+            // Color según estado con mejor contraste
+            $colors = match ($reservation->status) {
+                'pending' => [
+                    'bg' => '#fbbf24', // amber-400 más brillante
+                    'border' => '#f59e0b', // amber-500
+                    'text' => '#000000',
+                ],
+                'approved' => [
+                    'bg' => '#34d399', // emerald-400 más brillante
+                    'border' => '#10b981', // emerald-500
+                    'text' => '#000000',
+                ],
+                'rejected' => [
+                    'bg' => '#f87171', // red-400 más brillante
+                    'border' => '#ef4444', // red-500
+                    'text' => '#000000',
+                ],
+                'cancelled' => [
+                    'bg' => '#a1a1aa', // zinc-400
+                    'border' => '#71717a', // zinc-500
+                    'text' => '#000000',
+                ],
+                'completed' => [
+                    'bg' => '#60a5fa', // blue-400 más brillante
+                    'border' => '#3b82f6', // blue-500
+                    'text' => '#000000',
+                ],
+                default => [
+                    'bg' => '#a1a1aa',
+                    'border' => '#71717a',
+                    'text' => '#000000',
+                ],
             };
 
             return [
@@ -72,8 +96,9 @@ class SumReservationsController extends Controller
                 'title' => $reservation->user->name.' - '.$reservation->unit->full_identifier,
                 'start' => $startDateTime,
                 'end' => $endDateTime,
-                'backgroundColor' => $color,
-                'borderColor' => $color,
+                'backgroundColor' => $colors['bg'],
+                'borderColor' => $colors['border'],
+                'textColor' => $colors['text'],
                 'extendedProps' => [
                     'reservation_id' => $reservation->id,
                     'user_name' => $reservation->user->name,

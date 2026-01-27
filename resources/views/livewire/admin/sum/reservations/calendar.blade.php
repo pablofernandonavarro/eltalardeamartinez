@@ -215,9 +215,17 @@
         .fc-event {
             cursor: pointer;
             border-radius: 0.375rem;
-            padding: 2px 4px;
+            padding: 4px 6px;
             font-size: 0.75rem;
-            font-weight: 500;
+            font-weight: 600;
+            border-width: 2px !important;
+            border-style: solid !important;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+        }
+        .fc-event:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+            transition: all 0.2s ease;
         }
         .fc .fc-timegrid-col.fc-day-today {
             background-color: rgba(59, 130, 246, 0.05);
@@ -308,7 +316,7 @@
             });
 
             const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek',
+                initialView: 'timeGridWeek',
                 locale: 'es',
                 headerToolbar: {
                     left: 'prev,next today',
@@ -375,12 +383,7 @@
                 height: 'auto',
                 expandRows: true,
                 stickyHeaderDates: true,
-                dayMaxEvents: true,
-                windowResize: function(view) {
-                    if (window.innerWidth < 768) {
-                        calendar.changeView('timeGridDay');
-                    }
-                }
+                dayMaxEvents: true
             });
 
             calendar.render();
