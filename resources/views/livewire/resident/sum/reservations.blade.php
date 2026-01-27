@@ -98,8 +98,8 @@
         </div>
 
         {{-- FullCalendar Container --}}
-        <div class="overflow-hidden rounded-xl border border-zinc-700">
-            <div id="fullcalendar" class="min-h-[400px] p-2 sm:p-4" wire:ignore>
+        <div class="rounded-xl border border-zinc-700">
+            <div id="fullcalendar" class="min-h-[400px]" wire:ignore>
                 <div x-show="loading" class="flex h-[400px] items-center justify-center">
                     <div class="text-center">
                         <svg class="mx-auto h-8 w-8 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
@@ -366,6 +366,9 @@
 
     {{-- FullCalendar CSS --}}
     <style>
+        #fullcalendar {
+            width: 100%;
+        }
         .fc {
             --fc-border-color: rgb(63 63 70);
             --fc-button-bg-color: #3b82f6;
@@ -378,6 +381,12 @@
             --fc-page-bg-color: rgb(24 24 27);
             --fc-neutral-bg-color: rgb(39 39 42);
             --fc-list-event-hover-bg-color: rgb(63 63 70);
+        }
+        .fc .fc-header-toolbar {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            margin-bottom: 1rem;
         }
         .fc .fc-toolbar-title {
             font-size: 1.25rem;
