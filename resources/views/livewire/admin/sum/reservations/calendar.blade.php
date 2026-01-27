@@ -11,7 +11,7 @@
     </div>
 
     {{-- Leyenda de colores --}}
-    <div class="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-zinc-700 p-3">
+    <div class="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
         <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Leyenda:</span>
         <div class="flex items-center gap-2">
             <span class="h-4 w-4 rounded" style="background-color: #f59e0b;"></span>
@@ -36,7 +36,7 @@
     </div>
 
     {{-- Calendario --}}
-    <div class="rounded-xl border border-zinc-700">
+    <div class="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
         <div id="fullcalendar" class="min-h-[400px]"></div>
     </div>
 

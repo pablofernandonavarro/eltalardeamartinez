@@ -57,37 +57,37 @@ class SumReservationsController extends Controller
             $startDateTime = $startDate.'T'.$startTime;
             $endDateTime = $endDate.'T'.$endTime;
 
-            // Color según estado con mejor contraste
+            // Colores con buen contraste en modo claro y oscuro
             $colors = match ($reservation->status) {
                 'pending' => [
-                    'bg' => '#fbbf24', // amber-400 más brillante
-                    'border' => '#f59e0b', // amber-500
-                    'text' => '#000000',
+                    'bg' => '#f59e0b', // amber-500 - funciona en ambos modos
+                    'border' => '#d97706', // amber-600 - borde más oscuro
+                    'text' => '#ffffff', // texto blanco
                 ],
                 'approved' => [
-                    'bg' => '#34d399', // emerald-400 más brillante
-                    'border' => '#10b981', // emerald-500
-                    'text' => '#000000',
+                    'bg' => '#10b981', // emerald-500 - funciona en ambos modos
+                    'border' => '#059669', // emerald-600 - borde más oscuro
+                    'text' => '#ffffff', // texto blanco
                 ],
                 'rejected' => [
-                    'bg' => '#f87171', // red-400 más brillante
-                    'border' => '#ef4444', // red-500
-                    'text' => '#000000',
+                    'bg' => '#ef4444', // red-500 - funciona en ambos modos
+                    'border' => '#dc2626', // red-600 - borde más oscuro
+                    'text' => '#ffffff', // texto blanco
                 ],
                 'cancelled' => [
-                    'bg' => '#a1a1aa', // zinc-400
-                    'border' => '#71717a', // zinc-500
-                    'text' => '#000000',
+                    'bg' => '#71717a', // zinc-500
+                    'border' => '#52525b', // zinc-600 - borde más oscuro
+                    'text' => '#ffffff', // texto blanco
                 ],
                 'completed' => [
-                    'bg' => '#60a5fa', // blue-400 más brillante
-                    'border' => '#3b82f6', // blue-500
-                    'text' => '#000000',
+                    'bg' => '#3b82f6', // blue-500 - funciona en ambos modos
+                    'border' => '#2563eb', // blue-600 - borde más oscuro
+                    'text' => '#ffffff', // texto blanco
                 ],
                 default => [
-                    'bg' => '#a1a1aa',
-                    'border' => '#71717a',
-                    'text' => '#000000',
+                    'bg' => '#71717a',
+                    'border' => '#52525b',
+                    'text' => '#ffffff',
                 ],
             };
 
