@@ -137,24 +137,22 @@
         @endif
     </flux:modal>
 
-    @push('scripts')
-    <script type="module">
-        import { Calendar } from '@fullcalendar/core';
-        import dayGridPlugin from '@fullcalendar/daygrid';
-        import timeGridPlugin from '@fullcalendar/timegrid';
-        import listPlugin from '@fullcalendar/list';
-        import interactionPlugin from '@fullcalendar/interaction';
-        import esLocale from '@fullcalendar/core/locales/es';
+    @push('styles')
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css' rel='stylesheet' />
+    @endpush
 
+    @push('scripts')
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/es.global.min.js'></script>
+    <script>
         document.addEventListener('livewire:navigated', function () {
             const calendarEl = document.getElementById('calendar');
 
             if (!calendarEl) return;
 
-            const calendar = new Calendar(calendarEl, {
-                plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
+            const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                locale: esLocale,
+                locale: 'es',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
@@ -205,7 +203,7 @@
             calendar.render();
 
             // Re-render calendar when modal closes
-            Livewire.on('closeDetailsModal', () => {
+            window.addEventListener('closeDetailsModal', () => {
                 calendar.refetchEvents();
             });
         });
