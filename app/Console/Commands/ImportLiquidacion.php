@@ -108,6 +108,17 @@ class ImportLiquidacion extends Command
                 $unit->uf_code = $row['uf'];
                 $unit->owner = $row['owner'];
 
+                // Derivar piso: formato [edificio][piso][depto] → anteúltimo dígito es el piso
+                if (! $unit->floor) {
+                    $depto = (string) $row['depto'];
+                    if (str_starts_with(strtoupper($depto), 'PB')) {
+                        $unit->floor = 'PB';
+                    } elseif (is_numeric($depto) && strlen($depto) >= 3) {
+                        $floorInt = (int) substr($depto, -2, 1);
+                        $unit->floor = $floorInt === 0 ? 'PB' : (string) $floorInt;
+                    }
+                }
+
                 if ($row['coefficient'] > 0) {
                     $unit->coefficient = $row['coefficient'];
                 }
@@ -157,13 +168,45 @@ class ImportLiquidacion extends Command
                     continue;
                 }
 
-                $exists = Expense::query()
+                $expense = Expense::query()
                     ->where('period', $period)
                     ->where('building_id', $building->id)
-                    ->exists();
+                    ->first();
 
-                if ($exists) {
-                    $this->warn("Ya existe expense para {$buildingName} período {$period}. Saltando.");
+                if ($expense) {
+                    // Expense ya existe — solo agregar detalles faltantes
+                    $addedDetails = 0;
+                    if (! $dryRun) {
+                        foreach ($buildingUnits as $item) {
+                            if ($item['gastos_a'] <= 0) {
+                                continue;
+                            }
+                            $detail = ExpenseDetail::firstOrCreate(
+                                [
+                                    'expense_id' => $expense->id,
+                                    'unit_id'    => $item['unit']->id,
+                                ],
+                                [
+                                    'amount'      => $item['gastos_a'],
+                                    'paid_amount' => 0,
+                                    'status'      => ExpenseStatus::Pendiente,
+                                ]
+                            );
+                            if ($detail->wasRecentlyCreated) {
+                                $addedDetails++;
+                                $createdDetails++;
+                            }
+                        }
+                        // Recalcular total si se agregaron detalles
+                        if ($addedDetails > 0) {
+                            $expense->total_amount = ExpenseDetail::where('expense_id', $expense->id)->sum('amount');
+                            $expense->save();
+                        }
+                    }
+                    $msg = $addedDetails > 0
+                        ? "Expense existente {$buildingName} {$period}: {$addedDetails} detalles nuevos agregados."
+                        : "Expense existente {$buildingName} {$period}: sin detalles nuevos.";
+                    $this->line($msg);
                     $skippedExpenses++;
 
                     continue;

@@ -41,12 +41,10 @@
                     <span class="text-sm text-gray-500">Número:</span>
                     <p class="font-medium">{{ $unit->number }}</p>
                 </div>
-                @if($unit->floor)
-                    <div>
-                        <span class="text-sm text-gray-500">Piso:</span>
-                        <p class="font-medium">{{ $unit->floor }}</p>
-                    </div>
-                @endif
+                <div>
+                    <span class="text-sm text-gray-500">Piso:</span>
+                    <p class="font-medium">{{ $unit->floor_label }}</p>
+                </div>
                 <div>
                     <span class="text-sm text-gray-500">Coeficiente:</span>
                     <p class="font-medium">{{ number_format($unit->coefficient, 4) }}</p>

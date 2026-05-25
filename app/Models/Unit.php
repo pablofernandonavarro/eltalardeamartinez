@@ -133,6 +133,31 @@ class Unit extends Model
     }
 
     /**
+     * Returns the floor label, deriving it from the unit number when the field is empty.
+     * Format: [building][floor][apt] — the second-to-last digit is always the floor.
+     * e.g. "701" → PB, "711" → 1, "722" → 2
+     */
+    public function getFloorLabelAttribute(): string
+    {
+        if ($this->floor) {
+            return $this->floor;
+        }
+
+        $number = (string) $this->number;
+
+        if (str_starts_with(strtoupper($number), 'PB')) {
+            return 'PB';
+        }
+
+        if (is_numeric($number) && strlen($number) >= 3) {
+            $floorInt = (int) substr($number, -2, 1);
+            return $floorInt === 0 ? 'PB' : (string) $floorInt;
+        }
+
+        return '-';
+    }
+
+    /**
      * Get full unit identifier (building name - unit number).
      */
     public function getFullIdentifierAttribute(): string

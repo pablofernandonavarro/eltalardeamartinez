@@ -54,7 +54,7 @@
                 @forelse($units as $unit)
                     <tr class="border-b hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors">
                         <td class="p-2 font-medium">{{ $unit->number }}</td>
-                        <td class="p-2">{{ $unit->floor ?? '-' }}</td>
+                        <td class="p-2">{{ $unit->floor_label }}</td>
                         <td class="p-2 text-center">{{ number_format($unit->coefficient, 4) }}</td>
                         <td class="p-2 text-center">{{ $unit->rooms ?? '-' }}</td>
                         <td class="p-2 text-center">{{ $unit->terrazas ?? '-' }}</td>

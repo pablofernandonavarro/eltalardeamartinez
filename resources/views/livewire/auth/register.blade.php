@@ -40,7 +40,7 @@
                 <flux:label>{{ __('Unidad Funcional') }} *</flux:label>
                 <flux:select name="requested_unit_id" required>
                     <option value="">{{ __('Seleccione su unidad') }}</option>
-                    @foreach(\App\Models\Unit::with('building')->orderBy('number')->get() as $unit)
+                    @foreach(\App\Models\Unit::with('building')->whereDoesntHave('unitUsers', fn($q) => $q->whereNull('ended_at')->whereNull('deleted_at'))->orderBy('number')->get() as $unit)
                         <option value="{{ $unit->id }}" {{ old('requested_unit_id') == $unit->id ? 'selected' : '' }}>
                             {{ $unit->full_identifier }}
                         </option>

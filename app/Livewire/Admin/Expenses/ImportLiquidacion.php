@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Expenses;
 
+use App\Models\Building;
 use App\Models\Expense;
 use App\Models\Unit;
 use Illuminate\Support\Facades\Artisan;
@@ -68,13 +69,16 @@ class ImportLiquidacion extends Component
                 $existingExpenses = Expense::query()->where('period', $period)->count();
             }
 
+            $validacion = $this->validarConsistencia($data['units']);
+
             $this->preview = [
-                'period' => $data['period'],
-                'period_formatted' => $period,
-                'unit_count' => count($data['units']),
-                'total_gastos' => $data['total_gastos'],
-                'existing_expenses' => $existingExpenses,
-                'rubros' => $data['rubros'],
+                'period'             => $data['period'],
+                'period_formatted'   => $period,
+                'unit_count'         => count($data['units']),
+                'total_gastos'       => $data['total_gastos'],
+                'existing_expenses'  => $existingExpenses,
+                'rubros'             => $data['rubros'],
+                'validacion'         => $validacion,
             ];
         } catch (\Throwable $e) {
             $this->errorMessage = 'Error al procesar el PDF: '.$e->getMessage();
@@ -126,6 +130,94 @@ class ImportLiquidacion extends Component
         } finally {
             $this->importing = false;
         }
+    }
+
+    /**
+     * Controles de consistencia sobre las unidades del PDF.
+     */
+    private function validarConsistencia(array $units): array
+    {
+        $sinMatchBd       = [];  // en PDF pero sin registro en BD
+        $sinMontoPdf      = [];  // monto 0 o negativo
+        $coeficientesPorTorre = [];  // suma de coeficientes por torre
+        $sinEnPdf         = [];  // en BD pero ausentes del PDF
+
+        // Indexar el PDF por uf_code para búsqueda rápida
+        $pdfPorUf = [];
+        foreach ($units as $row) {
+            $pdfPorUf[$row['uf']] = $row;
+        }
+
+        // Cargar unidades de BD indexadas por uf_code
+        $dbUnits = Unit::query()
+            ->with('building')
+            ->whereIn('uf_code', array_keys($pdfPorUf))
+            ->get()
+            ->keyBy('uf_code');
+
+        // Agrupar unidades del PDF por torre para suma de coeficientes
+        $pdfPorTorre = [];
+        foreach ($units as $row) {
+            $pdfPorTorre[$row['building']][] = $row;
+        }
+
+        foreach ($units as $row) {
+            // 1. Sin match en BD
+            if (! isset($dbUnits[$row['uf']])) {
+                $sinMatchBd[] = [
+                    'uf'       => $row['uf'],
+                    'depto'    => $row['depto'],
+                    'torre'    => $row['building'],
+                    'monto'    => $row['gastos_a'],
+                    'owner'    => $row['owner'],
+                ];
+            }
+
+            // 2. Monto cero o negativo
+            if ($row['gastos_a'] <= 0) {
+                $sinMontoPdf[] = [
+                    'uf'    => $row['uf'],
+                    'depto' => $row['depto'],
+                    'torre' => $row['building'],
+                    'monto' => $row['gastos_a'],
+                ];
+            }
+        }
+
+        // 3. Suma global de coeficientes (debe ser ~1.0 en todo el complejo)
+        $sumaGlobal = round(array_sum(array_column($units, 'coefficient')), 6);
+        $coeficientesPorTorre = [
+            [
+                'suma'       => $sumaGlobal,
+                'diferencia' => round(abs(1.0 - $sumaGlobal), 6),
+                'ok'         => $sumaGlobal >= 0.98 && $sumaGlobal <= 1.02,
+            ],
+        ];
+
+        // 4. Unidades en BD que no están en el PDF (por torre si está registrada)
+        $torresEnPdf = array_unique(array_column($units, 'building'));
+        $buildings = Building::query()->whereIn('name', $torresEnPdf)->with('units')->get();
+
+        foreach ($buildings as $building) {
+            foreach ($building->units as $unit) {
+                if ($unit->uf_code && ! isset($pdfPorUf[$unit->uf_code])) {
+                    $sinEnPdf[] = [
+                        'uf'    => $unit->uf_code,
+                        'depto' => $unit->number,
+                        'torre' => $building->name,
+                    ];
+                }
+            }
+        }
+
+        return [
+            'sin_match_bd'          => $sinMatchBd,
+            'sin_monto'             => $sinMontoPdf,
+            'coeficientes_por_torre' => $coeficientesPorTorre,
+            'sin_en_pdf'            => $sinEnPdf,
+            'tiene_alertas'         => ! empty($sinMatchBd) || ! empty($sinMontoPdf) || ! empty($sinEnPdf)
+                || collect($coeficientesPorTorre)->contains(fn ($c) => ! $c['ok']),
+        ];
     }
 
     public function render()

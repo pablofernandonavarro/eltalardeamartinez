@@ -113,8 +113,8 @@
                                 @if($unit->building && $unit->building->complex)
                                     <span class="text-sm text-zinc-500">{{ $unit->building->complex->name }}</span>
                                 @endif
-                                @if($unit->floor)
-                                    <span class="text-sm text-zinc-400">Piso: {{ $unit->floor }}</span>
+                                @if($unit->floor_label !== '-')
+                                    <span class="text-sm text-zinc-400">Piso: {{ $unit->floor_label }}</span>
                                 @endif
                             </div>
                         </td>

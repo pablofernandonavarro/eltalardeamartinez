@@ -36,6 +36,13 @@
                     </div>
                 </div>
 
+                @if($unitUser->unit->owner)
+                <div>
+                    <flux:text size="sm" class="text-gray-500">Propietario de la unidad</flux:text>
+                    <div class="mt-1 font-medium">{{ $unitUser->unit->owner }}</div>
+                </div>
+                @endif
+
                 <div>
                     <flux:text size="sm" class="text-gray-500">Es Propietario</flux:text>
                     <div class="mt-1">
@@ -95,10 +102,11 @@
         </div>
 
         <!-- Propietario de la Unidad -->
-        @if($owner)
+        @if($owner || $unitUser->unit->owner)
             <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
                 <flux:heading size="lg" class="mb-4">Propietario de la Unidad</flux:heading>
-                
+
+                @if($owner)
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <flux:text size="sm" class="text-gray-500">Nombre</flux:text>
@@ -126,6 +134,17 @@
                         </div>
                     </div>
                 </div>
+                @else
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center flex-shrink-0">
+                        <flux:icon.user class="size-5 text-zinc-500" />
+                    </div>
+                    <div>
+                        <div class="font-medium">{{ $unitUser->unit->owner }}</div>
+                        <div class="text-xs text-zinc-500 mt-0.5">Sin cuenta en el sistema</div>
+                    </div>
+                </div>
+                @endif
             </div>
         @endif
 

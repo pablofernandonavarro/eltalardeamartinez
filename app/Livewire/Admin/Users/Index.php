@@ -36,11 +36,13 @@ class Index extends Component
                 ->exists();
 
             if (! $alreadyAssigned) {
+                $isPropietario = $user->role === \App\Role::Propietario;
+
                 \App\Models\UnitUser::create([
                     'unit_id' => $user->requested_unit_id,
                     'user_id' => $user->id,
-                    'is_owner' => false,
-                    'is_responsible' => false,
+                    'is_owner' => $isPropietario,
+                    'is_responsible' => $isPropietario,
                     'started_at' => now(),
                 ]);
             }

@@ -116,18 +116,18 @@ class UnitsFromProrrateoSeeder extends Seeder
 
     /**
      * Deduce el piso a partir del número de depto.
-     * Ej: "706" → piso 7 | "PB01" → PB | "101" → piso 1
+     * Formato: [edificio][piso][depto] — los últimos 2 dígitos son [piso][depto].
+     * Ej: "701" → PB | "711" → 1 | "722" → 2 | "PB01" → PB
      */
     private function deriveFloor(string $number): string
     {
-        // Si empieza con PB, es planta baja
         if (str_starts_with(strtoupper($number), 'PB')) {
             return 'PB';
         }
 
-        // Si es numérico de 3 o más dígitos, el primer dígito es el piso
         if (is_numeric($number) && strlen($number) >= 3) {
-            return (string) intval(substr($number, 0, strlen($number) - 2));
+            $floorInt = (int) substr($number, -2, 1);
+            return $floorInt === 0 ? 'PB' : (string) $floorInt;
         }
 
         return $number;

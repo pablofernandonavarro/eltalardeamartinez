@@ -149,7 +149,7 @@
                     @if($preview['existing_expenses'] > 0)
                         <div class="mt-4 rounded-lg bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 p-3">
                             <p class="text-sm text-yellow-800 dark:text-yellow-200">
-                                Ya existen expenses importadas para este período. Los edificios que ya tienen registros serán saltados.
+                                Ya existen expenses importadas para este período. Se agregarán solo los detalles faltantes.
                             </p>
                         </div>
                     @endif
@@ -164,6 +164,97 @@
                                         <span class="font-mono text-zinc-800 dark:text-zinc-200">${{ number_format($rubro['total'], 2, ',', '.') }}</span>
                                     </div>
                                 @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Controles de consistencia --}}
+                    @php $v = $preview['validacion']; @endphp
+                    @if($v['tiene_alertas'])
+                        <div class="mt-5 space-y-4">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-amber-500 dark:text-amber-400">Alertas de consistencia</p>
+
+                            {{-- Unidades sin match en BD --}}
+                            @if(!empty($v['sin_match_bd']))
+                                <div class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-3">
+                                    <p class="text-xs font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                                        {{ count($v['sin_match_bd']) }} unidad(es) en el PDF sin registro en la BD
+                                        <span class="font-normal">(se crearán si "Importar unidades" está activo, sino se saltean)</span>
+                                    </p>
+                                    <div class="space-y-1">
+                                        @foreach($v['sin_match_bd'] as $u)
+                                            <div class="flex gap-3 text-xs text-amber-700 dark:text-amber-300">
+                                                <span class="font-mono w-14">{{ $u['uf'] }}</span>
+                                                <span class="w-12">Dto. {{ $u['depto'] }}</span>
+                                                <span class="w-24 text-zinc-500">{{ $u['torre'] }}</span>
+                                                <span>{{ $u['owner'] }}</span>
+                                                <span class="ml-auto font-mono">${{ number_format($u['monto'], 2, ',', '.') }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Unidades con monto cero --}}
+                            @if(!empty($v['sin_monto']))
+                                <div class="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-3">
+                                    <p class="text-xs font-semibold text-red-800 dark:text-red-200 mb-2">
+                                        {{ count($v['sin_monto']) }} unidad(es) con monto $0 o negativo
+                                    </p>
+                                    <div class="space-y-1">
+                                        @foreach($v['sin_monto'] as $u)
+                                            <div class="flex gap-3 text-xs text-red-700 dark:text-red-300">
+                                                <span class="font-mono w-14">{{ $u['uf'] }}</span>
+                                                <span class="w-12">Dto. {{ $u['depto'] }}</span>
+                                                <span class="w-24 text-zinc-500">{{ $u['torre'] }}</span>
+                                                <span class="ml-auto font-mono">${{ number_format($u['monto'], 2, ',', '.') }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Unidades en BD ausentes del PDF --}}
+                            @if(!empty($v['sin_en_pdf']))
+                                <div class="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-3">
+                                    <p class="text-xs font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                                        {{ count($v['sin_en_pdf']) }} unidad(es) de la BD no figuran en este PDF
+                                        <span class="font-normal">(no se generará expensa para ellas)</span>
+                                    </p>
+                                    <div class="space-y-1">
+                                        @foreach($v['sin_en_pdf'] as $u)
+                                            <div class="flex gap-3 text-xs text-blue-700 dark:text-blue-300">
+                                                <span class="font-mono w-14">{{ $u['uf'] }}</span>
+                                                <span class="w-12">Dto. {{ $u['depto'] }}</span>
+                                                <span class="text-zinc-500">{{ $u['torre'] }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Coeficiente global del complejo --}}
+                            @if(collect($v['coeficientes_por_torre'])->contains(fn($c) => !$c['ok']))
+                                <div class="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-3">
+                                    <p class="text-xs font-semibold text-red-800 dark:text-red-200 mb-2">
+                                        La suma de coeficientes del complejo no es 1.0
+                                        <span class="font-normal">(puede indicar unidades faltantes o errores en el PDF)</span>
+                                    </p>
+                                    @foreach($v['coeficientes_por_torre'] as $c)
+                                        @if(!$c['ok'])
+                                            <div class="text-xs text-red-700 dark:text-red-300 font-mono">
+                                                Suma total: {{ $c['suma'] }} (diferencia con 1.0: {{ $c['diferencia'] }})
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="mt-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 p-3">
+                            <div class="flex items-center gap-2">
+                                <flux:icon.check-circle class="size-4 text-green-600 dark:text-green-400" />
+                                <p class="text-xs font-medium text-green-800 dark:text-green-200">Todas las unidades son consistentes con la BD</p>
                             </div>
                         </div>
                     @endif
