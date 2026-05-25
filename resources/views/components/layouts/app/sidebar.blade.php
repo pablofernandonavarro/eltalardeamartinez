@@ -43,6 +43,10 @@
                 <flux:navlist.item icon="banknotes" :href="route('admin.sum.payments.index')" :current="request()->routeIs('admin.sum.payments.*')" wire:navigate>{{ __('Pagos y Facturas') }}</flux:navlist.item>
                 <flux:navlist.item icon="cog" :href="route('admin.sum.settings')" :current="request()->routeIs('admin.sum.settings')" wire:navigate>{{ __('Configuración') }}</flux:navlist.item>
             </flux:navlist.group>
+
+            <flux:navlist.group :heading="__('Portal')" class="grid">
+                <flux:navlist.item icon="view-columns" :href="route('admin.settings.sections')" :current="request()->routeIs('admin.settings.*')" wire:navigate>{{ __('Secciones Visibles') }}</flux:navlist.item>
+            </flux:navlist.group>
             </flux:navlist>
 
             <flux:spacer />

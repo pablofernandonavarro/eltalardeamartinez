@@ -44,6 +44,61 @@
             @endif
         </flux:field>
 
+        {{-- Unidades ya asignadas --}}
+        @if($unitUserRecords->isNotEmpty())
+            <div>
+                <flux:label class="mb-3 block">Unidades asignadas</flux:label>
+                <div class="space-y-3">
+                    @foreach($unitUserRecords as $uu)
+                        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-4 py-3">
+                            <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+                                {{ $uu->unit->full_identifier }}
+                            </p>
+                            <div class="flex flex-wrap gap-6">
+                                <flux:checkbox
+                                    wire:model="unitUsers.{{ $uu->id }}.is_owner"
+                                    label="Propietario"
+                                />
+                                <flux:checkbox
+                                    wire:model="unitUsers.{{ $uu->id }}.is_responsible"
+                                    label="Responsable de pago"
+                                />
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        {{-- Asignar nueva unidad --}}
+        @if($availableUnits->isNotEmpty())
+            <div>
+                <flux:label class="mb-3 block">
+                    {{ $unitUserRecords->isNotEmpty() ? 'Agregar otra unidad' : 'Asignar unidad' }}
+                </flux:label>
+                <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-4 py-4 space-y-4">
+                    <flux:field>
+                        <flux:label>Unidad funcional</flux:label>
+                        <flux:select wire:model="newUnitId" placeholder="Seleccionar unidad...">
+                            <option value="">— Sin asignar —</option>
+                            @foreach($availableUnits as $unit)
+                                <option value="{{ $unit->id }}">
+                                    {{ $unit->building->name }} — Depto {{ $unit->number }}
+                                    @if($unit->owner) ({{ $unit->owner }}) @endif
+                                </option>
+                            @endforeach
+                        </flux:select>
+                        <flux:error name="newUnitId" />
+                    </flux:field>
+
+                    <div class="flex flex-wrap gap-6">
+                        <flux:checkbox wire:model="newIsOwner" label="Propietario" />
+                        <flux:checkbox wire:model="newIsResponsible" label="Responsable de pago" />
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="flex gap-4">
             <flux:button type="submit" variant="primary">
                 Actualizar

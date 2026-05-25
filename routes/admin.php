@@ -1,17 +1,23 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Livewire\Admin\Dashboard;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', Dashboard::class)->name('dashboard');
 
+use App\Livewire\Admin\Amenities\Create as AmenitiesCreate;
+use App\Livewire\Admin\Amenities\Edit as AmenitiesEdit;
+use App\Livewire\Admin\Amenities\Index as AmenitiesIndex;
+use App\Livewire\Admin\Baneros\Index as BanerosIndex;
 use App\Livewire\Admin\Buildings\Create as BuildingsCreate;
 use App\Livewire\Admin\Buildings\Edit as BuildingsEdit;
 use App\Livewire\Admin\Buildings\Index as BuildingsIndex;
 use App\Livewire\Admin\Buildings\Units\Create as BuildingUnitsCreate;
 use App\Livewire\Admin\Buildings\Units\Edit as BuildingUnitsEdit;
 use App\Livewire\Admin\Buildings\Units\Index as BuildingUnitsIndex;
+use App\Livewire\Admin\Expenses\ImportLiquidacion as ExpensesImportLiquidacion;
 use App\Livewire\Admin\Expenses\Index as ExpensesIndex;
+use App\Livewire\Admin\Expenses\Show as ExpensesShow;
 use App\Livewire\Admin\News\Create as NewsCreate;
 use App\Livewire\Admin\News\Edit as NewsEdit;
 use App\Livewire\Admin\News\Index as NewsIndex;
@@ -35,10 +41,6 @@ use App\Livewire\Admin\UnitUsers\Show as UnitUsersShow;
 use App\Livewire\Admin\Users\Create as UsersCreate;
 use App\Livewire\Admin\Users\Edit as UsersEdit;
 use App\Livewire\Admin\Users\Index as UsersIndex;
-use App\Livewire\Admin\Amenities\Create as AmenitiesCreate;
-use App\Livewire\Admin\Amenities\Edit as AmenitiesEdit;
-use App\Livewire\Admin\Amenities\Index as AmenitiesIndex;
-use App\Livewire\Admin\Baneros\Index as BanerosIndex;
 
 Route::prefix('users')->name('users.')->group(function () {
     Route::get('/', UsersIndex::class)->name('index');
@@ -92,8 +94,8 @@ Route::prefix('buildings')->name('buildings.')->group(function () {
 
 Route::prefix('expenses')->name('expenses.')->group(function () {
     Route::get('/', ExpensesIndex::class)->name('index');
-    // Route::get('/create', ExpensesCreate::class)->name('create');
-    // Route::get('/{expense}', ExpensesShow::class)->name('show');
+    Route::get('/import', ExpensesImportLiquidacion::class)->name('import');
+    Route::get('/{expense}', ExpensesShow::class)->name('show');
 });
 
 Route::prefix('pools')->name('pools.')->group(function () {
@@ -113,10 +115,16 @@ Route::prefix('baneros')->name('baneros.')->group(function () {
     Route::get('/', BanerosIndex::class)->name('index');
 });
 
+use App\Livewire\Admin\Settings\Sections as SettingsSections;
+
+Route::prefix('settings')->name('settings.')->group(function () {
+    Route::get('/sections', SettingsSections::class)->name('sections');
+});
+
 // SUM - Salón de Usos Múltiples
-use App\Livewire\Admin\Sum\Reservations\Index as SumReservationsIndex;
-use App\Livewire\Admin\Sum\Reservations\Calendar as SumReservationsCalendar;
 use App\Livewire\Admin\Sum\Payments\Index as SumPaymentsIndex;
+use App\Livewire\Admin\Sum\Reservations\Calendar as SumReservationsCalendar;
+use App\Livewire\Admin\Sum\Reservations\Index as SumReservationsIndex;
 use App\Livewire\Admin\Sum\Settings as SumSettings;
 
 Route::prefix('sum')->name('sum.')->group(function () {

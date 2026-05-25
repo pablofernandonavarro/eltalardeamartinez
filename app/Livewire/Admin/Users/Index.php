@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Users;
 
 use App\Models\User;
+use App\Notifications\UserApproved;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -26,16 +27,23 @@ class Index extends Component
     {
         $user = User::findOrFail($userId);
         $user->approve();
+        $user->notify(new UserApproved);
 
-        // Si el usuario tiene una unidad solicitada, crear la asignación
         if ($user->requested_unit_id) {
-            \App\Models\UnitUser::create([
-                'unit_id' => $user->requested_unit_id,
-                'user_id' => $user->id,
-                'is_owner' => false,
-                'is_responsible' => false,
-                'started_at' => now(),
-            ]);
+            $alreadyAssigned = \App\Models\UnitUser::where('user_id', $user->id)
+                ->where('unit_id', $user->requested_unit_id)
+                ->whereNull('ended_at')
+                ->exists();
+
+            if (! $alreadyAssigned) {
+                \App\Models\UnitUser::create([
+                    'unit_id' => $user->requested_unit_id,
+                    'user_id' => $user->id,
+                    'is_owner' => false,
+                    'is_responsible' => false,
+                    'started_at' => now(),
+                ]);
+            }
         }
 
         session()->flash('message', 'Usuario aprobado correctamente y asignado a su unidad.');

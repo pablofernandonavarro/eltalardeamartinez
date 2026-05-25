@@ -57,7 +57,9 @@ class Index extends Component
             ])
             ->when($this->search, function ($q) {
                 $q->where('number', 'like', "%{$this->search}%")
-                    ->orWhere('floor', 'like', "%{$this->search}%");
+                    ->orWhere('floor', 'like', "%{$this->search}%")
+                    ->orWhere('owner', 'like', "%{$this->search}%")
+                    ->orWhere('uf_code', 'like', "%{$this->search}%");
             })
             ->when($this->ownerId, function ($q) {
                 $q->whereHas('currentUsers', function ($query) {

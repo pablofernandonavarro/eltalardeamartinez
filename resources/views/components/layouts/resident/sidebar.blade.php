@@ -16,31 +16,39 @@
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Mi Portal')" class="grid">
                     <flux:navlist.item icon="home" :href="route('resident.dashboard')" :current="request()->routeIs('resident.dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-                    <flux:navlist.item icon="home-modern" :href="route('resident.household')" :current="request()->routeIs('resident.household')" wire:navigate>{{ __('Mi hogar') }}</flux:navlist.item>
+                    @if(\App\Models\SiteSetting::get('section_household', true))
+                        <flux:navlist.item icon="home-modern" :href="route('resident.household')" :current="request()->routeIs('resident.household')" wire:navigate>{{ __('Mi hogar') }}</flux:navlist.item>
+                    @endif
                 </flux:navlist.group>
                 <flux:navlist.group :heading="__('Mis Servicios')" class="grid">
-                    {{-- Ruta unificada de QR personal y day-pass --}}
-                    <flux:navlist.item icon="qr-code" :href="route('resident.pools.my-qr')" :current="request()->routeIs('resident.pools.my-qr') || request()->routeIs('resident.pools.day-pass')" wire:navigate>
-                        {{ __('Mi QR de Pileta') }}
-                    </flux:navlist.item>
-                    
-                    {{-- Submenu for Mis invitados --}}
-                    <flux:navlist.group icon="users" expandable :heading="__('Mis invitados')" :expanded="request()->routeIs('resident.pools.guests.*')">
-                        <flux:navlist.item :href="route('resident.pools.guests.manage')" :current="request()->routeIs('resident.pools.guests.manage')" wire:navigate>
-                            {{ __('Gestionar') }}
-                        </flux:navlist.item>
-                        <flux:navlist.item :href="route('resident.pools.guests.used')" :current="request()->routeIs('resident.pools.guests.used')" wire:navigate>
-                            {{ __('Utilizados') }}
-                        </flux:navlist.item>
-                    </flux:navlist.group>
+                    @if(\App\Models\SiteSetting::get('section_pool_qr', true))
+                        <flux:navlist.group icon="qr-code" expandable :heading="__('Mi QR de Pileta')" :expanded="request()->routeIs('resident.pools.*')">
+                            <flux:navlist.item :href="route('resident.pools.my-qr')" :current="request()->routeIs('resident.pools.my-qr') || request()->routeIs('resident.pools.day-pass')" wire:navigate>
+                                {{ __('Mi QR') }}
+                            </flux:navlist.item>
 
-                    {{-- SUM - Salon de Usos Multiples --}}
-                    <flux:navlist.item icon="calendar-days" :href="route('resident.sum.reservations')" :current="request()->routeIs('resident.sum.*')" wire:navigate>
-                        {{ __('Reservar SUM') }}
-                    </flux:navlist.item>
+                            @if(\App\Models\SiteSetting::get('section_pool_guests', true))
+                                <flux:navlist.group expandable :heading="__('Mis invitados')" :expanded="request()->routeIs('resident.pools.guests.*')">
+                                    <flux:navlist.item :href="route('resident.pools.guests.manage')" :current="request()->routeIs('resident.pools.guests.manage')" wire:navigate>
+                                        {{ __('Gestionar') }}
+                                    </flux:navlist.item>
+                                    <flux:navlist.item :href="route('resident.pools.guests.used')" :current="request()->routeIs('resident.pools.guests.used')" wire:navigate>
+                                        {{ __('Utilizados') }}
+                                    </flux:navlist.item>
+                                </flux:navlist.group>
+                            @endif
+                        </flux:navlist.group>
+                    @endif
 
-                    {{-- <flux:navlist.item icon="currency-dollar" :href="route('resident.expenses.index')" :current="request()->routeIs('resident.expenses.*')" wire:navigate>{{ __('Mis Expensas') }}</flux:navlist.item>
-                    <flux:navlist.item icon="beaker" :href="route('resident.pools.index')" :current="request()->routeIs('resident.pools.*')" wire:navigate>{{ __('Piletas') }}</flux:navlist.item> --}}
+                    @if(\App\Models\SiteSetting::get('section_sum', true))
+                        <flux:navlist.item icon="calendar-days" :href="route('resident.sum.reservations')" :current="request()->routeIs('resident.sum.*')" wire:navigate>
+                            {{ __('Reservar SUM') }}
+                        </flux:navlist.item>
+                    @endif
+
+                    @if(\App\Models\SiteSetting::get('section_expenses', true))
+                        <flux:navlist.item icon="currency-dollar" :href="route('resident.expenses.index')" :current="request()->routeIs('resident.expenses.*')" wire:navigate>{{ __('Mis Expensas') }}</flux:navlist.item>
+                    @endif
                 </flux:navlist.group>
             </flux:navlist>
 

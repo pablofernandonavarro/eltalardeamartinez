@@ -85,7 +85,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
             });
         });
 
-        // Route::get('/expenses', \App\Livewire\Resident\Expenses\Index::class)->name('expenses.index');
+        Route::get('/expenses', \App\Livewire\Resident\Expenses\Index::class)->name('expenses.index');
         // Route::get('/pools', \App\Livewire\Resident\Pools\Index::class)->name('pools.index');
 
         // SUM - Salon de Usos Multiples
