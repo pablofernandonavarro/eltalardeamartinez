@@ -1,7 +1,7 @@
 <div>
     <div class="mb-6">
         <flux:heading size="xl">Mi QR de Pileta (hoy)</flux:heading>
-        <p class="text-sm text-gray-500 mt-1">
+        <p class="text-sm text-zinc-500 mt-1">
             Precargá la cantidad de invitados para hoy. El bañero podrá elegir cuántos ingresan (hasta ese límite).
         </p>
     </div>
@@ -101,7 +101,7 @@
                 /* Mejor UX móvil: checkboxes grandes */
                 input[type="checkbox"] { width: 18px; height: 18px; }
             </style>
-            <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+            <div class="p-5 border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900">
                 <flux:heading size="lg" class="mb-4">Configuración del día</flux:heading>
 
                 <form wire:submit="save" class="space-y-6">
@@ -197,7 +197,7 @@
 
             <div class="space-y-6">
                 {{-- QR Personal --}}
-                <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                <div class="p-5 border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900">
                     <div class="flex items-center justify-between mb-4">
                         <flux:heading size="lg">Mi QR Personal</flux:heading>
                         <flux:badge color="green">Permanente</flux:badge>
@@ -255,10 +255,10 @@
                 </div>
 
                 {{-- QR Diario --}}
-                <div class="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                <div class="p-5 border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900">
                     <div class="flex items-center justify-between mb-4">
                         <flux:heading size="lg">QR Diario (con invitados)</flux:heading>
-                        <div class="text-sm text-gray-500">Invitados: {{ $pass?->guests_allowed ?? 0 }}</div>
+                        <div class="text-sm text-zinc-500">Invitados: {{ $pass?->guests_allowed ?? 0 }}</div>
                     </div>
 
                 @if(!$pass)

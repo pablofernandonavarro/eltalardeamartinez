@@ -4,13 +4,16 @@ namespace App\Exports;
 
 use App\Models\SumPayment;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class SumPaymentsExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle
+class SumPaymentsExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnFormatting, WithColumnWidths
 {
     protected $filters;
 
@@ -88,9 +91,9 @@ class SumPaymentsExport implements FromQuery, WithHeadings, WithMapping, WithSty
             ($payment->reservation->unit->building->name ?? '').' - '.$payment->reservation->unit->number,
             $payment->reservation->date->format('d/m/Y'),
             $payment->reservation->start_time.' - '.$payment->reservation->end_time,
-            number_format($payment->reservation->total_hours, 1),
-            '$'.number_format($payment->reservation->price_per_hour, 2),
-            '$'.number_format($payment->amount, 2),
+            (float) $payment->reservation->total_hours,
+            (float) $payment->reservation->price_per_hour,
+            (float) $payment->amount,
             $payment->status_label,
             $payment->payment_method_label,
             $payment->transaction_reference ?? '-',
@@ -100,11 +103,46 @@ class SumPaymentsExport implements FromQuery, WithHeadings, WithMapping, WithSty
         ];
     }
 
-    public function styles(Worksheet $sheet)
+    public function columnFormats(): array
     {
         return [
-            // Style the first row as bold text
-            1 => ['font' => ['bold' => true, 'size' => 12]],
+            'I' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED2,
+            'J' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED2,
+        ];
+    }
+
+    public function columnWidths(): array
+    {
+        return [
+            'A' => 8,   // ID
+            'B' => 14,  // Fecha Pago
+            'C' => 28,  // Residente
+            'D' => 32,  // Email
+            'E' => 22,  // Unidad
+            'F' => 14,  // Fecha Reserva
+            'G' => 18,  // Horario
+            'H' => 8,   // Horas
+            'I' => 14,  // Precio/Hora
+            'J' => 14,  // Monto Total
+            'K' => 14,  // Estado
+            'L' => 18,  // Método Pago
+            'M' => 22,  // Referencia
+            'N' => 20,  // Fecha Confirmación
+            'O' => 22,  // Confirmado Por
+            'P' => 30,  // Notas
+        ];
+    }
+
+    public function styles(Worksheet $sheet): array
+    {
+        $sheet->freezePane('A2');
+
+        return [
+            1 => [
+                'font'      => ['bold' => true, 'size' => 11],
+                'fill'      => ['fillType' => 'solid', 'startColor' => ['rgb' => 'E8EAF6']],
+                'alignment' => ['horizontal' => 'center'],
+            ],
         ];
     }
 

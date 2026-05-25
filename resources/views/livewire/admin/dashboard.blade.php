@@ -8,59 +8,73 @@
 
     {{-- Estadísticas principales --}}
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6">
-            <div class="flex items-center justify-between">
+        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 transition-shadow hover:shadow-md">
+            <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Unidades</p>
-                    <p class="text-3xl font-bold mt-2">{{ $stats['total_units'] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ $stats['occupied_units'] }} ocupadas</p>
+                    <p class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Unidades</p>
+                    <p class="text-3xl font-bold mt-2 text-zinc-900 dark:text-white">{{ $stats['total_units'] }}</p>
                 </div>
                 <div class="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
                     <flux:icon.home class="size-6 text-blue-600 dark:text-blue-400" />
                 </div>
             </div>
+            <div class="mt-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+                <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ $stats['occupied_units'] }} ocupadas</p>
+            </div>
         </div>
 
-        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6">
-            <div class="flex items-center justify-between">
+        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 transition-shadow hover:shadow-md">
+            <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Residentes Activos</p>
-                    <p class="text-3xl font-bold mt-2">{{ $stats['total_residents'] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">En {{ $stats['total_buildings'] }} edificios</p>
+                    <p class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Residentes Activos</p>
+                    <p class="text-3xl font-bold mt-2 text-zinc-900 dark:text-white">{{ $stats['total_residents'] }}</p>
                 </div>
                 <div class="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
                     <flux:icon.user-group class="size-6 text-green-600 dark:text-green-400" />
                 </div>
             </div>
+            <div class="mt-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+                <p class="text-xs text-zinc-500 dark:text-zinc-400">En {{ $stats['total_buildings'] }} edificios</p>
+            </div>
         </div>
 
-        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6">
-            <div class="flex items-center justify-between">
+        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 transition-shadow hover:shadow-md">
+            <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">En Pileta Ahora</p>
-                    <p class="text-3xl font-bold mt-2">{{ $poolActivity['currently_inside'] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ $poolActivity['entries_today'] }} ingresos hoy</p>
+                    <p class="text-sm font-medium text-zinc-500 dark:text-zinc-400">En Pileta Ahora</p>
+                    <p class="text-3xl font-bold mt-2 text-zinc-900 dark:text-white">{{ $poolActivity['currently_inside'] }}</p>
                 </div>
                 <div class="h-12 w-12 rounded-full bg-cyan-100 dark:bg-cyan-900/20 flex items-center justify-center">
                     <flux:icon.user class="size-6 text-cyan-600 dark:text-cyan-400" />
                 </div>
             </div>
+            <div class="mt-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+                <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ $poolActivity['entries_today'] }} ingresos hoy</p>
+            </div>
         </div>
 
-        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6">
-            <div class="flex items-center justify-between">
+        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 transition-shadow hover:shadow-md">
+            <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuarios Registrados</p>
-                    <p class="text-3xl font-bold mt-2">{{ $stats['total_users'] }}</p>
-                    @if($pendingPayments > 0)
-                        <p class="text-xs text-orange-500 mt-1">{{ $pendingPayments }} pagos pendientes</p>
-                    @else
-                        <p class="text-xs text-gray-500 mt-1">Sistema activo</p>
-                    @endif
+                    <p class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Usuarios Registrados</p>
+                    <p class="text-3xl font-bold mt-2 text-zinc-900 dark:text-white">{{ $stats['total_users'] }}</p>
                 </div>
                 <div class="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
                     <flux:icon.users class="size-6 text-purple-600 dark:text-purple-400" />
                 </div>
+            </div>
+            <div class="mt-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+                @if($pendingPayments > 0)
+                    <p class="text-xs font-medium text-orange-500 flex items-center gap-1">
+                        <flux:icon.exclamation-circle class="size-3.5" />
+                        {{ $pendingPayments }} pagos pendientes
+                    </p>
+                @else
+                    <p class="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <flux:icon.check-circle class="size-3.5" />
+                        Sistema activo
+                    </p>
+                @endif
             </div>
         </div>
     </div>
@@ -93,7 +107,10 @@
                     @endforeach
                 </div>
             @else
-                <p class="text-center text-gray-500 py-8">No hay actividad registrada en los últimos 7 días</p>
+                <div class="py-8 text-center">
+                    <flux:icon.chart-bar class="mx-auto size-10 text-zinc-300 dark:text-zinc-600 mb-3" />
+                    <p class="text-zinc-500 dark:text-zinc-400">No hay actividad registrada en los últimos 7 días</p>
+                </div>
             @endif
         </div>
 
@@ -123,7 +140,10 @@
                     @endforeach
                 </div>
             @else
-                <p class="text-center text-gray-500 py-8">No hay noticias publicadas</p>
+                <div class="py-8 text-center">
+                    <flux:icon.newspaper class="mx-auto size-10 text-zinc-300 dark:text-zinc-600 mb-3" />
+                    <p class="text-zinc-500 dark:text-zinc-400">No hay noticias publicadas</p>
+                </div>
             @endif
         </div>
     </div>

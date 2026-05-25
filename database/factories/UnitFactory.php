@@ -12,7 +12,6 @@ class UnitFactory extends Factory
         return [
             'building_id' => Building::factory(),
             'number' => fake()->numerify('###'),
-            'uf_code' => fake()->optional()->bothify('UF-###'),
             'floor' => fake()->numberBetween(1, 20),
             'coefficient' => fake()->randomFloat(4, 0.01, 10),
             'rooms' => fake()->numberBetween(1, 5),

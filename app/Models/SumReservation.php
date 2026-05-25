@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SumReservationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,8 +43,9 @@ class SumReservation extends Model
             'total_hours' => 'decimal:2',
             'price_per_hour' => 'decimal:2',
             'total_amount' => 'decimal:2',
-            'approved_at' => 'datetime',
-            'rejected_at' => 'datetime',
+            'status'       => SumReservationStatus::class,
+            'approved_at'  => 'datetime',
+            'rejected_at'  => 'datetime',
             'cancelled_at' => 'datetime',
         ];
     }
@@ -93,23 +95,17 @@ class SumReservation extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', SumReservationStatus::Pending);
     }
 
-    /**
-     * Scope to get approved reservations.
-     */
     public function scopeApproved($query)
     {
-        return $query->where('status', 'approved');
+        return $query->where('status', SumReservationStatus::Approved);
     }
 
-    /**
-     * Scope to get active reservations (pending or approved).
-     */
     public function scopeActive($query)
     {
-        return $query->whereIn('status', ['pending', 'approved']);
+        return $query->whereIn('status', [SumReservationStatus::Pending, SumReservationStatus::Approved]);
     }
 
     /**
@@ -172,33 +168,13 @@ class SumReservation extends Model
         return "{$start} - {$end}";
     }
 
-    /**
-     * Get status label in Spanish.
-     */
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
-            'pending' => 'Pendiente',
-            'approved' => 'Aprobada',
-            'rejected' => 'Rechazada',
-            'cancelled' => 'Cancelada',
-            'completed' => 'Completada',
-            default => $this->status,
-        };
+        return $this->status->label();
     }
 
-    /**
-     * Get status color for UI.
-     */
     public function getStatusColorAttribute(): string
     {
-        return match ($this->status) {
-            'pending' => 'amber',
-            'approved' => 'green',
-            'rejected' => 'red',
-            'cancelled' => 'zinc',
-            'completed' => 'blue',
-            default => 'zinc',
-        };
+        return $this->status->color();
     }
 }

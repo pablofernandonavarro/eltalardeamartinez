@@ -60,15 +60,15 @@
 
         {{-- Flash messages --}}
         @if (session()->has('message'))
-            <div class="mb-4 rounded-lg bg-green-100 p-4 text-green-800 dark:bg-green-900/50 dark:text-green-200">
+            <flux:callout color="green" icon="check-circle" class="mb-4">
                 {{ session('message') }}
-            </div>
+            </flux:callout>
         @endif
 
         @if (session()->has('error'))
-            <div class="mb-4 rounded-lg bg-red-100 p-4 text-red-800 dark:bg-red-900/50 dark:text-red-200">
+            <flux:callout color="red" icon="exclamation-circle" class="mb-4">
                 {{ session('error') }}
-            </div>
+            </flux:callout>
         @endif
 
         {{-- Info panel for non-responsible --}}
@@ -114,11 +114,9 @@
 
         {{-- Bottom Info Cards --}}
         <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
+            <div class="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50">
-                    <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <flux:icon.currency-dollar class="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Precio por hora</p>
@@ -126,11 +124,9 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
+            <div class="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                    <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <flux:icon.clock class="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Horario disponible</p>
@@ -138,11 +134,9 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
+            <div class="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/50">
-                    <svg class="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <flux:icon.calendar-days class="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Anticipacion maxima</p>
@@ -150,11 +144,9 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
+            <div class="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
-                    <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                    <flux:icon.exclamation-triangle class="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Aviso minimo</p>
@@ -166,38 +158,32 @@
         {{-- My Upcoming Reservations --}}
         @if ($myUpcomingReservations->isNotEmpty())
             <div class="mt-6">
-                <h3 class="mb-4 text-lg font-semibold text-white">Mis proximas reservas</h3>
+                <h3 class="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Mis proximas reservas</h3>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($myUpcomingReservations as $reservation)
-                        <div class="flex items-center justify-between rounded-lg border border-zinc-700 p-3">
+                        <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/50">
                             <div>
-                                <p class="font-semibold text-white">
+                                <p class="font-semibold text-zinc-900 dark:text-white">
                                     {{ $reservation->date->format('d/m/Y') }}
                                 </p>
-                                <p class="text-sm text-zinc-400">
+                                <p class="text-sm text-zinc-500 dark:text-zinc-400">
                                     {{ $reservation->time_range }}
                                 </p>
-                                <p class="mt-1 text-lg font-bold text-green-400">
+                                <p class="mt-1 text-lg font-bold text-green-600 dark:text-green-400">
                                     ${{ number_format($reservation->total_amount, 0, ',', '.') }}
                                 </p>
                             </div>
                             <div class="flex flex-col items-end gap-2">
                                 @php
-                                    $statusColors = [
-                                        'pending' => 'bg-amber-900/50 text-amber-200',
-                                        'approved' => 'bg-green-900/50 text-green-200',
-                                    ];
+                                    $statusBadgeColor = [
+                                        'pending' => 'amber',
+                                        'approved' => 'green',
+                                    ][$reservation->status] ?? 'zinc';
                                 @endphp
-                                <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $statusColors[$reservation->status] ?? '' }}">
-                                    {{ $reservation->status_label }}
-                                </span>
+                                <flux:badge color="{{ $statusBadgeColor }}" size="sm">{{ $reservation->status_label }}</flux:badge>
                                 @if (in_array($reservation->status, ['pending', 'approved']))
-                                    <button wire:click="openCancelModal({{ $reservation->id }})"
-                                        class="rounded p-1 text-red-400 hover:bg-red-900/20">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                                    <flux:button wire:click="openCancelModal({{ $reservation->id }})"
+                                        variant="ghost" size="sm" color="red" icon="x-mark" />
                                 @endif
                             </div>
                         </div>

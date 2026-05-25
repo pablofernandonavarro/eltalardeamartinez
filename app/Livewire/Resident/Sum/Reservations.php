@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Resident\Sum;
 
+use App\Enums\SumPaymentStatus;
+use App\Enums\SumReservationStatus;
 use App\Models\SumPayment;
 use App\Models\SumReservation;
 use App\Models\SumSetting;
@@ -241,29 +243,30 @@ class Reservations extends Component
         $totalHours = $end->diffInMinutes($start) / 60;
         $totalAmount = $totalHours * $this->pricePerHour;
 
-        $status = $this->requiresApproval ? 'pending' : 'approved';
+        $status = $this->requiresApproval
+            ? SumReservationStatus::Pending
+            : SumReservationStatus::Approved;
 
         $reservation = SumReservation::create([
-            'unit_id' => $this->unitId,
-            'user_id' => auth()->id(),
-            'date' => $this->selectedDate,
-            'start_time' => $this->startTime,
-            'end_time' => $this->endTime,
-            'total_hours' => $totalHours,
+            'unit_id'        => $this->unitId,
+            'user_id'        => auth()->id(),
+            'date'           => $this->selectedDate,
+            'start_time'     => $this->startTime,
+            'end_time'       => $this->endTime,
+            'total_hours'    => $totalHours,
             'price_per_hour' => $this->pricePerHour,
-            'total_amount' => $totalAmount,
-            'status' => $status,
-            'notes' => $this->notes,
-            'approved_at' => $this->requiresApproval ? null : now(),
-            'approved_by' => $this->requiresApproval ? null : auth()->id(),
+            'total_amount'   => $totalAmount,
+            'status'         => $status,
+            'notes'          => $this->notes,
+            'approved_at'    => $this->requiresApproval ? null : now(),
+            'approved_by'    => $this->requiresApproval ? null : auth()->id(),
         ]);
 
-        // Si no requiere aprobación, crear el pago automáticamente
         if (! $this->requiresApproval) {
             SumPayment::create([
                 'reservation_id' => $reservation->id,
-                'amount' => $reservation->total_amount,
-                'status' => 'pending',
+                'amount'         => $reservation->total_amount,
+                'status'         => SumPaymentStatus::Pending,
             ]);
         }
 
@@ -303,10 +306,10 @@ class Reservations extends Component
             ->firstOrFail();
 
         $reservation->update([
-            'status' => 'cancelled',
-            'cancelled_by' => auth()->id(),
-            'cancelled_at' => now(),
-            'cancellation_reason' => $this->cancellationReason,
+            'status'               => SumReservationStatus::Cancelled,
+            'cancelled_by'         => auth()->id(),
+            'cancelled_at'         => now(),
+            'cancellation_reason'  => $this->cancellationReason,
         ]);
 
         $this->closeCancelModal();

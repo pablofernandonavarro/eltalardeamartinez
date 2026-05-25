@@ -21,6 +21,7 @@ class ExpenseDetail extends Model
         'status',
         'paid_at',
         'notes',
+        'metadata',
     ];
 
     protected function casts(): array
@@ -30,6 +31,7 @@ class ExpenseDetail extends Model
             'paid_amount' => 'decimal:2',
             'status' => ExpenseStatus::class,
             'paid_at' => 'date',
+            'metadata' => 'array',
         ];
     }
 
@@ -74,7 +76,7 @@ class ExpenseDetail extends Model
     }
 
     /**
-     * Update the status based on paid amount.
+     * Update the status based on paid amount and due date.
      */
     public function updateStatus(): void
     {
@@ -84,7 +86,10 @@ class ExpenseDetail extends Model
         } elseif ($this->paid_amount > 0) {
             $this->status = ExpenseStatus::Parcial;
         } else {
-            $this->status = ExpenseStatus::Pendiente;
+            $dueDate = $this->expense?->due_date;
+            $this->status = ($dueDate && now()->isAfter($dueDate))
+                ? ExpenseStatus::Vencida
+                : ExpenseStatus::Pendiente;
             $this->paid_at = null;
         }
 

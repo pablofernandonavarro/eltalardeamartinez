@@ -3,164 +3,141 @@
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
             {{-- Header --}}
             <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h2 class="text-2xl font-bold text-zinc-900 dark:text-white">Reservas del SUM</h2>
-                <div class="flex gap-2">
+                <div>
+                    <flux:heading size="xl">Reservas del SUM</flux:heading>
+                    <p class="text-sm text-zinc-500 mt-1">Gestioná y aprobá las reservas del Salón de Usos Múltiples.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
                     @if($status || $dateFrom || $dateTo || $search)
-                        <button wire:click="clearFilters"
-                            class="rounded-lg border-2 border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700">
-                            <svg class="inline-block h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                            Limpiar Filtros
-                        </button>
+                        <flux:button wire:click="clearFilters" variant="ghost" icon="x-mark">Limpiar Filtros</flux:button>
                     @endif
-                    <a href="{{ route('admin.sum.settings') }}"
-                        class="rounded-lg border-2 border-blue-600 bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 hover:border-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:hover:border-blue-600"
-                        wire:navigate>
-                        <svg class="inline-block h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
+                    <flux:button href="{{ route('admin.sum.settings') }}" variant="primary" icon="cog-6-tooth" wire:navigate>
                         Configuración
-                    </a>
+                    </flux:button>
                 </div>
             </div>
 
             {{-- Flash messages --}}
             @if (session()->has('message'))
-                <div class="mb-4 rounded-lg border border-green-600 bg-green-50 p-4 text-green-900 dark:border-green-500 dark:bg-green-900/30 dark:text-green-100">
-                    <div class="flex items-center gap-2">
-                        <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span class="font-medium">{{ session('message') }}</span>
-                    </div>
-                </div>
+                <flux:callout color="green" icon="check-circle" class="mb-4">
+                    {{ session('message') }}
+                </flux:callout>
             @endif
 
             @if (session()->has('error'))
-                <div class="mb-4 rounded-lg border border-red-600 bg-red-50 p-4 text-red-900 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100">
-                    <div class="flex items-center gap-2">
-                        <svg class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span class="font-medium">{{ session('error') }}</span>
-                    </div>
-                </div>
+                <flux:callout color="red" icon="exclamation-circle" class="mb-4">
+                    {{ session('error') }}
+                </flux:callout>
             @endif
 
             {{-- Filtros --}}
-            <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Estado</label>
-                    <select wire:model.live="status" 
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
-                        <option value="">Todos</option>
-                        <option value="pending">Pendiente</option>
-                        <option value="approved">Aprobada</option>
-                        <option value="rejected">Rechazada</option>
-                        <option value="cancelled">Cancelada</option>
-                    </select>
-                </div>
+            <div class="mb-6 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 p-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <flux:field>
+                        <flux:label>Estado</flux:label>
+                        <flux:select wire:model.live="status">
+                            <option value="">Todos</option>
+                            <option value="pending">Pendiente</option>
+                            <option value="approved">Aprobada</option>
+                            <option value="rejected">Rechazada</option>
+                            <option value="cancelled">Cancelada</option>
+                        </flux:select>
+                    </flux:field>
 
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha Desde</label>
-                    <input type="date" wire:model.live="dateFrom" 
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
-                </div>
+                    <flux:field>
+                        <flux:label>Fecha Desde</flux:label>
+                        <flux:input type="date" wire:model.live="dateFrom" />
+                    </flux:field>
 
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha Hasta</label>
-                    <input type="date" wire:model.live="dateTo" 
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
-                </div>
+                    <flux:field>
+                        <flux:label>Fecha Hasta</flux:label>
+                        <flux:input type="date" wire:model.live="dateTo" />
+                    </flux:field>
 
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Buscar</label>
-                    <input type="text" wire:model.live.debounce.300ms="search" 
-                        placeholder="Nombre o Unidad" 
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    <flux:field>
+                        <flux:label>Buscar</flux:label>
+                        <flux:input wire:model.live.debounce.300ms="search" placeholder="Nombre o Unidad" icon="magnifying-glass" />
+                    </flux:field>
                 </div>
             </div>
 
             {{-- Tabla de Reservas --}}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
-                    <thead class="bg-zinc-50 dark:bg-zinc-800">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">ID</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Residente</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Unidad</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Fecha</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Horario</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Horas</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Total</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Estado</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-200 bg-white dark:divide-zinc-700 dark:bg-zinc-900">
-                        @forelse ($reservations as $reservation)
-                            <tr class="transition-colors hover:bg-gray-200 dark:hover:bg-zinc-800/50">
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">#{{ $reservation->id }}</td>
-                                <td class="px-6 py-4 text-sm">
-                                    <div class="font-medium text-zinc-900 dark:text-white">{{ $reservation->user->name }}</div>
-                                    <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $reservation->user->email }}</div>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">
-                                    {{ $reservation->unit->building->name ?? 'UF' }} - {{ $reservation->unit->number }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">
-                                    {{ $reservation->date->format('d/m/Y') }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">
-                                    {{ $reservation->time_range }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">
-                                    {{ $reservation->total_hours }} hrs
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-zinc-900 dark:text-white">
-                                    ${{ number_format($reservation->total_amount, 0, ',', '.') }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    @php
-                                        $statusClasses = [
-                                            'pending' => 'border border-yellow-600 bg-yellow-200 text-yellow-900 dark:border-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-100',
-                                            'approved' => 'border border-green-600 bg-green-200 text-green-900 dark:border-green-500 dark:bg-green-900/30 dark:text-green-100',
-                                            'rejected' => 'border border-red-600 bg-red-200 text-red-900 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100',
-                                            'cancelled' => 'border border-zinc-500 bg-zinc-200 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-200',
-                                        ];
-                                    @endphp
-                                    <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold leading-5 {{ $statusClasses[$reservation->status] ?? '' }}">
-                                        {{ $reservation->status_label }}
-                                    </span>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                                    <button wire:click="viewDetails({{ $reservation->id }})" 
-                                        class="mr-3 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                                        Ver
-                                    </button>
-                                    @if($reservation->status === 'pending')
-                                        <button wire:click="approveReservation({{ $reservation->id }})" 
-                                            class="mr-3 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                                            wire:confirm="¿Está seguro que desea aprobar esta reserva?">
-                                            Aprobar
-                                        </button>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
+            <div class="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+                        <thead class="bg-zinc-50 dark:bg-zinc-800">
                             <tr>
-                                <td colspan="9" class="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400">
-                                    <svg class="mx-auto h-12 w-12 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p class="mt-2">No hay reservas registradas</p>
-                                </td>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">ID</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Residente</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Unidad</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Fecha</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Horario</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Horas</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Total</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Estado</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Acciones</th>
                             </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-200 bg-white dark:divide-zinc-700 dark:bg-zinc-900">
+                            @forelse ($reservations as $reservation)
+                                <tr class="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                                    <td class="whitespace-nowrap px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400">#{{ $reservation->id }}</td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <div class="font-medium text-zinc-900 dark:text-white">{{ $reservation->user->name }}</div>
+                                        <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $reservation->user->email }}</div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-sm text-zinc-900 dark:text-white">
+                                        {{ $reservation->unit->building->name ?? 'UF' }} - {{ $reservation->unit->number }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-sm text-zinc-900 dark:text-white">
+                                        {{ $reservation->date->format('d/m/Y') }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
+                                        {{ $reservation->time_range }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
+                                        {{ $reservation->total_hours }} hrs
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-right text-sm font-mono font-semibold text-zinc-900 dark:text-white">
+                                        ${{ number_format($reservation->total_amount, 0, ',', '.') }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-center">
+                                        @php
+                                            $statusBadgeColor = [
+                                                'pending' => 'yellow',
+                                                'approved' => 'green',
+                                                'rejected' => 'red',
+                                                'cancelled' => 'zinc',
+                                            ][$reservation->status] ?? 'zinc';
+                                        @endphp
+                                        <flux:badge color="{{ $statusBadgeColor }}">{{ $reservation->status_label }}</flux:badge>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-center">
+                                        <div class="flex justify-center gap-2">
+                                            <flux:button wire:click="viewDetails({{ $reservation->id }})" variant="ghost" size="sm" icon="eye">
+                                                Ver
+                                            </flux:button>
+                                            @if($reservation->status === 'pending')
+                                                <flux:button wire:click="approveReservation({{ $reservation->id }})"
+                                                    variant="ghost" size="sm" color="green"
+                                                    wire:confirm="¿Está seguro que desea aprobar esta reserva?">
+                                                    Aprobar
+                                                </flux:button>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="px-4 py-12 text-center">
+                                        <flux:icon.calendar-days class="mx-auto size-10 text-zinc-300 dark:text-zinc-600 mb-3" />
+                                        <p class="text-zinc-500 dark:text-zinc-400">No hay reservas registradas</p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {{-- Paginación --}}
@@ -179,9 +156,7 @@
                 <div class="mb-6 flex items-center justify-between">
                     <h3 class="text-xl font-bold text-zinc-900 dark:text-white">Detalles de Reserva #{{ $selectedReservation->id }}</h3>
                     <button wire:click="closeDetailsModal" class="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <flux:icon.x-mark class="h-6 w-6" />
                     </button>
                 </div>
 
@@ -190,16 +165,14 @@
                     <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
                         <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Estado:</span>
                         @php
-                            $statusClasses = [
-                                'pending' => 'border border-yellow-600 bg-yellow-200 text-yellow-900 dark:border-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-100',
-                                'approved' => 'border border-green-600 bg-green-200 text-green-900 dark:border-green-500 dark:bg-green-900/30 dark:text-green-100',
-                                'rejected' => 'border border-red-600 bg-red-200 text-red-900 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100',
-                                'cancelled' => 'border border-zinc-500 bg-zinc-200 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-200',
-                            ];
+                            $statusBadgeColor = [
+                                'pending' => 'yellow',
+                                'approved' => 'green',
+                                'rejected' => 'red',
+                                'cancelled' => 'zinc',
+                            ][$selectedReservation->status] ?? 'zinc';
                         @endphp
-                        <span class="rounded-full px-3 py-1 text-sm font-semibold {{ $statusClasses[$selectedReservation->status] ?? '' }}">
-                            {{ $selectedReservation->status_label }}
-                        </span>
+                        <flux:badge color="{{ $statusBadgeColor }}">{{ $selectedReservation->status_label }}</flux:badge>
                     </div>
 
                     {{-- Resident Info --}}
@@ -304,20 +277,19 @@
                 </div>
 
                 <div class="mt-6 flex gap-3">
-                    <button type="button" wire:click="closeDetailsModal"
-                        class="flex-1 rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800">
+                    <flux:button type="button" wire:click="closeDetailsModal" variant="ghost" class="flex-1">
                         Cerrar
-                    </button>
+                    </flux:button>
                     @if($selectedReservation->status === 'pending')
-                        <button type="button" wire:click="approveReservation({{ $selectedReservation->id }})"
+                        <flux:button type="button" wire:click="approveReservation({{ $selectedReservation->id }})"
                             wire:confirm="¿Está seguro que desea aprobar esta reserva?"
-                            class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
+                            variant="primary" class="flex-1">
                             Aprobar
-                        </button>
-                        <button type="button" wire:click="rejectReservation"
-                            class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
+                        </flux:button>
+                        <flux:button type="button" wire:click="rejectReservation"
+                            variant="danger" class="flex-1">
                             Rechazar
-                        </button>
+                        </flux:button>
                     @endif
                 </div>
             </div>

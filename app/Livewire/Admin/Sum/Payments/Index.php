@@ -157,24 +157,18 @@ class Index extends Component
 
     public function getStatsProperty()
     {
-        $currentMonth = now()->month;
-        $currentYear = now()->year;
+        $month = $this->month ?: now()->month;
+        $year  = $this->year  ?: now()->year;
+
+        $base = fn () => SumPayment::query()
+            ->when($month, fn ($q) => $q->whereMonth('created_at', $month))
+            ->when($year,  fn ($q) => $q->whereYear('created_at',  $year));
 
         return [
-            'totalMonth' => SumPayment::whereMonth('created_at', $currentMonth)
-                ->whereYear('created_at', $currentYear)
-                ->sum('amount'),
-            'totalPaid' => SumPayment::paid()
-                ->whereMonth('created_at', $currentMonth)
-                ->whereYear('created_at', $currentYear)
-                ->sum('amount'),
-            'totalPending' => SumPayment::pending()
-                ->whereMonth('created_at', $currentMonth)
-                ->whereYear('created_at', $currentYear)
-                ->sum('amount'),
-            'totalReservations' => SumPayment::whereMonth('created_at', $currentMonth)
-                ->whereYear('created_at', $currentYear)
-                ->count(),
+            'totalMonth'        => $base()->sum('amount'),
+            'totalPaid'         => $base()->paid()->sum('amount'),
+            'totalPending'      => $base()->pending()->sum('amount'),
+            'totalReservations' => $base()->count(),
         ];
     }
 

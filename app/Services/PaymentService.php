@@ -23,14 +23,17 @@ class PaymentService
         ?string $reference = null,
         ?string $notes = null
     ): Payment {
-        return DB::transaction(function () use (
+        $wasFullyPaid = false;
+
+        $payment = DB::transaction(function () use (
             $expenseDetail,
             $userId,
             $amount,
             $paymentDate,
             $paymentMethod,
             $reference,
-            $notes
+            $notes,
+            &$wasFullyPaid
         ) {
             $payment = Payment::create([
                 'expense_detail_id' => $expenseDetail->id,
@@ -43,12 +46,21 @@ class PaymentService
                 'notes' => $notes,
             ]);
 
-            $this->updateExpenseDetail($expenseDetail, $amount);
-
-            PaymentRegistered::dispatch($payment);
+            $expenseDetail->paid_amount += $amount;
+            $expenseDetail->updateStatus();
+            $wasFullyPaid = $expenseDetail->isFullyPaid();
 
             return $payment;
         });
+
+        // Dispatch events after the transaction commits to avoid side effects on rollback.
+        PaymentRegistered::dispatch($payment);
+
+        if ($wasFullyPaid) {
+            ExpensePaid::dispatch($expenseDetail);
+        }
+
+        return $payment;
     }
 
     /**
@@ -58,10 +70,6 @@ class PaymentService
     {
         $expenseDetail->paid_amount += $amount;
         $expenseDetail->updateStatus();
-
-        if ($expenseDetail->isFullyPaid()) {
-            ExpensePaid::dispatch($expenseDetail);
-        }
     }
 
     /**

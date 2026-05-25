@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Admin\Sum\Reservations;
 
+use App\Enums\SumPaymentStatus;
+use App\Enums\SumReservationStatus;
 use App\Models\SumPayment;
 use App\Models\SumReservation;
 use Livewire\Component;
@@ -77,23 +79,22 @@ class Index extends Component
     {
         $reservation = SumReservation::find($reservationId);
 
-        if (! $reservation || $reservation->status !== 'pending') {
+        if (! $reservation || $reservation->status !== SumReservationStatus::Pending) {
             session()->flash('error', 'La reserva no puede ser aprobada.');
 
             return;
         }
 
         $reservation->update([
-            'status' => 'approved',
+            'status'      => SumReservationStatus::Approved,
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
 
-        // Crear el pago pendiente automáticamente
         SumPayment::create([
             'reservation_id' => $reservation->id,
-            'amount' => $reservation->total_amount,
-            'status' => 'pending',
+            'amount'         => $reservation->total_amount,
+            'status'         => SumPaymentStatus::Pending,
         ]);
 
         session()->flash('message', 'Reserva aprobada exitosamente. Se ha generado el pago pendiente.');
@@ -114,7 +115,7 @@ class Index extends Component
 
         $reservation = SumReservation::find($this->selectedReservationId);
 
-        if (! $reservation || $reservation->status !== 'pending') {
+        if (! $reservation || $reservation->status !== SumReservationStatus::Pending) {
             session()->flash('error', 'La reserva no puede ser rechazada.');
             $this->closeDetailsModal();
 
@@ -122,9 +123,9 @@ class Index extends Component
         }
 
         $reservation->update([
-            'status' => 'rejected',
-            'rejected_by' => auth()->id(),
-            'rejected_at' => now(),
+            'status'           => SumReservationStatus::Rejected,
+            'rejected_by'      => auth()->id(),
+            'rejected_at'      => now(),
             'rejection_reason' => $this->rejectionReason,
         ]);
 

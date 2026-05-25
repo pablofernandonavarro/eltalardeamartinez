@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\SumPaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SumPayment extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'reservation_id',
@@ -22,7 +24,8 @@ class SumPayment extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount'  => 'decimal:2',
+        'status'  => SumPaymentStatus::class,
         'paid_at' => 'datetime',
     ];
 
@@ -47,58 +50,36 @@ class SumPayment extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', SumPaymentStatus::Pending);
     }
 
-    /**
-     * Scope para pagos confirmados
-     */
     public function scopePaid($query)
     {
-        return $query->where('status', 'paid');
+        return $query->where('status', SumPaymentStatus::Paid);
     }
 
-    /**
-     * Marcar pago como pagado
-     */
     public function markAsPaid(string $paymentMethod, ?string $transactionRef = null, ?string $notes = null): void
     {
         $this->update([
-            'status' => 'paid',
-            'payment_method' => $paymentMethod,
+            'status'                => SumPaymentStatus::Paid,
+            'payment_method'        => $paymentMethod,
             'transaction_reference' => $transactionRef,
-            'notes' => $notes,
-            'paid_at' => now(),
-            'paid_by' => auth()->id(),
+            'notes'                 => $notes,
+            'paid_at'               => now(),
+            'paid_by'               => auth()->id(),
         ]);
     }
 
-    /**
-     * Marcar pago como cancelado
-     */
     public function markAsCancelled(): void
     {
-        $this->update([
-            'status' => 'cancelled',
-        ]);
+        $this->update(['status' => SumPaymentStatus::Cancelled]);
     }
 
-    /**
-     * Obtener el label del estado
-     */
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
-            'pending' => 'Pendiente',
-            'paid' => 'Pagado',
-            'cancelled' => 'Cancelado',
-            default => $this->status,
-        };
+        return $this->status->label();
     }
 
-    /**
-     * Obtener el label del método de pago
-     */
     public function getPaymentMethodLabelAttribute(): string
     {
         if (! $this->payment_method) {

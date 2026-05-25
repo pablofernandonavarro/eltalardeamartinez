@@ -2,9 +2,9 @@
     <div class="mb-6 flex items-center justify-between gap-4">
         <div>
             <flux:heading size="xl">En pileta</flux:heading>
-            <p class="text-sm text-gray-500 mt-1">Personas con ingreso abierto (sin salida registrada).</p>
+            <p class="text-sm text-zinc-500 mt-1">Personas con ingreso abierto (sin salida registrada).</p>
         </div>
-        <flux:button href="{{ route('banero.pools.scanner') }}" variant="ghost" wire:navigate>
+        <flux:button href="{{ route('banero.pools.scanner') }}" variant="primary" icon="qr-code" wire:navigate>
             Escanear QR
         </flux:button>
     </div>
@@ -15,53 +15,73 @@
         </flux:callout>
     @endif
 
-    <div class="mb-4 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 bg-zinc-50 dark:bg-zinc-800">
-        <div class="text-sm text-gray-500 mb-1">Pileta de turno:</div>
-        <div class="font-semibold text-lg">{{ $pool->name ?? 'N/D' }}</div>
-    </div>
+    {{-- KPI cards: misma estructura visual (etiqueta + icono arriba, valor grande, subtexto abajo) y misma altura via items-stretch + flex-col --}}
+    <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+        {{-- Pileta de turno --}}
+        <div class="flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5">
+            <div class="flex items-start justify-between gap-3">
+                <div class="text-sm text-zinc-500">Pileta de turno</div>
+                <div class="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/20 flex items-center justify-center flex-shrink-0">
+                    <flux:icon.beaker class="size-5 text-cyan-600 dark:text-cyan-400" />
+                </div>
+            </div>
+            <div class="mt-1 text-2xl font-bold text-zinc-900 dark:text-white truncate">{{ $pool->name ?? 'N/D' }}</div>
+            <div class="mt-auto pt-2 text-xs text-zinc-500">Turno activo</div>
+        </div>
 
-    <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
-            <div class="text-sm text-gray-500">Personas en pileta</div>
-            <div class="mt-1 text-3xl font-semibold">{{ $totalPeopleCount }}</div>
-            <div class="mt-1 text-xs text-gray-500">
+        {{-- Personas en pileta --}}
+        <div class="flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5">
+            <div class="flex items-start justify-between gap-3">
+                <div class="text-sm text-zinc-500">Personas en pileta</div>
+                <div class="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                    <flux:icon.users class="size-5 text-blue-600 dark:text-blue-400" />
+                </div>
+            </div>
+            <div class="mt-1 text-3xl font-bold text-zinc-900 dark:text-white">{{ $totalPeopleCount }}</div>
+            <div class="mt-auto pt-2 text-xs text-zinc-500">
                 Titulares: {{ $openEntriesCount }} · Invitados: {{ $openGuestsCount }}
             </div>
         </div>
 
-        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
-            <div class="text-sm text-gray-500">Detalle</div>
-            <div class="mt-2 flex items-end justify-between gap-6">
-                <div>
-                    <div class="text-xs text-gray-500">Menores</div>
-                    <div class="mt-1 text-2xl font-semibold">{{ $minorsCount }}</div>
+        {{-- Detalle: Menores e Invitados como sub-métricas alineadas horizontalmente --}}
+        <div class="flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 sm:col-span-2 lg:col-span-1">
+            <div class="flex items-start justify-between gap-3">
+                <div class="text-sm text-zinc-500">Detalle</div>
+                <div class="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0">
+                    <flux:icon.user-group class="size-5 text-amber-600 dark:text-amber-400" />
                 </div>
-                <div class="text-right">
-                    <div class="text-xs text-gray-500">Invitados</div>
-                    <div class="mt-1 text-2xl font-semibold">{{ $openGuestsCount }}</div>
+            </div>
+            <div class="mt-1 flex items-stretch divide-x divide-zinc-200 dark:divide-zinc-700">
+                <div class="flex-1 pr-4">
+                    <div class="text-3xl font-bold text-zinc-900 dark:text-white">{{ $minorsCount }}</div>
+                    <div class="text-xs text-zinc-500">Menores</div>
+                </div>
+                <div class="flex-1 pl-4">
+                    <div class="text-3xl font-bold text-zinc-900 dark:text-white">{{ $openGuestsCount }}</div>
+                    <div class="text-xs text-zinc-500">Invitados</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="w-full max-w-full min-w-0 overflow-x-auto border border-zinc-200 dark:border-zinc-700 rounded-lg">
-        <table class="w-full min-w-[900px]">
+    <div class="w-full max-w-full min-w-0 overflow-x-auto border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900">
+        <table class="w-full min-w-[900px] text-sm">
             <thead>
-                <tr class="border-b">
-                    <th class="text-left p-3">Ingreso</th>
-                    <th class="text-left p-3">Pileta</th>
-                    <th class="text-left p-3">Titular</th>
-                    <th class="text-left p-3">Unidad</th>
-                    <th class="text-center p-3">Invitados</th>
-                    <th class="text-right p-3">Acción</th>
+                <tr class="border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Ingreso</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Pileta</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Titular</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Unidad</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Invitados</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Acción</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
                 @forelse($entries as $entry)
-                    <tr class="border-b hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors">
-                        <td class="p-3 whitespace-nowrap">{{ $entry->entered_at->format('d/m/Y H:i') }}</td>
-                        <td class="p-3">{{ $entry->pool->name }}</td>
-                        <td class="p-3">
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+                        <td class="px-4 py-3 whitespace-nowrap text-zinc-900 dark:text-zinc-100">{{ $entry->entered_at->format('d/m/Y H:i') }}</td>
+                        <td class="px-4 py-3 text-zinc-900 dark:text-zinc-100">{{ $entry->pool->name }}</td>
+                        <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
                                 @php
                                     $photo = $entry->resident?->profilePhotoUrl() ?? $entry->user?->profilePhotoUrl();
@@ -75,15 +95,15 @@
                                     </div>
                                 @endif
                                 <div class="leading-tight">
-                                    <div class="font-medium">{{ $name }}</div>
+                                    <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $name }}</div>
                                     @if($entry->resident)
-                                        <div class="text-xs text-gray-500">Residente</div>
+                                        <div class="text-xs text-zinc-500">Residente</div>
                                     @endif
                                 </div>
                             </div>
                         </td>
-                        <td class="p-3">{{ $entry->unit->full_identifier }}</td>
-                        <td class="p-3">
+                        <td class="px-4 py-3 text-zinc-900 dark:text-zinc-100">{{ $entry->unit->full_identifier }}</td>
+                        <td class="px-4 py-3">
                             @if($entry->guests_count > 0)
                                 <details class="group">
                                     <summary class="cursor-pointer text-center font-medium text-blue-600 dark:text-blue-400 hover:underline">
@@ -112,14 +132,16 @@
                                     </div>
                                 </details>
                             @else
-                                <div class="text-center text-gray-400">0</div>
+                                <div class="text-center text-zinc-400">0</div>
                             @endif
                         </td>
-                        <td class="p-3 text-right">
+                        <td class="px-4 py-3 text-right">
                             <flux:button
                                 size="sm"
                                 variant="ghost"
+                                color="red"
                                 type="button"
+                                icon="arrow-right-start-on-rectangle"
                                 wire:click="checkoutEntry({{ $entry->id }})"
                                 wire:confirm="⚠️ IMPORTANTE: Solo usar si la persona salió SIN ESCANEAR su QR.\n\nSi tiene QR personal, pedile que lo escanee en el Scanner.\n\n¿Confirmar salida manual de {{ $name }}?"
                             >
@@ -129,8 +151,9 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="p-8 text-center text-gray-500">
-                            No hay personas en pileta.
+                        <td colspan="6" class="px-4 py-12 text-center">
+                            <flux:icon.users class="mx-auto size-10 text-zinc-300 dark:text-zinc-600 mb-3" />
+                            <p class="text-zinc-500 dark:text-zinc-400">No hay personas en pileta.</p>
                         </td>
                     </tr>
                 @endforelse

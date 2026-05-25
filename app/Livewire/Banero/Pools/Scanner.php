@@ -108,12 +108,6 @@ class Scanner extends Component
             return;
         }
 
-        \Log::info('📱 updatedToken disparado', [
-            'token_length' => strlen(trim($this->token)),
-            'will_load' => strlen(trim($this->token)) >= 10,
-        ]);
-
-        // Autocargar cuando el scanner setea el token manualmente
         if (strlen(trim($this->token)) >= 10) {
             $this->loadPass();
         }
@@ -121,8 +115,6 @@ class Scanner extends Component
 
     public function resetScanner(): void
     {
-        \Log::info('🔄 resetScanner() - Limpiando estado');
-
         $this->resetErrorBag();
         $this->token = '';
         $this->pass = null;
@@ -147,10 +139,6 @@ class Scanner extends Component
      */
     public function loadExitEntries(): void
     {
-        \Log::info('📋 Cargando entradas abiertas para salida', [
-            'poolId' => $this->poolId,
-        ]);
-
         // Para admins sin poolId, intentar usar la primera pileta disponible
         if (! $this->poolId) {
             if (auth()->user()->isAdmin()) {
@@ -177,10 +165,6 @@ class Scanner extends Component
             ->with(['pool', 'unit.building.complex', 'user', 'resident', 'guests'])
             ->latest('entered_at')
             ->get();
-
-        \Log::info('✅ Entradas abiertas cargadas', [
-            'count' => $this->openEntries->count(),
-        ]);
 
         if ($this->openEntries->isEmpty()) {
             $this->addError('error', 'No hay personas dentro de la pileta en este momento.');
@@ -211,11 +195,6 @@ class Scanner extends Component
             return;
         }
 
-        \Log::info('✅ Registrando salida de entrada seleccionada', [
-            'entry_id' => $entry->id,
-            'exited_by_user_id' => auth()->id(),
-        ]);
-
         $entry->update([
             'exited_at' => now(),
             'exited_by_user_id' => auth()->id(),
@@ -232,7 +211,6 @@ class Scanner extends Component
         $this->selectedEntryId = null;
         $this->exitNotes = null;
 
-        \Log::info('✅ Salida registrada exitosamente');
     }
 
     public function toggleGuestList(): void
@@ -264,12 +242,6 @@ class Scanner extends Component
      */
     public function loadPassFromScan(string $scannedToken): void
     {
-        \Log::info('📱 loadPassFromScan llamado', [
-            'scannedToken' => substr($scannedToken, 0, 20).'...',
-            'token_length' => strlen($scannedToken),
-            'current_token' => $this->token ? substr($this->token, 0, 20).'...' : '(vacío)',
-        ]);
-
         // Asegurar que el estado esté limpio antes de procesar el nuevo escaneo
         // Esto es crítico después de un checkout automático
         $this->skipUpdatedToken = true;
@@ -289,18 +261,11 @@ class Scanner extends Component
         // Asignar el nuevo token después de limpiar el estado
         $this->token = $scannedToken;
 
-        \Log::info('✅ Estado limpiado, procesando nuevo escaneo');
         $this->loadPass();
     }
 
     public function loadPass(): void
     {
-        \Log::info('🔍 loadPass INICIADO', [
-            'token' => substr($this->token, 0, 20).'...',
-            'token_completo' => $this->token,
-            'poolId' => $this->poolId,
-        ]);
-
         $this->resetErrorBag();
         $this->pass = null;
         $this->scannedResident = null;
@@ -315,25 +280,11 @@ class Scanner extends Component
         $this->openEntries = null; // Limpiar lista de entradas abiertas
         $this->selectedEntryId = null; // Limpiar entrada seleccionada
 
-        // DEBUG DETALLADO - Ver exactamente qué llega del scanner
-        \Log::info('===== SCAN QR - ANTES DE LIMPIAR =====');
-        \Log::info('Token ORIGINAL: "'.$this->token.'"');
-        \Log::info('Longitud: '.strlen($this->token));
-        \Log::info('Hex completo: '.bin2hex($this->token));
-
-        // Limpieza agresiva del token: trim, minúsculas, remover espacios internos y caracteres de control
         $token = strtolower(trim($this->token));
-        $token = preg_replace('/\s+/', '', $token); // Remover todos los espacios
-        $token = preg_replace('/[\x00-\x1F\x7F]/u', '', $token); // Remover caracteres de control (invisibles)
-
-        \Log::info('===== SCAN QR - DESPUÉS DE LIMPIAR =====');
-        \Log::info('Token LIMPIADO: "'.$token.'"');
-        \Log::info('Longitud limpiada: '.strlen($token));
-        \Log::info('Hex limpio: '.bin2hex($token));
-        \Log::info('========================================');
+        $token = preg_replace('/\s+/', '', $token);
+        $token = preg_replace('/[\x00-\x1F\x7F]/u', '', $token);
 
         if ($token === '') {
-            \Log::warning('Token vacío después de limpieza');
             $this->addError('token', 'Debe ingresar o escanear un token.');
 
             return;
@@ -342,7 +293,6 @@ class Scanner extends Component
         // Verificar si es el QR único de salida
         $exitToken = strtolower(trim(self::EXIT_QR_TOKEN));
         if ($token === $exitToken) {
-            \Log::info('🚪 QR de salida único detectado');
             $this->loadExitEntries();
 
             return;
@@ -369,39 +319,14 @@ class Scanner extends Component
             $openEntry = $this->findOpenEntryForResident($resident);
             $this->action = $openEntry ? 'exit' : 'entry';
 
-            \Log::info('🎯 Acción determinada para residente', [
-                'resident_id' => $resident->id,
-                'resident_name' => $resident->name,
-                'action' => $this->action,
-                'openEntry_exists' => (bool) $openEntry,
-                'openEntry_id' => $openEntry?->id,
-                'poolId' => $this->poolId,
-            ]);
-
-            // Si ya está adentro, ejecutar salida automáticamente
             if ($this->action === 'exit') {
-                // Guardar la entrada encontrada para usar en checkout
                 $this->foundOpenEntry = $openEntry;
-
-                \Log::info('🚪 Ejecutando checkout automático para residente', [
-                    'resident_id' => $resident->id,
-                    'resident_name' => $resident->name,
-                    'entry_id' => $openEntry?->id,
-                ]);
 
                 try {
                     $personName = $resident->name;
                     $this->checkout();
-                    // El checkout ya limpia todo el estado mediante resetScanner()
-                    \Log::info('✅ Checkout automático completado exitosamente, estado limpio para siguiente escaneo');
-
-                    // Alerta simple de salida
                     $this->js("alert('Usuario salió: {$personName}');");
                 } catch (\Exception $e) {
-                    \Log::error('❌ Error en checkout automático', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
-                    ]);
                     $this->addError('error', 'Error al registrar la salida: '.$e->getMessage());
                 }
 
@@ -418,16 +343,8 @@ class Scanner extends Component
             ->first();
 
         if ($user) {
-            // Es un QR personal de usuario (propietario/inquilino)
-            \Log::info('👥 Usuario con QR personal encontrado', [
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'email' => $user->email,
-            ]);
-
             $unitUser = $user->currentUnitUsers()->first();
             if (! $unitUser) {
-                \Log::error('❌ Usuario no tiene unidad activa');
                 $this->addError('token', 'El usuario no tiene una unidad activa asignada.');
 
                 return;
@@ -447,39 +364,17 @@ class Scanner extends Component
             // Cargar la relación unit manualmente
             $this->scannedResident->setRelation('unit', Unit::with(['building.complex'])->find($unitUser->unit_id));
 
-            \Log::info('✅ Usuario guardado', [
-                'user_id' => $this->scannedUserId,
-                'name' => $user->name,
-                'unit_id' => $unitUser->unit_id,
-            ]);
-
-            // Acción automática según estado actual
             $openEntry = $this->findOpenEntryForUser($user);
             $this->action = $openEntry ? 'exit' : 'entry';
 
-            // Si ya está adentro, ejecutar salida automáticamente
             if ($this->action === 'exit') {
-                // Guardar la entrada encontrada para usar en checkout
                 $this->foundOpenEntry = $openEntry;
-
-                \Log::info('🚪 Ejecutando checkout automático para usuario', [
-                    'user_id' => $user->id,
-                    'entry_id' => $openEntry?->id,
-                ]);
 
                 try {
                     $personName = $user->name;
                     $this->checkout();
-                    // El checkout ya limpia todo el estado mediante resetScanner()
-                    \Log::info('✅ Checkout automático completado, estado limpio para siguiente escaneo');
-
-                    // Alerta simple de salida
                     $this->js("alert('Usuario salió: {$personName}');");
                 } catch (\Exception $e) {
-                    \Log::error('❌ Error en checkout automático para usuario', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
-                    ]);
                     $this->addError('error', 'Error al registrar la salida: '.$e->getMessage());
                 }
 
@@ -502,59 +397,30 @@ class Scanner extends Component
         }
 
         if ($pass->date->toDateString() !== now()->toDateString()) {
-            \Log::warning('⚠️ Fecha incorrecta', ['pass_date' => $pass->date->toDateString(), 'today' => now()->toDateString()]);
             $this->addError('token', 'El pase no corresponde a hoy.');
 
             return;
         }
 
         $this->pass = $pass;
-        \Log::info('✅ Pass cargado', [
-            'pass_id' => $pass->id,
-            'unit_id' => $pass->unit_id,
-            'guests_count' => $pass->guests->count(),
-            'guests_allowed' => $pass->guests_allowed,
-        ]);
 
-        // Acción automática según estado actual
         $openEntry = $this->findOpenEntryForPass();
         $this->action = $openEntry ? 'exit' : 'entry';
-        \Log::info('📍 Acción determinada', ['action' => $this->action, 'openEntry_exists' => (bool) $openEntry]);
 
-        // Si ya está adentro y es un day-pass, NO ejecutar checkout automático
-        // Dejar que el usuario confirme manualmente la salida para day-passes
-
-        // Por defecto, seleccionar todos los invitados precargados (respetando límite del reglamento)
         $maxAllowed = $this->calculateMaxGuestsAllowedToday();
         $allGuestIds = $pass->guests->pluck('id')->map(fn ($id) => (int) $id)->all();
         $this->selectedGuestIds = array_slice($allGuestIds, 0, $maxAllowed);
-        \Log::info('👥 Invitados seleccionados', [
-            'maxAllowed' => $maxAllowed,
-            'allGuestIds' => $allGuestIds,
-            'selectedGuestIds' => $this->selectedGuestIds,
-        ]);
     }
 
     public function confirm(PoolAccessService $poolAccessService): void
     {
-        \Log::info('🟢 🟢 🟢 confirm() LLAMADO 🟢 🟢 🟢', [
-            'has_pass' => (bool) $this->pass,
-            'has_resident' => (bool) $this->scannedResident,
-            'scannedUserId' => $this->scannedUserId,
-            'action' => $this->action,
-            'poolId' => $this->poolId,
-            'selectedGuestIds' => $this->selectedGuestIds,
-        ]);
-
         if (! $this->pass && ! $this->scannedResident) {
-            \Log::error('❌ No hay pass ni residente');
             $this->addError('error', 'Primero escanee un QR.');
 
             return;
         }
 
         if ($this->action !== 'entry') {
-            \Log::warning('⚠️ Acción no es entry', ['action' => $this->action]);
             $this->addError('error', 'Este QR indica que hay un ingreso abierto. Registre la salida.');
 
             return;
@@ -757,10 +623,6 @@ class Scanner extends Component
             $entry->refresh(); // Forzar recarga desde BD
             // Doble verificación: si tiene exited_at, no es una entrada válida
             if ($entry->exited_at !== null) {
-                \Log::warning('⚠️ Entrada encontrada pero ya cerrada (caché obsoleto)', [
-                    'entry_id' => $entry->id,
-                    'exited_at' => $entry->exited_at,
-                ]);
                 $entry = null;
             }
         }
@@ -788,30 +650,12 @@ class Scanner extends Component
 
         $entry = $query->latest('entered_at')->first();
 
-        // Si encontramos una entrada, recargarla desde BD y verificar que esté realmente abierta
         if ($entry) {
-            $entry->refresh(); // Forzar recarga desde BD
-            // Doble verificación: si tiene exited_at, no es una entrada válida
+            $entry->refresh();
             if ($entry->exited_at !== null) {
-                \Log::warning('⚠️ Entrada encontrada pero ya cerrada (caché obsoleto)', [
-                    'entry_id' => $entry->id,
-                    'exited_at' => $entry->exited_at,
-                ]);
                 $entry = null;
             }
         }
-
-        \Log::info('🔍 Búsqueda de entrada abierta para residente', [
-            'resident_id' => $resident->id,
-            'resident_name' => $resident->name,
-            'unit_id' => $resident->unit_id,
-            'pool_id' => $this->poolId,
-            'found' => $entry !== null,
-            'entry_id' => $entry?->id,
-            'entry_pool_id' => $entry?->pool_id,
-            'entry_entered_at' => $entry?->entered_at?->toDateTimeString(),
-            'entry_exited_at' => $entry?->exited_at?->toDateTimeString(),
-        ]);
 
         return $entry;
     }
@@ -820,8 +664,6 @@ class Scanner extends Component
     {
         $unitId = $user->currentUnitUsers()->first()?->unit_id;
         if (! $unitId) {
-            \Log::warning('⚠️ Usuario sin unidad activa', ['user_id' => $user->id]);
-
             return null;
         }
 
@@ -844,46 +686,19 @@ class Scanner extends Component
 
         $entry = $query->latest('entered_at')->first();
 
-        // Si encontramos una entrada, recargarla desde BD y verificar que esté realmente abierta
         if ($entry) {
-            $entry->refresh(); // Forzar recarga desde BD
-            // Doble verificación: si tiene exited_at, no es una entrada válida
+            $entry->refresh();
             if ($entry->exited_at !== null) {
-                \Log::warning('⚠️ Entrada encontrada pero ya cerrada (caché obsoleto)', [
-                    'entry_id' => $entry->id,
-                    'exited_at' => $entry->exited_at,
-                ]);
                 $entry = null;
             }
         }
-
-        \Log::info('🔍 Búsqueda de entrada abierta para usuario', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'unit_id' => $unitId,
-            'pool_id' => $this->poolId,
-            'found' => $entry !== null,
-            'entry_id' => $entry?->id,
-            'entry_pool_id' => $entry?->pool_id,
-            'entry_entered_at' => $entry?->entered_at?->toDateTimeString(),
-            'entry_exited_at' => $entry?->exited_at?->toDateTimeString(),
-        ]);
 
         return $entry;
     }
 
     protected function confirmResidentEntry(PoolAccessService $poolAccessService): void
     {
-        \Log::info('👤 confirmResidentEntry INICIADO', [
-            'resident_id' => $this->scannedResident?->id,
-            'resident_name' => $this->scannedResident?->name,
-            'is_virtual' => $this->scannedResident?->id === null,
-            'poolId' => $this->poolId,
-        ]);
-
         if (! $this->scannedResident) {
-            \Log::error('❌ No hay residente escaneado');
-
             return;
         }
 
@@ -897,13 +712,7 @@ class Scanner extends Component
             return;
         }
 
-        // Evitar doble entrada - forzar recarga desde BD
-        \Log::info('🔍 Verificando entrada abierta...', [
-            'unit_id' => $this->scannedResident->unit_id,
-            'resident_id' => $this->scannedResident->id,
-            'date' => now()->toDateString(),
-        ]);
-
+        // Evitar doble entrada
         $openEntry = \App\Models\PoolEntry::query()
             ->where('unit_id', $this->scannedResident->unit_id)
             ->where('resident_id', $this->scannedResident->id)
@@ -912,14 +721,7 @@ class Scanner extends Component
             ->latest('entered_at')
             ->first();
 
-        \Log::info('📊 Resultado búsqueda entrada abierta', [
-            'found' => $openEntry !== null,
-            'entry_id' => $openEntry?->id,
-            'exited_at' => $openEntry?->exited_at,
-        ]);
-
         if ($openEntry) {
-            \Log::warning('⚠️ Residente ya tiene entrada abierta', ['entry_id' => $openEntry->id]);
             $this->addError('error', 'Este residente ya está en la pileta. Registre la salida antes de volver a ingresar.');
 
             return;
@@ -934,55 +736,28 @@ class Scanner extends Component
         try {
             /** @var Pool $pool */
             $pool = Pool::findOrFail($this->poolId);
-            \Log::info('🏊 Pool encontrado', ['pool_name' => $pool->name]);
 
             /** @var Unit $unit */
             $unit = Unit::findOrFail($this->scannedResident->unit_id);
-            \Log::info('🏠 Unit encontrado', ['unit' => $unit->full_identifier]);
-
-            // Registrar entrada del residente sin invitados
-            \Log::info('🟢 Llamando a registerResidentEntry...', [
-                'pool_id' => $pool->id,
-                'unit_id' => $unit->id,
-                'resident_id' => $this->scannedResident->id,
-                'guests_count' => 0,
-            ]);
 
             $entry = $poolAccessService->registerResidentEntry($pool, $unit, $this->scannedResident, 0, now()->toDateTimeString());
 
-            \Log::info('✅ Entrada registrada exitosamente', ['entry_id' => $entry->id]);
-
-            // Notificar a otros componentes
             $this->dispatch('entry-registered')->to(Inside::class);
 
-            // Alerta simple de entrada
             $personName = $this->scannedResident->name;
             $this->js("alert('Usuario ingresó: {$personName}');");
 
-            // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
             $this->dispatch('restart-camera')->self();
 
-            \Log::info('✅ Entrada registrada - cámara reiniciada');
-
         } catch (\Exception $e) {
-            \Log::error('🔴 ERROR al registrar entrada', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
             $this->addError('error', $e->getMessage());
         }
     }
 
     protected function confirmUserEntry(PoolAccessService $poolAccessService): void
     {
-        \Log::info('👥 confirmUserEntry INICIADO (QR de usuario)', [
-            'scannedUserId' => $this->scannedUserId,
-            'poolId' => $this->poolId,
-        ]);
-
         if (! $this->scannedUserId) {
-            \Log::error('❌ No hay scannedUserId');
             $this->addError('error', 'Error: ID de usuario no encontrado');
 
             return;
@@ -1008,7 +783,6 @@ class Scanner extends Component
             ->first();
 
         if ($openEntry) {
-            \Log::warning('⚠️ Usuario ya tiene entrada abierta', ['entry_id' => $openEntry->id]);
             $this->addError('error', 'Este usuario ya está en la pileta. Registre la salida antes de volver a ingresar.');
 
             return;
@@ -1022,118 +796,64 @@ class Scanner extends Component
 
         try {
             $pool = Pool::findOrFail($this->poolId);
-            \Log::info('🏊 Pool encontrado', ['pool_name' => $pool->name]);
 
             $unitUser = $user->currentUnitUsers()->first();
             if (! $unitUser) {
-                \Log::error('❌ Usuario sin unidad activa');
                 $this->addError('error', 'El usuario no tiene una unidad activa.');
 
                 return;
             }
 
             $unit = Unit::findOrFail($unitUser->unit_id);
-            \Log::info('🏠 Unit encontrado', ['unit' => $unit->full_identifier]);
 
-            // Registrar entrada del usuario sin invitados
-            \Log::info('🟢 Llamando a registerEntry (usuario)...');
             $entry = $poolAccessService->registerEntry($pool, $unit, $user, 0, now()->toDateTimeString());
-            \Log::info('✅ Entrada registrada exitosamente', ['entry_id' => $entry->id]);
 
-            // Notificar a otros componentes
             $this->dispatch('entry-registered')->to(Inside::class);
 
-            // Alerta simple de entrada
             $personName = $user->name;
             $this->js("alert('Usuario ingresó: {$personName}');");
 
-            // Resetear scanner para permitir nuevo escaneo inmediato
             $this->resetScanner();
             $this->dispatch('restart-camera')->self();
 
-            \Log::info('✅ Entrada de usuario registrada - cámara reiniciada');
         } catch (\Exception $e) {
-            \Log::error('🔴 ERROR al registrar entrada de usuario', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
             $this->addError('error', $e->getMessage());
         }
     }
 
     public function checkout(): void
     {
-        \Log::info('🚪 checkout() INICIADO', [
-            'has_pass' => (bool) $this->pass,
-            'has_scannedResident' => (bool) $this->scannedResident,
-            'scannedUserId' => $this->scannedUserId,
-            'scannedResident_id' => $this->scannedResident?->id,
-            'scannedResident_name' => $this->scannedResident?->name,
-            'action' => $this->action,
-            'poolId' => $this->poolId,
-        ]);
-
         if (! $this->pass && ! $this->scannedResident) {
-            \Log::warning('⚠️ checkout() sin pass ni residente');
             $this->addError('error', 'Primero escanee un QR.');
 
             return;
         }
 
         if ($this->action !== 'exit') {
-            \Log::warning('⚠️ checkout() con action != exit', ['action' => $this->action]);
             $this->addError('error', 'No hay un ingreso abierto. Registre la entrada.');
 
             return;
         }
 
-        // Si tenemos una entrada encontrada previamente (checkout automático), usarla
-        // De lo contrario, buscar la entrada
         $entry = null;
         if ($this->foundOpenEntry) {
-            \Log::info('✅ Usando entrada encontrada previamente', [
-                'entry_id' => $this->foundOpenEntry->id,
-            ]);
             $entry = $this->foundOpenEntry;
-            // Recargar desde BD para asegurar que tenemos los datos más recientes
+            // Reload from DB to ensure fresh data
             $entry = \App\Models\PoolEntry::find($entry->id);
         } elseif ($this->scannedUserId) {
-            // Es un usuario con QR personal
-            \Log::info('🔍 Buscando entrada para usuario', ['user_id' => $this->scannedUserId]);
             $user = User::findOrFail($this->scannedUserId);
             $entry = $this->findOpenEntryForUser($user);
         } elseif ($this->scannedResident) {
-            \Log::info('🔍 Buscando entrada para residente', [
-                'resident_id' => $this->scannedResident->id,
-                'resident_name' => $this->scannedResident->name,
-            ]);
             $entry = $this->findOpenEntryForResident($this->scannedResident);
         } else {
-            \Log::info('🔍 Buscando entrada para pass');
             $entry = $this->findOpenEntryForPass();
         }
 
-        \Log::info('📊 Resultado búsqueda entrada', [
-            'entry_found' => $entry !== null,
-            'entry_id' => $entry?->id,
-            'entry_pool_id' => $entry?->pool_id,
-            'entry_resident_id' => $entry?->resident_id,
-            'entry_user_id' => $entry?->user_id,
-            'entry_entered_at' => $entry?->entered_at?->toDateTimeString(),
-            'entry_exited_at' => $entry?->exited_at?->toDateTimeString(),
-        ]);
-
         if (! $entry) {
-            \Log::error('❌ No se encontró entrada abierta para checkout');
             $this->addError('error', 'No se encontró un ingreso abierto para hacer salida.');
 
             return;
         }
-
-        \Log::info('✅ Registrando salida', [
-            'entry_id' => $entry->id,
-            'exited_by_user_id' => auth()->id(),
-        ]);
 
         $entry->update([
             'exited_at' => now(),
@@ -1141,30 +861,18 @@ class Scanner extends Component
             'exit_notes' => $this->exitNotes,
         ]);
 
-        \Log::info('✅ Salida registrada en BD', ['entry_id' => $entry->id]);
-
-        // Notificar a otros componentes
         $this->dispatch('entry-registered')->to(Inside::class);
 
-        // Resetear completamente para forzar nuevo escaneo
-        // Esto limpia todo el estado incluyendo token, pass, scannedResident, etc.
         $this->resetScanner();
 
-        // Asegurar que el token esté completamente limpio y el flag reseteado
         $this->token = '';
         $this->skipUpdatedToken = false;
 
-        \Log::info('🔄 Estado completamente limpiado después de checkout, listo para siguiente escaneo');
-
-        // Determinar nombre de la persona
         $personName = $entry->resident ? $entry->resident->name : ($entry->user ? $entry->user->name : 'Usuario');
 
-        // Alerta simple de salida
         $this->js("alert('Usuario salió: {$personName}');");
 
         $this->dispatch('restart-camera')->self();
-
-        \Log::info('✅ Salida registrada - cámara reiniciada');
     }
 
     /**

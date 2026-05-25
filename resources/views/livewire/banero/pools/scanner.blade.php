@@ -3,7 +3,7 @@
     <div class="mb-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
             <flux:heading size="xl">Escanear QR</flux:heading>
-            <p class="text-sm text-gray-500 mt-1">Entrada / salida automática.</p>
+            <p class="text-sm text-zinc-500 mt-1">Entrada / salida automática.</p>
         </div>
 
         {{-- Selector de pileta para admins --}}
@@ -22,36 +22,36 @@
         @endif
 
         <div class="flex items-center gap-2">
-            <button
+            <flux:button
                 type="button"
                 wire:click="resetScanner"
                 @click="$wire.resetScanner().then(() => setTimeout(() => window.__baneroStartQrScanner?.(), 300))"
-                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                variant="ghost"
+                icon="arrow-path"
             >
                 Nuevo
-            </button>
-            <flux:button href="{{ route('banero.pools.inside') }}" variant="ghost" wire:navigate>En pileta</flux:button>
-            <button 
-                type="button" 
+            </flux:button>
+            <flux:button href="{{ route('banero.pools.inside') }}" variant="ghost" icon="users" wire:navigate>En pileta</flux:button>
+            <flux:button
+                type="button"
                 @click="document.getElementById('exitQrModal').classList.remove('hidden')"
-                class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                variant="danger"
+                icon="qr-code"
             >
                 Ver QR de Salida
-            </button>
+            </flux:button>
         </div>
     </div>
 
     {{-- Modal para mostrar QR de salida --}}
     <div id="exitQrModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onclick="this.classList.add('hidden')">
         <div class="relative max-w-md w-full bg-white dark:bg-zinc-900 rounded-xl shadow-xl p-6" onclick="event.stopPropagation()">
-            <button 
-                type="button" 
-                onclick="document.getElementById('exitQrModal').classList.add('hidden')" 
-                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            <button
+                type="button"
+                onclick="document.getElementById('exitQrModal').classList.add('hidden')"
+                class="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
             >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+                <flux:icon.x-mark class="w-6 h-6" />
             </button>
 
             <div class="text-center space-y-4">
@@ -267,9 +267,7 @@
                         <div id="photoModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onclick="this.classList.add('hidden')">
                             <div class="relative max-w-2xl w-full" onclick="event.stopPropagation()">
                                 <button type="button" onclick="document.getElementById('photoModal').classList.add('hidden')" class="absolute -top-10 right-0 text-white hover:text-gray-300">
-                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
+                                    <flux:icon.x-mark class="w-8 h-8" />
                                 </button>
                                 <img src="{{ $photo }}" alt="{{ $name }}" class="w-full h-auto rounded-lg" />
                                 <div class="mt-4 text-white text-center">
@@ -358,9 +356,7 @@
                         <div id="photoModalPass" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onclick="this.classList.add('hidden')">
                             <div class="relative max-w-2xl w-full" onclick="event.stopPropagation()">
                                 <button type="button" onclick="document.getElementById('photoModalPass').classList.add('hidden')" class="absolute -top-10 right-0 text-white hover:text-gray-300">
-                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
+                                    <flux:icon.x-mark class="w-8 h-8" />
                                 </button>
                                 <img src="{{ $photo }}" alt="{{ $name }}" class="w-full h-auto rounded-lg" />
                                 <div class="mt-4 text-white text-center">
@@ -487,9 +483,7 @@
                                                     <div id="guestPhotoModal{{ $guest->id }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onclick="this.classList.add('hidden')">
                                                         <div class="relative max-w-2xl w-full" onclick="event.stopPropagation()">
                                                             <button type="button" onclick="document.getElementById('guestPhotoModal{{ $guest->id }}').classList.add('hidden')" class="absolute -top-10 right-0 text-white hover:text-gray-300">
-                                                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                                </svg>
+                                                                <flux:icon.x-mark class="w-8 h-8" />
                                                             </button>
                                                             <img src="{{ $gPhoto }}" alt="{{ $guest->name }}" class="w-full h-auto rounded-lg" />
                                                             <div class="mt-4 text-white text-center">

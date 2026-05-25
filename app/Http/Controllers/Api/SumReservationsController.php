@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\SumReservationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\SumReservation;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +30,11 @@ class SumReservationsController extends Controller
             ->with(['unit.building', 'user'])
             ->where('date', '>=', $start)
             ->where('date', '<=', $end)
-            ->whereIn('status', ['pending', 'approved', 'completed'])
+            ->whereIn('status', [
+                SumReservationStatus::Pending->value,
+                SumReservationStatus::Approved->value,
+                SumReservationStatus::Completed->value,
+            ])
             ->get();
 
         $events = $reservations->map(function ($reservation) {
@@ -57,36 +62,30 @@ class SumReservationsController extends Controller
             $startDateTime = $startDate.'T'.$startTime;
             $endDateTime = $endDate.'T'.$endTime;
 
-            // Colores con buen contraste en modo claro y oscuro
             $colors = match ($reservation->status) {
-                'pending' => [
-                    'bg' => '#f59e0b', // amber-500 - funciona en ambos modos
-                    'border' => '#d97706', // amber-600 - borde más oscuro
-                    'text' => '#ffffff', // texto blanco
+                SumReservationStatus::Pending => [
+                    'bg' => '#f59e0b',
+                    'border' => '#d97706',
+                    'text' => '#ffffff',
                 ],
-                'approved' => [
-                    'bg' => '#10b981', // emerald-500 - funciona en ambos modos
-                    'border' => '#059669', // emerald-600 - borde más oscuro
-                    'text' => '#ffffff', // texto blanco
+                SumReservationStatus::Approved => [
+                    'bg' => '#10b981',
+                    'border' => '#059669',
+                    'text' => '#ffffff',
                 ],
-                'rejected' => [
-                    'bg' => '#ef4444', // red-500 - funciona en ambos modos
-                    'border' => '#dc2626', // red-600 - borde más oscuro
-                    'text' => '#ffffff', // texto blanco
+                SumReservationStatus::Rejected => [
+                    'bg' => '#ef4444',
+                    'border' => '#dc2626',
+                    'text' => '#ffffff',
                 ],
-                'cancelled' => [
-                    'bg' => '#71717a', // zinc-500
-                    'border' => '#52525b', // zinc-600 - borde más oscuro
-                    'text' => '#ffffff', // texto blanco
-                ],
-                'completed' => [
-                    'bg' => '#3b82f6', // blue-500 - funciona en ambos modos
-                    'border' => '#2563eb', // blue-600 - borde más oscuro
-                    'text' => '#ffffff', // texto blanco
-                ],
-                default => [
+                SumReservationStatus::Cancelled => [
                     'bg' => '#71717a',
                     'border' => '#52525b',
+                    'text' => '#ffffff',
+                ],
+                SumReservationStatus::Completed => [
+                    'bg' => '#3b82f6',
+                    'border' => '#2563eb',
                     'text' => '#ffffff',
                 ],
             };

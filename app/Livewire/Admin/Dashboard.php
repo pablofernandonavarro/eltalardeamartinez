@@ -4,10 +4,12 @@ namespace App\Livewire\Admin;
 
 use App\Models\Building;
 use App\Models\News;
+use App\Models\Payment;
 use App\Models\PoolEntry;
 use App\Models\Resident;
 use App\Models\Unit;
 use App\Models\User;
+use App\PaymentStatus;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -47,9 +49,7 @@ class Dashboard extends Component
             ->take(3)
             ->get();
 
-        // Unidades con pagos pendientes (si existe el modelo Payment)
-        $pendingPayments = \App\Models\Payment::where('status', 'pending')
-            ->count();
+        $pendingPayments = Payment::where('status', PaymentStatus::Pendiente)->count();
 
         return view('livewire.admin.dashboard', [
             'stats' => $stats,

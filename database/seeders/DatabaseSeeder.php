@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
             ComplexSeeder::class,
             ConceptSeeder::class,
             PoolSeeder::class,
-            UnitsFromExcelSeeder::class,
+            // UnitsFromExcelSeeder::class, // requiere storage/app/seeders/datos_talar.xlsx
         ]);
     }
 }
