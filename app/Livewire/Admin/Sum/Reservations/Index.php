@@ -114,33 +114,49 @@ class Index extends Component
         $this->closeDetailsModal();
     }
 
-    public function approveReservation(int $reservationId): void
+    public function syncReservationPayment(int $reservationId): void
     {
-        $reservation = SumReservation::find($reservationId);
+        $reservation = SumReservation::with('payment')->find($reservationId);
+        $payment = $reservation?->payment;
 
-        if (! $reservation || $reservation->status !== SumReservationStatus::Pending) {
-            session()->flash('error', 'La reserva no puede ser aprobada.');
+        if (! $payment || ! $payment->mp_preference_id) {
+            session()->flash('error', 'Esta reserva no tiene un pago MP asociado para sincronizar.');
 
             return;
         }
 
-        $reservation->update([
-            'status'      => SumReservationStatus::Approved,
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
+        try {
+            $mpPayment = app(MercadoPagoService::class)->findApprovedPayment($payment->id);
 
-        $existingPayment = SumPayment::where('reservation_id', $reservation->id)->first();
-        if (! $existingPayment) {
-            SumPayment::create([
-                'reservation_id' => $reservation->id,
-                'amount'         => $reservation->total_amount,
-                'status'         => SumPaymentStatus::Pending,
+            if (! $mpPayment) {
+                session()->flash('error', 'No se encontró un pago aprobado en Mercado Pago para esta reserva.');
+
+                return;
+            }
+
+            $payment->update([
+                'status'                => SumPaymentStatus::Paid,
+                'mp_payment_id'         => (string) $mpPayment->id,
+                'mp_status'             => $mpPayment->status,
+                'payment_method'        => 'online',
+                'transaction_reference' => (string) $mpPayment->id,
+                'paid_at'               => now(),
             ]);
-        }
 
-        session()->flash('message', 'Reserva aprobada exitosamente.');
-        $this->closeDetailsModal();
+            $reservation->update([
+                'status'      => SumReservationStatus::Approved,
+                'approved_at' => now(),
+            ]);
+
+            session()->flash('message', 'Pago sincronizado y reserva aprobada. ID MP: ' . $mpPayment->id);
+            $this->closeDetailsModal();
+        } catch (\Throwable $e) {
+            \Log::error('Error al sincronizar pago MP desde reservas', [
+                'reservation_id' => $reservationId,
+                'error'          => $e->getMessage(),
+            ]);
+            session()->flash('error', 'Error al consultar Mercado Pago: ' . $e->getMessage());
+        }
     }
 
     public function rejectReservation(): void

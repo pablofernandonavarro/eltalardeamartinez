@@ -142,18 +142,9 @@
                                         @endif
                                     </td>
                                     <td class="whitespace-nowrap px-4 py-3 text-center">
-                                        <div class="flex justify-center gap-2">
-                                            <flux:button wire:click="viewDetails({{ $reservation->id }})" variant="ghost" size="sm" icon="eye">
-                                                Ver
-                                            </flux:button>
-                                            @if($reservation->status->value === 'pending')
-                                                <flux:button wire:click="approveReservation({{ $reservation->id }})"
-                                                    variant="ghost" size="sm" color="green"
-                                                    wire:confirm="¿Está seguro que desea aprobar esta reserva?">
-                                                    Aprobar
-                                                </flux:button>
-                                            @endif
-                                        </div>
+                                        <flux:button wire:click="viewDetails({{ $reservation->id }})" variant="ghost" size="sm" icon="eye">
+                                            Ver
+                                        </flux:button>
                                     </td>
                                 </tr>
                             @empty
@@ -252,30 +243,44 @@
                         @php $p = $selectedReservation->payment; @endphp
 
                         @if ($p->status->value === 'pending')
-                            {{-- Registrar pago --}}
-                            <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-900/20">
-                                <p class="mb-3 text-sm font-semibold text-amber-800 dark:text-amber-200">Pago pendiente — registrá el cobro</p>
-                                <div class="flex gap-3">
-                                    <flux:select wire:model="paymentMethod" class="flex-1">
-                                        <option value="">— Método de pago —</option>
-                                        <option value="cash">Efectivo</option>
-                                        <option value="transfer">Transferencia</option>
-                                        <option value="card">Tarjeta</option>
-                                    </flux:select>
-                                    <flux:button wire:click="registerPayment" variant="primary" size="sm"
-                                        wire:loading.attr="disabled" wire:target="registerPayment">
-                                        Confirmar pago
-                                    </flux:button>
+                            @if ($p->mp_preference_id)
+                                {{-- Pago MP iniciado pero no confirmado --}}
+                                <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-700 dark:bg-blue-900/20">
+                                    <div class="flex items-start gap-3">
+                                        <flux:icon.clock class="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
+                                        <div>
+                                            <p class="text-sm font-semibold text-blue-800 dark:text-blue-200">Esperando confirmación de Mercado Pago</p>
+                                            <p class="mt-1 text-xs text-blue-700 dark:text-blue-300">El residente inició el pago pero el webhook aún no lo confirmó. Si el pago ya se realizó, sincronizá manualmente.</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <flux:button wire:click="syncReservationPayment({{ $selectedReservation->id }})" variant="primary" size="sm" icon="arrow-path"
+                                            wire:loading.attr="disabled" wire:target="syncReservationPayment">
+                                            Sincronizar con MP
+                                        </flux:button>
+                                    </div>
                                 </div>
-                                @error('paymentMethod')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
-                                @if ($p->mp_preference_id)
-                                    <p class="mt-2 text-xs text-amber-700 dark:text-amber-300">
-                                        El residente inició un pago por Mercado Pago pero aún no fue confirmado.
-                                    </p>
-                                @endif
-                            </div>
+                            @else
+                                {{-- Pago manual pendiente --}}
+                                <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-900/20">
+                                    <p class="mb-3 text-sm font-semibold text-amber-800 dark:text-amber-200">Pago pendiente — registrá el cobro</p>
+                                    <div class="flex gap-3">
+                                        <flux:select wire:model="paymentMethod" class="flex-1">
+                                            <option value="">— Método de pago —</option>
+                                            <option value="cash">Efectivo</option>
+                                            <option value="transfer">Transferencia</option>
+                                            <option value="card">Tarjeta</option>
+                                        </flux:select>
+                                        <flux:button wire:click="registerPayment" variant="primary" size="sm"
+                                            wire:loading.attr="disabled" wire:target="registerPayment">
+                                            Confirmar pago
+                                        </flux:button>
+                                    </div>
+                                    @error('paymentMethod')
+                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
                         @else
                             <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
                                 <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Información de Pago</p>
@@ -377,14 +382,9 @@
                         Cerrar
                     </flux:button>
                     @if($selectedReservation->status->value === 'pending')
-                        <flux:button type="button" wire:click="approveReservation({{ $selectedReservation->id }})"
-                            wire:confirm="¿Está seguro que desea aprobar esta reserva?"
-                            variant="primary" class="flex-1">
-                            Aprobar
-                        </flux:button>
                         <flux:button type="button" wire:click="rejectReservation"
-                            variant="danger" class="flex-1">
-                            Rechazar
+                            variant="danger">
+                            Rechazar reserva
                         </flux:button>
                     @endif
                 </div>
