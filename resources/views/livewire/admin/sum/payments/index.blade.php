@@ -172,7 +172,15 @@
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-medium">
                                     @if ($payment->status->value === 'pending')
-                                        <button wire:click="openPaymentModal({{ $payment->id }})" class="mr-3 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">Confirmar Pago</button>
+                                        @if ($payment->mp_preference_id)
+                                            <button wire:click="syncWithMercadoPago({{ $payment->id }})"
+                                                wire:confirm="¿Consultar Mercado Pago y actualizar el estado de este pago?"
+                                                class="mr-3 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                                Sincronizar MP
+                                            </button>
+                                        @else
+                                            <button wire:click="openPaymentModal({{ $payment->id }})" class="mr-3 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">Confirmar Pago</button>
+                                        @endif
                                     @endif
                                     <button wire:click="downloadInvoice({{ $payment->id }})" class="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300">
                                         <svg class="inline-block h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

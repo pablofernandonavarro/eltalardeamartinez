@@ -7,6 +7,7 @@ use App\Models\SumReservation;
 use MercadoPago\Client\Payment\PaymentClient;
 use MercadoPago\Client\Payment\PaymentRefundClient;
 use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\Net\MPSearchRequest;
 use MercadoPago\MercadoPagoConfig;
 
 class MercadoPagoService
@@ -76,5 +77,28 @@ class MercadoPagoService
         $client = new PaymentRefundClient;
 
         return $client->refundTotal((int) $paymentId);
+    }
+
+    /**
+     * Busca en MP el pago aprobado asociado a un SumPayment por external_reference.
+     * Retorna el objeto de pago MP si encontró uno aprobado, o null si no hay nada.
+     */
+    public function findApprovedPayment(int $paymentDbId): ?object
+    {
+        $client = new PaymentClient;
+
+        $search = $client->search(
+            new MPSearchRequest(1, 0, ['external_reference' => "sum_payment_{$paymentDbId}"])
+        );
+
+        $results = $search->results ?? [];
+
+        foreach ($results as $mpPayment) {
+            if (($mpPayment->status ?? '') === 'approved') {
+                return $mpPayment;
+            }
+        }
+
+        return null;
     }
 }

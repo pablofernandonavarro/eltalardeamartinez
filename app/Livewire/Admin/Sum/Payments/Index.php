@@ -2,8 +2,11 @@
 
 namespace App\Livewire\Admin\Sum\Payments;
 
+use App\Enums\SumPaymentStatus;
+use App\Enums\SumReservationStatus;
 use App\Exports\SumPaymentsExport;
 use App\Models\SumPayment;
+use App\Services\MercadoPagoService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -103,6 +106,48 @@ class Index extends Component
 
         $this->closePaymentModal();
         session()->flash('message', 'Pago confirmado exitosamente.');
+    }
+
+    public function syncWithMercadoPago(int $paymentId): void
+    {
+        $payment = SumPayment::with('reservation')->find($paymentId);
+
+        if (! $payment || $payment->status === SumPaymentStatus::Paid) {
+            session()->flash('error', 'El pago ya está confirmado o no existe.');
+
+            return;
+        }
+
+        try {
+            $mpPayment = app(MercadoPagoService::class)->findApprovedPayment($payment->id);
+
+            if (! $mpPayment) {
+                session()->flash('error', 'No se encontró un pago aprobado en Mercado Pago para esta reserva.');
+
+                return;
+            }
+
+            $payment->update([
+                'status'                => SumPaymentStatus::Paid,
+                'mp_payment_id'         => (string) $mpPayment->id,
+                'mp_status'             => $mpPayment->status,
+                'payment_method'        => 'online',
+                'transaction_reference' => (string) $mpPayment->id,
+                'paid_at'               => now(),
+            ]);
+
+            if ($payment->reservation && $payment->reservation->status === \App\Enums\SumReservationStatus::Pending) {
+                $payment->reservation->update([
+                    'status'      => SumReservationStatus::Approved,
+                    'approved_at' => now(),
+                ]);
+            }
+
+            session()->flash('message', 'Pago sincronizado con MP correctamente. ID: ' . $mpPayment->id);
+        } catch (\Throwable $e) {
+            \Log::error('Error al sincronizar pago con MP', ['payment_id' => $paymentId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Error al consultar Mercado Pago: ' . $e->getMessage());
+        }
     }
 
     public function downloadInvoice(int $paymentId)
