@@ -126,11 +126,11 @@
                                                     'cancelled'=> 'zinc',
                                                 ][$reservation->payment->status->value] ?? 'zinc';
                                             @endphp
-                                            <div class="flex items-center justify-center gap-1">
+                                            <div class="flex flex-col items-center gap-1">
                                                 <flux:badge color="{{ $paymentBadgeColor }}" size="sm">{{ $reservation->payment->status_label }}</flux:badge>
-                                                @if ($reservation->payment->mp_payment_id)
-                                                    <span class="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-semibold text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">MP</span>
-                                                @endif
+                                                <span class="text-xs text-zinc-500 dark:text-zinc-400">
+                                                    {{ $reservation->payment->payment_method_label }}
+                                                </span>
                                             </div>
                                         @else
                                             <span class="text-zinc-400">—</span>
