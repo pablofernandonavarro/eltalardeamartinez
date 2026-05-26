@@ -13,3 +13,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/sum/reservations/events', [SumReservationsController::class, 'events'])
         ->name('api.sum.reservations.events');
 });
+
+// MercadoPago webhook — sin auth ni CSRF
+Route::post('/mp/webhook', \App\Http\Controllers\MercadoPagoWebhookController::class)
+    ->name('mp.webhook');

@@ -119,3 +119,32 @@ SQLite in development. Migrations are in `database/migrations/` (47 migrations).
 ## Localization
 
 The app uses `laravel-lang/common` for Spanish translations. Timezone is `America/Argentina/Buenos_Aires`.
+
+## Mercado Pago — SUM Reservations
+
+Payments for SUM reservations go through Mercado Pago. The integration lives in `app/Services/MercadoPagoService.php`.
+
+### Credenciales
+| Variable | Descripción |
+|----------|-------------|
+| `MERCADO_PAGO_ACCESS_TOKEN` | Token de acceso (sandbox: `APP_USR-...`, producción: diferente) |
+| `MERCADO_PAGO_PUBLIC_KEY` | Clave pública (no usada aún, para futuros pagos brick) |
+
+### Comportamiento según entorno
+- **Desarrollo (http://)**: `auto_return` desactivado. MP no redirige automáticamente al usuario; muestra un botón "Volver al sitio". El webhook tampoco llega (URL local inaccesible).
+- **Producción (https://)**: `auto_return = 'approved'` se activa automáticamente (el código lo detecta via `config('app.url')`). MP redirige al usuario solo después del pago aprobado.
+
+### Checklist al subir a producción
+1. **Cambiar credenciales** en `.env` del servidor por las de producción (no las de sandbox `TEST-`):
+   ```
+   MERCADO_PAGO_ACCESS_TOKEN=APP_USR-PRODUCCION...
+   MERCADO_PAGO_PUBLIC_KEY=APP_USR-PRODUCCION...
+   ```
+2. **Verificar `APP_URL`** usa `https://` — esto activa `auto_return` automáticamente.
+3. **Webhook**: la URL `POST /api/mp/webhook` (`MercadoPagoWebhookController`) debe estar accesible desde internet. En el panel de MP (Tus integraciones → Webhooks) configurar la URL de producción. La ruta ya está excluida de CSRF (está en `routes/api.php`).
+4. **Redirect post-pago**: la ruta de resultado es `GET /resident/sum/payment/result/{status}` donde `{status}` es `success`, `failure` o `pending`. MP la recibe como `back_url` y agrega `payment_id`, `external_reference`, etc. como query params al redirigir.
+
+### Flujo completo
+1. Residente crea reserva → se crea `SumReservation` (pending) + `SumPayment` (pending) → redirige al checkout sandbox/producción de MP.
+2. Residente paga → MP llama al webhook → `MercadoPagoWebhookController` actualiza `SumPayment` (paid) y `SumReservation` (approved).
+3. Residente vuelve al sitio (manual en dev, automático en prod) → ve página `PaymentResult` con el estado del pago.

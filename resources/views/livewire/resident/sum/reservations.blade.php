@@ -178,10 +178,10 @@
                                     $statusBadgeColor = [
                                         'pending' => 'amber',
                                         'approved' => 'green',
-                                    ][$reservation->status] ?? 'zinc';
+                                    ][$reservation->status->value] ?? 'zinc';
                                 @endphp
                                 <flux:badge color="{{ $statusBadgeColor }}" size="sm">{{ $reservation->status_label }}</flux:badge>
-                                @if (in_array($reservation->status, ['pending', 'approved']))
+                                @if (in_array($reservation->status->value, ['pending', 'approved']))
                                     <flux:button wire:click="openCancelModal({{ $reservation->id }})"
                                         variant="ghost" size="sm" color="red" icon="x-mark" />
                                 @endif

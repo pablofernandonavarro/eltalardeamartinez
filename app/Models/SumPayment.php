@@ -21,6 +21,9 @@ class SumPayment extends Model
         'notes',
         'paid_at',
         'paid_by',
+        'mp_preference_id',
+        'mp_payment_id',
+        'mp_status',
     ];
 
     protected $casts = [

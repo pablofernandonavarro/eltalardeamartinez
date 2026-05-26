@@ -124,12 +124,14 @@ Route::prefix('settings')->name('settings.')->group(function () {
 // SUM - Salón de Usos Múltiples
 use App\Livewire\Admin\Sum\Payments\Index as SumPaymentsIndex;
 use App\Livewire\Admin\Sum\Reservations\Calendar as SumReservationsCalendar;
+use App\Livewire\Admin\Sum\Reservations\Create as SumReservationsCreate;
 use App\Livewire\Admin\Sum\Reservations\Index as SumReservationsIndex;
 use App\Livewire\Admin\Sum\Settings as SumSettings;
 
 Route::prefix('sum')->name('sum.')->group(function () {
     Route::prefix('reservations')->name('reservations.')->group(function () {
         Route::get('/', SumReservationsIndex::class)->name('index');
+        Route::get('/create', SumReservationsCreate::class)->name('create');
         Route::get('/calendar', SumReservationsCalendar::class)->name('calendar');
         Route::get('/events', [\App\Http\Controllers\Api\SumReservationsController::class, 'events'])->name('events');
     });

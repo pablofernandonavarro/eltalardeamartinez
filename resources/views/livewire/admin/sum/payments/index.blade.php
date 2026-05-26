@@ -143,11 +143,11 @@
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-zinc-900 dark:text-white">${{ number_format($payment->amount, 2) }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-zinc-900 dark:text-white">{{ $payment->payment_method_label }}</td>
                                 <td class="whitespace-nowrap px-6 py-4">
-                                    @if ($payment->status === 'paid')
+                                    @if ($payment->status->value === 'paid')
                                         <span class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold leading-5 text-green-800 dark:bg-green-900/50 dark:text-green-200">
                                             {{ $payment->status_label }}
                                         </span>
-                                    @elseif ($payment->status === 'pending')
+                                    @elseif ($payment->status->value === 'pending')
                                         <span class="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold leading-5 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200">
                                             {{ $payment->status_label }}
                                         </span>
@@ -158,7 +158,7 @@
                                     @endif
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                                    @if ($payment->status === 'pending')
+                                    @if ($payment->status->value === 'pending')
                                         <button wire:click="openPaymentModal({{ $payment->id }})" class="mr-3 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">Confirmar Pago</button>
                                     @endif
                                     <button wire:click="downloadInvoice({{ $payment->id }})" class="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300">

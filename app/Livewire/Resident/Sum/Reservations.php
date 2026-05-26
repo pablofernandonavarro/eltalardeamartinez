@@ -7,6 +7,7 @@ use App\Enums\SumReservationStatus;
 use App\Models\SumPayment;
 use App\Models\SumReservation;
 use App\Models\SumSetting;
+use App\Services\MercadoPagoService;
 use Carbon\Carbon;
 use Livewire\Component;
 
@@ -179,12 +180,14 @@ class Reservations extends Component
         // Verificar que haya al menos 1 hora de diferencia
         if ($endTime->lte($startTime)) {
             $this->addError('endTime', 'La hora de fin debe ser posterior a la hora de inicio.');
+
             return;
         }
 
         // Validate time range (considerando turnos nocturnos)
         if ($this->startTime < $this->openTime) {
             $this->addError('startTime', "La hora de inicio debe ser igual o posterior a {$this->openTime}.");
+
             return;
         }
 
@@ -196,12 +199,14 @@ class Reservations extends Component
             // considerando que puede ser del mismo día o del siguiente
             if ($this->endTime > $this->closeTime && $this->endTime < $this->openTime) {
                 $this->addError('endTime', "La hora de fin no puede estar entre {$this->closeTime} y {$this->openTime}.");
+
                 return;
             }
         } else {
             // El cierre es del mismo día
             if ($this->endTime > $this->closeTime || $this->endTime < $this->openTime) {
                 $this->addError('endTime', "El horario permitido es de {$this->openTime} a {$this->closeTime}.");
+
                 return;
             }
         }
@@ -240,43 +245,48 @@ class Reservations extends Component
             $end->addDay();
         }
 
-        $totalHours = $end->diffInMinutes($start) / 60;
+        $totalHours = $start->diffInMinutes($end) / 60;
         $totalAmount = $totalHours * $this->pricePerHour;
 
-        $status = $this->requiresApproval
-            ? SumReservationStatus::Pending
-            : SumReservationStatus::Approved;
-
         $reservation = SumReservation::create([
-            'unit_id'        => $this->unitId,
-            'user_id'        => auth()->id(),
-            'date'           => $this->selectedDate,
-            'start_time'     => $this->startTime,
-            'end_time'       => $this->endTime,
-            'total_hours'    => $totalHours,
+            'unit_id' => $this->unitId,
+            'user_id' => auth()->id(),
+            'date' => $this->selectedDate,
+            'start_time' => $this->startTime,
+            'end_time' => $this->endTime,
+            'total_hours' => $totalHours,
             'price_per_hour' => $this->pricePerHour,
-            'total_amount'   => $totalAmount,
-            'status'         => $status,
-            'notes'          => $this->notes,
-            'approved_at'    => $this->requiresApproval ? null : now(),
-            'approved_by'    => $this->requiresApproval ? null : auth()->id(),
+            'total_amount' => $totalAmount,
+            'status' => SumReservationStatus::Pending,
+            'notes' => $this->notes,
         ]);
 
-        if (! $this->requiresApproval) {
-            SumPayment::create([
-                'reservation_id' => $reservation->id,
-                'amount'         => $reservation->total_amount,
-                'status'         => SumPaymentStatus::Pending,
+        $payment = SumPayment::create([
+            'reservation_id' => $reservation->id,
+            'amount' => $totalAmount,
+            'status' => SumPaymentStatus::Pending,
+        ]);
+
+        try {
+            $mpService = app(MercadoPagoService::class);
+            $preference = $mpService->createPreference($reservation, $payment);
+            $payment->update(['mp_preference_id' => $preference['preference_id']]);
+
+            $checkoutUrl = app()->environment('production')
+                ? $preference['init_point']
+                : $preference['sandbox_init_point'];
+
+            $this->closeCreateModal();
+            $this->redirect($checkoutUrl);
+        } catch (\Throwable $e) {
+            $reservation->forceDelete();
+            $payment->forceDelete();
+            \Illuminate\Support\Facades\Log::error('MP createPreference error', [
+                'class'   => get_class($e),
+                'message' => $e->getMessage(),
             ]);
+            session()->flash('error', 'Error al conectar con Mercado Pago. Intente nuevamente.');
         }
-
-        $this->closeCreateModal();
-        $this->dispatchCalendarRefresh();
-
-        $message = $this->requiresApproval
-            ? 'Reserva creada. Pendiente de aprobacion.'
-            : 'Reserva confirmada exitosamente.';
-        session()->flash('message', $message);
     }
 
     public function openCancelModal(int $reservationId): void
@@ -306,10 +316,10 @@ class Reservations extends Component
             ->firstOrFail();
 
         $reservation->update([
-            'status'               => SumReservationStatus::Cancelled,
-            'cancelled_by'         => auth()->id(),
-            'cancelled_at'         => now(),
-            'cancellation_reason'  => $this->cancellationReason,
+            'status' => SumReservationStatus::Cancelled,
+            'cancelled_by' => auth()->id(),
+            'cancelled_at' => now(),
+            'cancellation_reason' => $this->cancellationReason,
         ]);
 
         $this->closeCancelModal();
@@ -453,7 +463,7 @@ class Reservations extends Component
             $end->addDay();
         }
 
-        $hours = $end->diffInMinutes($start) / 60;
+        $hours = $start->diffInMinutes($end) / 60;
 
         return $hours * $this->pricePerHour;
     }
@@ -472,7 +482,7 @@ class Reservations extends Component
             $end->addDay();
         }
 
-        return $end->diffInMinutes($start) / 60;
+        return $start->diffInMinutes($end) / 60;
     }
 
     public function render()

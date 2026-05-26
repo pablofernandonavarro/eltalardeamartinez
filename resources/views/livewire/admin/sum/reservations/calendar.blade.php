@@ -102,14 +102,14 @@
                         </div>
                     @endif
 
-                    @if($selectedReservation->status === 'approved' && $selectedReservation->approvedBy)
+                    @if($selectedReservation->status->value === 'approved' && $selectedReservation->approvedBy)
                         <div>
                             <flux:subheading class="mb-1">Aprobada por</flux:subheading>
                             <p class="text-sm">{{ $selectedReservation->approvedBy->name }} - {{ $selectedReservation->approved_at->format('d/m/Y H:i') }}</p>
                         </div>
                     @endif
 
-                    @if($selectedReservation->status === 'rejected')
+                    @if($selectedReservation->status->value === 'rejected')
                         <div>
                             <flux:subheading class="mb-1">Rechazada por</flux:subheading>
                             <p class="text-sm">{{ $selectedReservation->rejectedBy->name }} - {{ $selectedReservation->rejected_at->format('d/m/Y H:i') }}</p>
@@ -119,7 +119,7 @@
                         </div>
                     @endif
 
-                    @if($selectedReservation->status === 'cancelled')
+                    @if($selectedReservation->status->value === 'cancelled')
                         <div>
                             <flux:subheading class="mb-1">Cancelada por</flux:subheading>
                             <p class="text-sm">{{ $selectedReservation->cancelledBy->name }} - {{ $selectedReservation->cancelled_at->format('d/m/Y H:i') }}</p>

@@ -91,6 +91,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
         // SUM - Salon de Usos Multiples
         Route::prefix('sum')->name('sum.')->group(function () {
             Route::get('/reservations', \App\Livewire\Resident\Sum\Reservations::class)->name('reservations');
+            Route::get('/payment/result/{status}', \App\Livewire\Resident\Sum\PaymentResult::class)->name('payment.result');
         });
     });
 });

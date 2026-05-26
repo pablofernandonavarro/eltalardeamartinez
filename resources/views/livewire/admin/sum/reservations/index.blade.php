@@ -11,6 +11,9 @@
                     @if($status || $dateFrom || $dateTo || $search)
                         <flux:button wire:click="clearFilters" variant="ghost" icon="x-mark">Limpiar Filtros</flux:button>
                     @endif
+                    <flux:button href="{{ route('admin.sum.reservations.create') }}" variant="filled" icon="plus" wire:navigate>
+                        Nueva reserva
+                    </flux:button>
                     <flux:button href="{{ route('admin.sum.settings') }}" variant="primary" icon="cog-6-tooth" wire:navigate>
                         Configuración
                     </flux:button>
@@ -108,7 +111,7 @@
                                                 'approved' => 'green',
                                                 'rejected' => 'red',
                                                 'cancelled' => 'zinc',
-                                            ][$reservation->status] ?? 'zinc';
+                                            ][$reservation->status->value] ?? 'zinc';
                                         @endphp
                                         <flux:badge color="{{ $statusBadgeColor }}">{{ $reservation->status_label }}</flux:badge>
                                     </td>
@@ -117,7 +120,7 @@
                                             <flux:button wire:click="viewDetails({{ $reservation->id }})" variant="ghost" size="sm" icon="eye">
                                                 Ver
                                             </flux:button>
-                                            @if($reservation->status === 'pending')
+                                            @if($reservation->status->value === 'pending')
                                                 <flux:button wire:click="approveReservation({{ $reservation->id }})"
                                                     variant="ghost" size="sm" color="green"
                                                     wire:confirm="¿Está seguro que desea aprobar esta reserva?">
@@ -170,7 +173,7 @@
                                 'approved' => 'green',
                                 'rejected' => 'red',
                                 'cancelled' => 'zinc',
-                            ][$selectedReservation->status] ?? 'zinc';
+                            ][$selectedReservation->status->value] ?? 'zinc';
                         @endphp
                         <flux:badge color="{{ $statusBadgeColor }}">{{ $selectedReservation->status_label }}</flux:badge>
                     </div>
@@ -227,7 +230,7 @@
                     @endif
 
                     {{-- Approval/Rejection Info --}}
-                    @if($selectedReservation->status === 'approved' && $selectedReservation->approved_at)
+                    @if($selectedReservation->status->value === 'approved' && $selectedReservation->approved_at)
                         <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-700 dark:bg-green-900/20">
                             <p class="text-sm text-green-800 dark:text-green-200">
                                 <strong>Aprobada por:</strong> {{ $selectedReservation->approvedBy->name ?? 'Sistema' }}<br>
@@ -236,7 +239,7 @@
                         </div>
                     @endif
 
-                    @if($selectedReservation->status === 'rejected' && $selectedReservation->rejected_at)
+                    @if($selectedReservation->status->value === 'rejected' && $selectedReservation->rejected_at)
                         <div class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900/20">
                             <p class="text-sm text-red-800 dark:text-red-200">
                                 <strong>Rechazada por:</strong> {{ $selectedReservation->rejectedBy->name ?? 'Sistema' }}<br>
@@ -248,7 +251,7 @@
                         </div>
                     @endif
 
-                    @if($selectedReservation->status === 'cancelled' && $selectedReservation->cancelled_at)
+                    @if($selectedReservation->status->value === 'cancelled' && $selectedReservation->cancelled_at)
                         <div class="rounded-lg border border-zinc-300 bg-zinc-100 p-4 dark:border-zinc-600 dark:bg-zinc-800">
                             <p class="text-sm text-zinc-800 dark:text-zinc-200">
                                 <strong>Cancelada por:</strong> {{ $selectedReservation->cancelledBy->name ?? 'Usuario' }}<br>
@@ -261,7 +264,7 @@
                     @endif
 
                     {{-- Rejection Form (if pending) --}}
-                    @if($selectedReservation->status === 'pending')
+                    @if($selectedReservation->status->value === 'pending')
                         <div class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900/20">
                             <label class="mb-2 block text-sm font-medium text-red-800 dark:text-red-200">
                                 Motivo de rechazo (requerido para rechazar)
@@ -280,7 +283,7 @@
                     <flux:button type="button" wire:click="closeDetailsModal" variant="ghost" class="flex-1">
                         Cerrar
                     </flux:button>
-                    @if($selectedReservation->status === 'pending')
+                    @if($selectedReservation->status->value === 'pending')
                         <flux:button type="button" wire:click="approveReservation({{ $selectedReservation->id }})"
                             wire:confirm="¿Está seguro que desea aprobar esta reserva?"
                             variant="primary" class="flex-1">
