@@ -128,9 +128,14 @@
                                             @endphp
                                             <div class="flex flex-col items-center gap-1">
                                                 <flux:badge color="{{ $paymentBadgeColor }}" size="sm">{{ $reservation->payment->status_label }}</flux:badge>
-                                                <span class="text-xs text-zinc-500 dark:text-zinc-400">
-                                                    {{ $reservation->payment->payment_method_label }}
-                                                </span>
+                                                @if ($reservation->payment->status->value === 'pending')
+                                                    <button wire:click="viewDetails({{ $reservation->id }})"
+                                                        class="text-xs font-medium text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
+                                                        Registrar pago
+                                                    </button>
+                                                @else
+                                                    <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ $reservation->payment->payment_method_label }}</span>
+                                                @endif
                                             </div>
                                         @else
                                             <span class="text-zinc-400">—</span>
@@ -245,40 +250,68 @@
                     {{-- Payment Info --}}
                     @if ($selectedReservation->payment)
                         @php $p = $selectedReservation->payment; @endphp
-                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
-                            <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Información de Pago</p>
-                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                <div>
-                                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Estado del pago</p>
-                                    @php
-                                        $pb = ['pending'=>'yellow','paid'=>'green','refunded'=>'blue','cancelled'=>'zinc'][$p->status->value] ?? 'zinc';
-                                    @endphp
-                                    <flux:badge color="{{ $pb }}" size="sm" class="mt-1">{{ $p->status_label }}</flux:badge>
+
+                        @if ($p->status->value === 'pending')
+                            {{-- Registrar pago --}}
+                            <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-900/20">
+                                <p class="mb-3 text-sm font-semibold text-amber-800 dark:text-amber-200">Pago pendiente — registrá el cobro</p>
+                                <div class="flex gap-3">
+                                    <flux:select wire:model="paymentMethod" class="flex-1">
+                                        <option value="">— Método de pago —</option>
+                                        <option value="cash">Efectivo</option>
+                                        <option value="transfer">Transferencia</option>
+                                        <option value="card">Tarjeta</option>
+                                    </flux:select>
+                                    <flux:button wire:click="registerPayment" variant="primary" size="sm"
+                                        wire:loading.attr="disabled" wire:target="registerPayment">
+                                        Confirmar pago
+                                    </flux:button>
                                 </div>
-                                <div>
-                                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Método</p>
-                                    <p class="mt-1 font-medium text-zinc-900 dark:text-white">{{ $p->payment_method_label }}</p>
-                                </div>
-                                @if ($p->paid_at)
-                                    <div>
-                                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Fecha de pago</p>
-                                        <p class="mt-1 font-medium text-zinc-900 dark:text-white">{{ $p->paid_at->format('d/m/Y H:i') }}</p>
-                                    </div>
-                                @endif
-                                @if ($p->mp_payment_id)
-                                    <div>
-                                        <p class="text-xs text-zinc-500 dark:text-zinc-400">ID transacción MP</p>
-                                        <p class="mt-1 font-mono text-sm font-semibold text-zinc-900 dark:text-white">{{ $p->mp_payment_id }}</p>
-                                    </div>
-                                @endif
-                                @if ($p->transaction_reference)
-                                    <div class="col-span-2">
-                                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Referencia</p>
-                                        <p class="mt-1 font-mono text-sm text-zinc-900 dark:text-white">{{ $p->transaction_reference }}</p>
-                                    </div>
+                                @error('paymentMethod')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                                @if ($p->mp_preference_id)
+                                    <p class="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                                        El residente inició un pago por Mercado Pago pero aún no fue confirmado.
+                                    </p>
                                 @endif
                             </div>
-                        </div>
+                        @else
+                            <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                                <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Información de Pago</p>
+                                <div class="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Estado del pago</p>
+                                        @php
+                                            $pb = ['pending'=>'yellow','paid'=>'green','refunded'=>'blue','cancelled'=>'zinc'][$p->status->value] ?? 'zinc';
+                                        @endphp
+                                        <flux:badge color="{{ $pb }}" size="sm" class="mt-1">{{ $p->status_label }}</flux:badge>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Método</p>
+                                        <p class="mt-1 font-medium text-zinc-900 dark:text-white">{{ $p->payment_method_label }}</p>
+                                    </div>
+                                    @if ($p->paid_at)
+                                        <div>
+                                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Fecha de pago</p>
+                                            <p class="mt-1 font-medium text-zinc-900 dark:text-white">{{ $p->paid_at->format('d/m/Y H:i') }}</p>
+                                        </div>
+                                    @endif
+                                    @if ($p->mp_payment_id)
+                                        <div>
+                                            <p class="text-xs text-zinc-500 dark:text-zinc-400">ID transacción MP</p>
+                                            <p class="mt-1 font-mono text-sm font-semibold text-zinc-900 dark:text-white">{{ $p->mp_payment_id }}</p>
+                                        </div>
+                                    @endif
+                                    @if ($p->transaction_reference && $p->transaction_reference !== $p->mp_payment_id)
+                                        <div class="col-span-2">
+                                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Referencia</p>
+                                            <p class="mt-1 font-mono text-sm text-zinc-900 dark:text-white">{{ $p->transaction_reference }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     @endif
 
                     {{-- Notes --}}

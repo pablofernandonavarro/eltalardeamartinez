@@ -30,6 +30,8 @@ class Index extends Component
 
     public string $rejectionReason = '';
 
+    public string $paymentMethod = '';
+
     protected $queryString = [
         'status' => ['except' => ''],
         'dateFrom' => ['except' => ''],
@@ -74,6 +76,42 @@ class Index extends Component
         $this->showDetailsModal = false;
         $this->selectedReservationId = null;
         $this->rejectionReason = '';
+        $this->paymentMethod = '';
+    }
+
+    public function registerPayment(): void
+    {
+        $this->validate([
+            'paymentMethod' => 'required|in:cash,transfer,card',
+        ], [
+            'paymentMethod.required' => 'Seleccioná un método de pago.',
+        ]);
+
+        $reservation = SumReservation::with('payment')->find($this->selectedReservationId);
+
+        if (! $reservation) {
+            return;
+        }
+
+        $payment = $reservation->payment;
+
+        if (! $payment) {
+            $payment = SumPayment::create([
+                'reservation_id' => $reservation->id,
+                'amount'         => $reservation->total_amount,
+                'status'         => SumPaymentStatus::Pending,
+            ]);
+        }
+
+        if ($payment->status !== SumPaymentStatus::Pending) {
+            session()->flash('error', 'Este pago ya fue procesado.');
+            return;
+        }
+
+        $payment->markAsPaid($this->paymentMethod);
+
+        session()->flash('message', 'Pago registrado exitosamente.');
+        $this->closeDetailsModal();
     }
 
     public function approveReservation(int $reservationId): void
