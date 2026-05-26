@@ -92,13 +92,16 @@ class Index extends Component
             'approved_at' => now(),
         ]);
 
-        SumPayment::create([
-            'reservation_id' => $reservation->id,
-            'amount'         => $reservation->total_amount,
-            'status'         => SumPaymentStatus::Pending,
-        ]);
+        $existingPayment = SumPayment::where('reservation_id', $reservation->id)->first();
+        if (! $existingPayment) {
+            SumPayment::create([
+                'reservation_id' => $reservation->id,
+                'amount'         => $reservation->total_amount,
+                'status'         => SumPaymentStatus::Pending,
+            ]);
+        }
 
-        session()->flash('message', 'Reserva aprobada exitosamente. Se ha generado el pago pendiente.');
+        session()->flash('message', 'Reserva aprobada exitosamente.');
         $this->closeDetailsModal();
     }
 
@@ -162,7 +165,7 @@ class Index extends Component
     public function getReservationsProperty()
     {
         $query = SumReservation::query()
-            ->with(['unit.building', 'user']);
+            ->with(['unit.building', 'user', 'payment']);
 
         // Apply filters
         if ($this->status) {
@@ -200,7 +203,7 @@ class Index extends Component
             return null;
         }
 
-        return SumReservation::with(['unit.building', 'user', 'approvedBy', 'rejectedBy', 'cancelledBy'])
+        return SumReservation::with(['unit.building', 'user', 'approvedBy', 'rejectedBy', 'cancelledBy', 'payment'])
             ->find($this->selectedReservationId);
     }
 

@@ -85,16 +85,20 @@ class SumPayment extends Model
 
     public function getPaymentMethodLabelAttribute(): string
     {
+        if (! $this->payment_method && $this->mp_payment_id) {
+            return 'Mercado Pago';
+        }
+
         if (! $this->payment_method) {
             return '-';
         }
 
         return match ($this->payment_method) {
-            'cash' => 'Efectivo',
+            'cash'     => 'Efectivo',
             'transfer' => 'Transferencia',
-            'card' => 'Tarjeta',
-            'online' => 'Pago Online',
-            default => $this->payment_method,
+            'card'     => 'Tarjeta',
+            'online'   => 'Mercado Pago',
+            default    => $this->payment_method,
         };
     }
 }
