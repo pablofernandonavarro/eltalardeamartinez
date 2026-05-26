@@ -214,6 +214,26 @@
                                 </div>
                             @endif
 
+                            {{-- Unidades con edificio incorrecto en BD --}}
+                            @if(!empty($v['edificio_incorrecto']))
+                                <div class="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-3">
+                                    <p class="text-xs font-semibold text-red-800 dark:text-red-200 mb-2">
+                                        {{ count($v['edificio_incorrecto']) }} unidad(es) asignadas a otro edificio en la BD
+                                        <span class="font-normal">(el import las saltearía para no cruzar datos entre torres)</span>
+                                    </p>
+                                    <div class="space-y-1">
+                                        @foreach($v['edificio_incorrecto'] as $u)
+                                            <div class="flex gap-3 text-xs text-red-700 dark:text-red-300">
+                                                <span class="font-mono w-14">{{ $u['uf'] }}</span>
+                                                <span class="w-12">Dto. {{ $u['depto'] }}</span>
+                                                <span class="text-zinc-500">PDF: {{ $u['torre_pdf'] }}</span>
+                                                <span class="ml-auto text-zinc-500">BD: {{ $u['torre_bd'] }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             {{-- Unidades en BD ausentes del PDF --}}
                             @if(!empty($v['sin_en_pdf']))
                                 <div class="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-3">

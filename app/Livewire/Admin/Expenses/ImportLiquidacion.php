@@ -137,10 +137,11 @@ class ImportLiquidacion extends Component
      */
     private function validarConsistencia(array $units): array
     {
-        $sinMatchBd       = [];  // en PDF pero sin registro en BD
-        $sinMontoPdf      = [];  // monto 0 o negativo
-        $coeficientesPorTorre = [];  // suma de coeficientes por torre
-        $sinEnPdf         = [];  // en BD pero ausentes del PDF
+        $sinMatchBd          = [];  // en PDF pero sin registro en BD
+        $sinMontoPdf         = [];  // monto 0 o negativo
+        $coeficientesPorTorre = [];
+        $sinEnPdf            = [];  // en BD pero ausentes del PDF
+        $edificioIncorrecto  = [];  // unidad encontrada en BD pero asignada a otro edificio
 
         // Indexar el PDF por uf_code para búsqueda rápida
         $pdfPorUf = [];
@@ -155,22 +156,17 @@ class ImportLiquidacion extends Component
             ->get()
             ->keyBy('uf_code');
 
-        // Agrupar unidades del PDF por torre para suma de coeficientes
-        $pdfPorTorre = [];
-        foreach ($units as $row) {
-            $pdfPorTorre[$row['building']][] = $row;
-        }
-
         foreach ($units as $row) {
             // 1. Sin match en BD
             if (! isset($dbUnits[$row['uf']])) {
                 $sinMatchBd[] = [
-                    'uf'       => $row['uf'],
-                    'depto'    => $row['depto'],
-                    'torre'    => $row['building'],
-                    'monto'    => $row['gastos_a'],
-                    'owner'    => $row['owner'],
+                    'uf'    => $row['uf'],
+                    'depto' => $row['depto'],
+                    'torre' => $row['building'],
+                    'monto' => $row['gastos_a'],
+                    'owner' => $row['owner'],
                 ];
+                continue;
             }
 
             // 2. Monto cero o negativo
@@ -182,9 +178,20 @@ class ImportLiquidacion extends Component
                     'monto' => $row['gastos_a'],
                 ];
             }
+
+            // 3. Edificio incorrecto: la unidad existe en BD pero en otro edificio
+            $dbUnit = $dbUnits[$row['uf']];
+            if ($dbUnit->building && $dbUnit->building->name !== $row['building']) {
+                $edificioIncorrecto[] = [
+                    'uf'          => $row['uf'],
+                    'depto'       => $row['depto'],
+                    'torre_pdf'   => $row['building'],
+                    'torre_bd'    => $dbUnit->building->name,
+                ];
+            }
         }
 
-        // 3. Suma global de coeficientes (debe ser ~1.0 en todo el complejo)
+        // 4. Suma global de coeficientes (debe ser ~1.0 en todo el complejo)
         $sumaGlobal = round(array_sum(array_column($units, 'coefficient')), 6);
         $coeficientesPorTorre = [
             [
@@ -194,7 +201,7 @@ class ImportLiquidacion extends Component
             ],
         ];
 
-        // 4. Unidades en BD que no están en el PDF (por torre si está registrada)
+        // 5. Unidades en BD que no están en el PDF (por torre si está registrada)
         $torresEnPdf = array_unique(array_column($units, 'building'));
         $buildings = Building::query()->whereIn('name', $torresEnPdf)->with('units')->get();
 
@@ -211,11 +218,13 @@ class ImportLiquidacion extends Component
         }
 
         return [
-            'sin_match_bd'          => $sinMatchBd,
-            'sin_monto'             => $sinMontoPdf,
+            'sin_match_bd'           => $sinMatchBd,
+            'sin_monto'              => $sinMontoPdf,
+            'edificio_incorrecto'    => $edificioIncorrecto,
             'coeficientes_por_torre' => $coeficientesPorTorre,
-            'sin_en_pdf'            => $sinEnPdf,
-            'tiene_alertas'         => ! empty($sinMatchBd) || ! empty($sinMontoPdf) || ! empty($sinEnPdf)
+            'sin_en_pdf'             => $sinEnPdf,
+            'tiene_alertas'          => ! empty($sinMatchBd) || ! empty($sinMontoPdf) || ! empty($sinEnPdf)
+                || ! empty($edificioIncorrecto)
                 || collect($coeficientesPorTorre)->contains(fn ($c) => ! $c['ok']),
         ];
     }

@@ -181,6 +181,11 @@ class ImportLiquidacion extends Command
                             if ($item['gastos_a'] <= 0) {
                                 continue;
                             }
+                            // Guardia: la unidad debe pertenecer al mismo edificio que la expense
+                            if ($item['unit']->building_id !== $building->id) {
+                                $this->warn("Unidad {$item['unit']->number} (id={$item['unit']->id}) no pertenece a {$buildingName} — saltando.");
+                                continue;
+                            }
                             $detail = ExpenseDetail::firstOrCreate(
                                 [
                                     'expense_id' => $expense->id,
@@ -232,6 +237,12 @@ class ImportLiquidacion extends Command
 
                     foreach ($buildingUnits as $item) {
                         if ($item['gastos_a'] <= 0) {
+                            continue;
+                        }
+
+                        // Guardia: la unidad debe pertenecer al mismo edificio que la expense
+                        if ($item['unit']->building_id !== $building->id) {
+                            $this->warn("Unidad {$item['unit']->number} (id={$item['unit']->id}) no pertenece a {$buildingName} — saltando.");
                             continue;
                         }
 
