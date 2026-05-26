@@ -6,8 +6,8 @@
                 <flux:icon.check-circle class="w-10 h-10 text-green-600" />
             </div>
             <div>
-                <h1 class="text-2xl font-bold text-zinc-900 dark:text-white">¡Reserva confirmada!</h1>
-                <p class="mt-1 text-zinc-500">Tu pago fue procesado y la reserva quedó aprobada.</p>
+                <h1 class="text-2xl font-bold text-zinc-900 dark:text-white">¡Pago recibido!</h1>
+                <p class="mt-1 text-zinc-500">Tu pago fue procesado. La reserva se confirmará en instantes.</p>
             </div>
 
             @if ($reservation)
@@ -32,7 +32,7 @@
                         <flux:separator />
                         <div class="flex justify-between text-base font-semibold">
                             <span>Total pagado</span>
-                            <span class="text-green-600">${{ number_format($reservation->total_amount, 2, ',', '.') }}</span>
+                            <span class="text-green-600">${{ number_format($reservation->total_amount, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 </flux:card>
@@ -71,7 +71,7 @@
             </div>
             <div>
                 <h1 class="text-2xl font-bold text-zinc-900 dark:text-white">El pago no se completó</h1>
-                <p class="mt-1 text-zinc-500">No se pudo procesar el pago. No se realizó ningún cargo. Podés intentarlo nuevamente.</p>
+                <p class="mt-1 text-zinc-500">No se pudo procesar el pago. No se realizó ningún cargo. Podés intentarlo nuevamente eligiendo otro horario.</p>
             </div>
 
             <flux:button :href="route('resident.sum.reservations')" wire:navigate variant="primary" icon="arrow-path">

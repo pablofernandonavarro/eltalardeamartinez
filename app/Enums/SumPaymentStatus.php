@@ -7,6 +7,7 @@ enum SumPaymentStatus: string
     case Pending   = 'pending';
     case Paid      = 'paid';
     case Cancelled = 'cancelled';
+    case Refunded  = 'refunded';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum SumPaymentStatus: string
             self::Pending   => 'Pendiente',
             self::Paid      => 'Pagado',
             self::Cancelled => 'Cancelado',
+            self::Refunded  => 'Reembolsado',
         };
     }
 
@@ -23,6 +25,7 @@ enum SumPaymentStatus: string
             self::Pending   => 'amber',
             self::Paid      => 'green',
             self::Cancelled => 'zinc',
+            self::Refunded  => 'blue',
         };
     }
 }

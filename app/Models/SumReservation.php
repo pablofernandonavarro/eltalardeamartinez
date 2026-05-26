@@ -6,6 +6,7 @@ use App\Enums\SumReservationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SumReservation extends Model
@@ -48,6 +49,11 @@ class SumReservation extends Model
             'rejected_at'  => 'datetime',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    public function payment(): HasOne
+    {
+        return $this->hasOne(SumPayment::class, 'reservation_id');
     }
 
     /**

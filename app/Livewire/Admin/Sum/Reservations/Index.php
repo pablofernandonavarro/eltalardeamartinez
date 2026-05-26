@@ -6,6 +6,7 @@ use App\Enums\SumPaymentStatus;
 use App\Enums\SumReservationStatus;
 use App\Models\SumPayment;
 use App\Models\SumReservation;
+use App\Services\MercadoPagoService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -113,13 +114,34 @@ class Index extends Component
             'rejectionReason.required' => 'Debe indicar el motivo del rechazo.',
         ]);
 
-        $reservation = SumReservation::find($this->selectedReservationId);
+        $reservation = SumReservation::with('payment')->find($this->selectedReservationId);
 
         if (! $reservation || $reservation->status !== SumReservationStatus::Pending) {
             session()->flash('error', 'La reserva no puede ser rechazada.');
             $this->closeDetailsModal();
 
             return;
+        }
+
+        $payment = $reservation->payment;
+        $refunded = false;
+
+        if ($payment && $payment->status === SumPaymentStatus::Paid && $payment->mp_payment_id) {
+            try {
+                app(MercadoPagoService::class)->refundPayment($payment->mp_payment_id);
+                $payment->update(['status' => SumPaymentStatus::Refunded]);
+                $refunded = true;
+            } catch (\Throwable $e) {
+                \Log::error('Error al reembolsar pago MP', [
+                    'payment_id' => $payment->id,
+                    'mp_payment_id' => $payment->mp_payment_id,
+                    'error' => $e->getMessage(),
+                ]);
+                session()->flash('error', 'No se pudo procesar el reembolso en Mercado Pago. Verificá manualmente el pago #' . $payment->mp_payment_id . '.');
+                $this->closeDetailsModal();
+
+                return;
+            }
         }
 
         $reservation->update([
@@ -129,7 +151,11 @@ class Index extends Component
             'rejection_reason' => $this->rejectionReason,
         ]);
 
-        session()->flash('message', 'Reserva rechazada exitosamente.');
+        $msg = $refunded
+            ? 'Reserva rechazada y pago reembolsado exitosamente.'
+            : 'Reserva rechazada exitosamente.';
+
+        session()->flash('message', $msg);
         $this->closeDetailsModal();
     }
 

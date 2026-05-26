@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Resident\Sum;
 
+use App\Enums\SumPaymentStatus;
+use App\Enums\SumReservationStatus;
 use App\Models\SumPayment;
 use App\Models\SumReservation;
 use Illuminate\Http\Request;
@@ -30,11 +32,24 @@ class PaymentResult extends Component
             }
         }
 
-        // Fallback: find latest pending/approved reservation for this user
-        if (! $this->reservation) {
+        // En caso de fallo, limpiar la reserva y el pago pendientes
+        if ($status === 'failure' && $this->reservation) {
+            $this->reservation->update([
+                'status' => SumReservationStatus::Cancelled,
+                'cancelled_by' => auth()->id(),
+                'cancelled_at' => now(),
+                'cancellation_reason' => 'Pago rechazado por Mercado Pago',
+            ]);
+            if ($this->payment) {
+                $this->payment->update(['status' => SumPaymentStatus::Cancelled]);
+            }
+        }
+
+        // Fallback: buscar la última reserva activa del usuario si no se encontró por external_reference
+        if (! $this->reservation && $status !== 'failure') {
             $this->reservation = SumReservation::with('unit.building')
                 ->where('user_id', auth()->id())
-                ->whereIn('status', ['pending', 'approved'])
+                ->whereIn('status', [SumReservationStatus::Pending, SumReservationStatus::Approved])
                 ->latest()
                 ->first();
         }

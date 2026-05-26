@@ -310,10 +310,32 @@ class Reservations extends Component
         }
 
         $reservation = SumReservation::query()
+            ->with('payment')
             ->where('id', $this->cancelReservationId)
             ->where('user_id', auth()->id())
             ->active()
             ->firstOrFail();
+
+        $payment = $reservation->payment;
+        $refunded = false;
+
+        if ($payment && $payment->status === SumPaymentStatus::Paid && $payment->mp_payment_id) {
+            try {
+                app(MercadoPagoService::class)->refundPayment($payment->mp_payment_id);
+                $payment->update(['status' => SumPaymentStatus::Refunded]);
+                $refunded = true;
+            } catch (\Throwable $e) {
+                \Log::error('Error al reembolsar pago MP en cancelación de residente', [
+                    'payment_id' => $payment->id,
+                    'mp_payment_id' => $payment->mp_payment_id,
+                    'error' => $e->getMessage(),
+                ]);
+                session()->flash('error', 'No se pudo procesar el reembolso. Contactá al administrador.');
+                $this->closeCancelModal();
+
+                return;
+            }
+        }
 
         $reservation->update([
             'status' => SumReservationStatus::Cancelled,
@@ -324,7 +346,12 @@ class Reservations extends Component
 
         $this->closeCancelModal();
         $this->dispatchCalendarRefresh();
-        session()->flash('message', 'Reserva cancelada exitosamente.');
+
+        $msg = $refunded
+            ? 'Reserva cancelada y pago reembolsado exitosamente.'
+            : 'Reserva cancelada exitosamente.';
+
+        session()->flash('message', $msg);
     }
 
     public function getCalendarEventsProperty(): array

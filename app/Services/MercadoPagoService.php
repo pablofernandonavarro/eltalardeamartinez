@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\SumPayment;
 use App\Models\SumReservation;
 use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\Client\Payment\PaymentRefundClient;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\MercadoPagoConfig;
 
@@ -68,5 +69,12 @@ class MercadoPagoService
         $client = new PaymentClient;
 
         return $client->get((int) $paymentId);
+    }
+
+    public function refundPayment(string|int $paymentId): object
+    {
+        $client = new PaymentRefundClient;
+
+        return $client->refundTotal((int) $paymentId);
     }
 }
