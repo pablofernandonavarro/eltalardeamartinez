@@ -14,7 +14,7 @@
         <flux:callout color="green" icon="check-circle">{{ session('message') }}</flux:callout>
     @endif
 
-    <flux:card>
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
         <div class="space-y-5">
 
             {{-- Unidad --}}
@@ -100,7 +100,7 @@
             </flux:field>
 
         </div>
-    </flux:card>
+    </div>
 
     <div class="flex justify-end gap-3">
         <flux:button :href="route('admin.sum.reservations.index')" wire:navigate variant="ghost">Cancelar</flux:button>

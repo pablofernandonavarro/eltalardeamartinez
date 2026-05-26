@@ -11,7 +11,7 @@
             </div>
 
             @if ($reservation)
-                <flux:card class="w-full text-left">
+                <div class="w-full rounded-xl border border-zinc-200 bg-white p-4 text-left dark:border-zinc-700 dark:bg-zinc-900">
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
                             <span class="text-zinc-500">Unidad</span>
@@ -35,7 +35,7 @@
                             <span class="text-green-600">${{ number_format($reservation->total_amount, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                </flux:card>
+                </div>
             @endif
 
             <flux:button :href="route('resident.sum.reservations')" wire:navigate variant="primary" icon="calendar">
